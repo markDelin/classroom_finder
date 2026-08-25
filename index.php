@@ -54,14 +54,54 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 
 <section class="hero">
   <div class="hero__rail" aria-hidden="true"></div>
-  <h1><?= icon('school') ?> <?= e(strtoupper($school)) ?></h1>
+  <h1><?= icon('map-pin') ?> <?= e(strtoupper($school)) ?></h1>
   <p class="hero__sub">Live availability for every classroom — see what&rsquo;s free before you walk there.</p>
 
   <form id="finderForm" class="finder" method="get" action="index.php">
-    <div class="finder__search input-icon">
-      <?= icon('search', 'input-icon__lead') ?>
-      <input type="search" name="q" id="searchBox" placeholder="Search room number, building or type…"
-             value="<?= e($filters['q']) ?>" autocomplete="off">
+    <div class="finder__bar">
+      <div class="finder__search input-icon">
+        <?= icon('search', 'input-icon__lead') ?>
+        <input type="search" name="q" id="searchBox" placeholder="Search room number, building or type…"
+               value="<?= e($filters['q']) ?>" autocomplete="off">
+      </div>
+      <details class="finder__more" <?= ($filters['building'] || $filters['floor'] !== '' || $filters['type'] || $filters['mincap']) ? 'open' : '' ?>>
+        <summary title="Filters"><?= icon('sliders-horizontal') ?></summary>
+        <div class="finder__dropdown">
+          <div class="finder__dropdown-grid">
+            <label>Building
+              <select name="building">
+                <option value="">All buildings</option>
+                <?php foreach ($buildings as $b): ?>
+                  <option value="<?= e($b) ?>" <?= $filters['building'] === $b ? 'selected' : '' ?>><?= e($b) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label>Floor
+              <select name="floor">
+                <option value="">All floors</option>
+                <?php foreach ($floors as $fl): ?>
+                  <option value="<?= (int)$fl ?>" <?= $filters['floor'] !== '' && (int)$filters['floor'] === $fl ? 'selected' : '' ?>>
+                    Floor <?= (int)$fl ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label>Type
+              <select name="type">
+                <option value="">All types</option>
+                <?php foreach ($types as $t): ?>
+                  <option value="<?= e($t) ?>" <?= $filters['type'] === $t ? 'selected' : '' ?>><?= e($t) ?></option>
+                <?php endforeach; ?>
+              </select>
+            </label>
+            <label>Min seats
+              <input type="number" name="mincap" min="1" max="999" placeholder="Any" value="<?= e($filters['mincap']) ?>">
+            </label>
+          </div>
+          <div class="finder__dropdown-actions">
+            <button class="btn btn--ghost btn--sm" type="button" id="clearFilters">Reset filters</button>
+          </div>
+        </div>
+      </details>
     </div>
 
     <div class="chips" role="tablist" aria-label="Status filter">
@@ -76,37 +116,12 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
               e($label)
           );
       };
-      $chip('', 'ALL');
-      $chip('available', 'AVAILABLE', 'circle-check');
-      $chip('occupied', 'OCCUPIED', 'clock');
-      $chip('reserved', 'RESERVED', 'calendar-clock');
-      $chip('unavailable', 'UNAVAILABLE', 'ban');
+      $chip('', 'All');
+      $chip('available', 'Available', 'circle-check');
+      $chip('occupied', 'Occupied', 'clock');
+      $chip('reserved', 'Reserved', 'calendar-clock');
+      $chip('unavailable', 'Unavailable', 'ban');
       ?>
-    </div>
-
-    <div class="finder__filters">
-      <select name="building" aria-label="Building">
-        <option value="">All buildings</option>
-        <?php foreach ($buildings as $b): ?>
-          <option value="<?= e($b) ?>" <?= $filters['building'] === $b ? 'selected' : '' ?>><?= e($b) ?></option>
-        <?php endforeach; ?>
-      </select>
-      <select name="floor" aria-label="Floor">
-        <option value="">All floors</option>
-        <?php foreach ($floors as $fl): ?>
-          <option value="<?= (int)$fl ?>" <?= $filters['floor'] !== '' && (int)$filters['floor'] === $fl ? 'selected' : '' ?>>
-            Floor <?= (int)$fl ?></option>
-        <?php endforeach; ?>
-      </select>
-      <select name="type" aria-label="Room type">
-        <option value="">All types</option>
-        <?php foreach ($types as $t): ?>
-          <option value="<?= e($t) ?>" <?= $filters['type'] === $t ? 'selected' : '' ?>><?= e($t) ?></option>
-        <?php endforeach; ?>
-      </select>
-      <input type="number" name="mincap" min="1" max="999" placeholder="Min seats"
-             aria-label="Minimum capacity" value="<?= e($filters['mincap']) ?>">
-      <button class="btn btn--ghost btn--sm" type="reset" id="clearFilters">Clear</button>
     </div>
   </form>
 

@@ -114,7 +114,7 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
   <?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
     <div class="logo-preview">
       <img src="../assets/uploads/<?= e($logo) ?>" alt="Current school logo">
-      <form method="post">
+      <form method="post" class="inline-form">
         <?= csrf_field() ?>
         <input type="hidden" name="logo_action" value="remove">
         <button class="btn btn--danger btn--sm" type="submit"
@@ -131,32 +131,45 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 </div>
 
 <div class="card">
-  <form method="post" class="form-grid">
+  <div class="card__head">
+    <h3>System parameters</h3>
+    <p class="muted small">Configure durations, reservation lead times, and live feed intervals.</p>
+  </div>
+  <form method="post">
     <?= csrf_field() ?>
-    <label style="grid-column: 1 / -1">School / institution name
-      <input name="school_name" maxlength="80" value="<?= e(get_setting('school_name', APP_NAME)) ?>">
-    </label>
-
-    <?php foreach ($intKeys as $key => [$min, $max, $label]): ?>
-      <label><?= e($label) ?> <small>(<?= $min ?>–<?= $max ?>)</small>
-        <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>"
-               value="<?= get_setting_int($key, match ($key) {
-                   'reserve_window_minutes' => 45,
-                   'min_duration_minutes'   => 15,
-                   'max_duration_minutes'   => 480,
-                   'duration_step_minutes'  => 30,
-                   default                  => 15,
-               }) ?>">
+    <div style="margin-bottom: 1.2rem;">
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">Title / School name</span>
+        <input name="school_name" maxlength="80" value="<?= e(get_setting('school_name', APP_NAME)) ?>" style="width:100%">
       </label>
-    <?php endforeach; ?>
+    </div>
 
-    <button class="btn btn--primary" type="submit" style="grid-column: 1 / -1">Save settings</button>
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+      <?php foreach ($intKeys as $key => [$min, $max, $label]): ?>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem"><?= e($label) ?></span>
+          <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>" style="width:100%"
+                 value="<?= get_setting_int($key, match ($key) {
+                     'reserve_window_minutes' => 45,
+                     'min_duration_minutes'   => 15,
+                     'max_duration_minutes'   => 480,
+                     'duration_step_minutes'  => 30,
+                     default                  => 15,
+                 }) ?>">
+          <small class="muted" style="display:block;margin-top:.3rem">Allowed range: <?= $min ?> – <?= $max ?></small>
+        </label>
+      <?php endforeach; ?>
+    </div>
+
+    <div style="margin-top: 1.3rem; display: flex; justify-content: flex-end;">
+      <button class="btn btn--primary" type="submit"><?= icon('circle-check') ?> Save settings</button>
+    </div>
   </form>
 </div>
 
 <div class="card muted small">
-  <h3>How these are used</h3>
-  <ul>
+  <h3 style="margin-bottom:.5rem">Parameter reference</h3>
+  <ul style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:.35rem">
     <li><strong>Reserve window</strong> — how many minutes before a booking a room flips to RESERVED on the landing page.</li>
     <li><strong>Min / max occupancy</strong> — bounds for the duration a lecturer can pick after scanning.</li>
     <li><strong>Picker step</strong> — the +/− increment in the scanner’s duration dialog.</li>

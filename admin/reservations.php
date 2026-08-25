@@ -138,20 +138,12 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
 
 <div class="page-head">
   <h1><?= icon('calendar-days') ?> Reservations</h1>
+  <button class="btn btn--primary btn--sm" type="button"
+          data-modal-form="#reservationForm"
+          data-title="New reservation"
+          data-confirm-text="Reserve"><?= icon('plus') ?> New reservation</button>
   <p class="muted">Book rooms in advance. Rooms show as RESERVED on the landing page before the booking starts.</p>
 </div>
-
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-    <div>
-      <h3><?= icon('calendar-days') ?> Bookings</h3>
-      <p class="muted small">Reserve a room in advance — the landing page flips it to RESERVED inside the reserve window.</p>
-    </div>
-    <button class="btn btn--primary" type="button"
-            data-modal-form="#reservationForm"
-            data-title="New reservation"
-            data-confirm-text="Reserve"><?= icon('plus') ?> New reservation</button>
-  </div>
 
   <!-- shown as a SweetAlert2 modal by admin-modals.js -->
   <form method="post" class="form-grid form-grid--5" id="reservationForm" hidden style="text-align:left">
@@ -186,7 +178,7 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
     <p class="muted">No upcoming reservations.</p>
   <?php else: ?>
   <table class="table">
-    <thead><tr><th>Date &amp; time</th><th>Room</th><th>For</th><th>Purpose</th><th></th></tr></thead>
+    <thead><tr><th>Date &amp; time</th><th>Room</th><th>For</th><th>Purpose</th><th style="text-align:right">Action</th></tr></thead>
     <tbody>
       <?php foreach ($upcoming as $r): ?>
       <tr>
@@ -194,11 +186,11 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
         <td data-label="Room"><strong><?= e($r['room_number']) ?></strong> <span class="muted small"><?= e($r['building']) ?></span></td>
         <td data-label="Booked for"><?= e($r['full_name'] ?? '—') ?></td>
         <td class="small muted" data-label="Purpose"><?= e($r['purpose'] ?: '') ?></td>
-        <td class="actions-cell" data-label="Action">
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
           <form method="post" data-confirm="Cancel this reservation?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="cancel"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit">Cancel</button>
+            <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Cancel</button>
           </form>
         </td>
       </tr>

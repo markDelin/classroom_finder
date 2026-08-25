@@ -43,21 +43,21 @@ function render_header(string $title, array $opts = []): void
 
     $menus = [
         'admin' => [
-            ['key' => 'dashboard',    'label' => 'Dashboard',        'href' => 'dashboard.php'],
-            ['key' => 'users',        'label' => 'Users',            'href' => 'users.php'],
-            ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => 'classrooms.php'],
-            ['key' => 'qr',           'label' => 'QR Codes',         'href' => 'qr_codes.php'],
-            ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => 'sessions.php'],
-            ['key' => 'reservations', 'label' => 'Reservations',     'href' => 'reservations.php'],
-            ['key' => 'history',      'label' => 'Usage History',    'href' => 'history.php'],
-            ['key' => 'logs',         'label' => 'Activity Logs',    'href' => 'logs.php'],
-            ['key' => 'settings',     'label' => 'Settings',         'href' => 'settings.php'],
+            ['key' => 'dashboard',    'label' => 'Dashboard',        'href' => 'dashboard.php',    'icon' => 'layout-dashboard'],
+            ['key' => 'users',        'label' => 'Users',            'href' => 'users.php',        'icon' => 'users'],
+            ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => 'classrooms.php',   'icon' => 'door-open'],
+            ['key' => 'qr',           'label' => 'QR Codes',         'href' => 'qr_codes.php',     'icon' => 'qr-code'],
+            ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => 'sessions.php',     'icon' => 'clock'],
+            ['key' => 'reservations', 'label' => 'Reservations',     'href' => 'reservations.php', 'icon' => 'calendar-clock'],
+            ['key' => 'history',      'label' => 'Usage History',    'href' => 'history.php',      'icon' => 'history'],
+            ['key' => 'logs',         'label' => 'Activity Logs',    'href' => 'logs.php',         'icon' => 'file-text'],
+            ['key' => 'settings',     'label' => 'Settings',         'href' => 'settings.php',     'icon' => 'settings'],
         ],
         'lecturer' => [
-            ['key' => 'scanner',   'label' => 'Scan QR Code', 'href' => 'scanner.php'],
-            ['key' => 'dashboard', 'label' => 'My Dashboard', 'href' => 'dashboard.php'],
-            ['key' => 'history',   'label' => 'My History',   'href' => 'history.php'],
-            ['key' => 'finder',    'label' => 'Find Rooms',   'href' => $prefix . 'index.php'],
+            ['key' => 'scanner',   'label' => 'Scan QR Code', 'href' => 'scanner.php',   'icon' => 'scan-line'],
+            ['key' => 'dashboard', 'label' => 'My Dashboard', 'href' => 'dashboard.php', 'icon' => 'layout-dashboard'],
+            ['key' => 'history',   'label' => 'My History',   'href' => 'history.php',   'icon' => 'history'],
+            ['key' => 'finder',    'label' => 'Find Rooms',   'href' => $prefix . 'index.php', 'icon' => 'search'],
         ],
     ];
 
@@ -113,7 +113,7 @@ function render_header(string $title, array $opts = []): void
   <ul>
     <?php foreach ($menus[$nav] as $item): ?>
       <li><a class="<?= $item['key'] === $active ? 'is-active' : '' ?>"
-             href="<?= $item['href'] ?>"><?= e($item['label']) ?></a></li>
+             href="<?= $item['href'] ?>"><?= !empty($item['icon']) ? icon($item['icon']) : '' ?> <span><?= e($item['label']) ?></span></a></li>
     <?php endforeach; ?>
   </ul>
 </nav>
@@ -146,40 +146,42 @@ function render_footer(array $scripts = []): void
 function room_card(array $r, int $i = 0): string
 {
     [$label, $statusIcon, $cls] = room_status_meta($r['computed']);
-    // the mechanical slider shows what the room IS; the ghost shows what it
-    // could be instead — only meaningful for the vacant/in-use pair
-    $ghost = $r['computed'] === 'available' ? 'IN USE' : ($r['computed'] === 'occupied' ? 'VACANT' : '');
     ob_start(); ?>
 <article class="room-card st-<?= e($r['computed']) ?>" data-room-id="<?= (int)$r['id'] ?>" style="--i: <?= $i % 12 ?>">
   <div class="room-card__top">
-    <div>
+    <div class="room-card__head">
       <h3 class="room-card__no"><?= e($r['room_number']) ?></h3>
-      <p class="room-card__loc"><?= e($r['building']) ?> &middot; FLOOR <?= (int)$r['floor'] ?></p>
+      <p class="room-card__loc"><?= e($r['building']) ?> · Floor <?= (int)$r['floor'] ?></p>
     </div>
-    <span class="slider slider--<?= $cls ?>" role="img" aria-label="<?= e(ucfirst(strtolower($label))) ?>">
-      <?php if ($ghost): ?><span class="slider__ghost" aria-hidden="true"><?= $ghost ?></span><?php endif; ?>
-      <span class="slider__thumb"><?= $label ?></span>
-    </span>
+    <span class="pill pill--<?= $cls ?>"><?= icon($statusIcon) ?> <?= $label ?></span>
   </div>
 
   <div class="room-card__meta">
-    <span><?= e($r['room_type']) ?></span>
-    <span title="Capacity"><?= icon('users') ?> <?= (int)$r['capacity'] ?> seats</span>
+    <span class="room-card__type"><?= e($r['room_type']) ?></span>
+    <span class="room-card__cap" title="Capacity"><?= icon('users') ?> <?= (int)$r['capacity'] ?> seats</span>
   </div>
 
   <div class="room-card__foot">
     <?php if ($r['computed'] === 'occupied'): ?>
-      <p class="room-card__who"><?= icon('user') ?> <?= e($r['session_lecturer'] ?? 'Lecturer') ?></p>
-      <p class="room-card__when"><?= fmt_range($r['session_start'], $r['session_end']) ?></p>
-      <p class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</p>
+      <div class="room-card__occupied-info">
+        <p class="room-card__who"><?= icon('user') ?> <?= e($r['session_lecturer'] ?? 'Lecturer') ?></p>
+        <div class="room-card__timing">
+          <span class="room-card__when"><?= fmt_range($r['session_start'], $r['session_end']) ?></span>
+          <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
+        </div>
+      </div>
     <?php elseif ($r['computed'] === 'reserved'): ?>
-      <p class="room-card__who"><?= icon('calendar-days') ?> Reserved<?= !empty($r['reservation_purpose']) ? ' — ' . e($r['reservation_purpose']) : '' ?></p>
-      <p class="room-card__when"><?= fmt_range($r['reservation_start'], $r['reservation_end']) ?></p>
-      <p class="room-card__free" data-free-at="<?= e(fmt_iso($r['reservation_start'])) ?>">Starts soon…</p>
+      <div class="room-card__reserved-info">
+        <p class="room-card__who"><?= icon('calendar-days') ?> <?= !empty($r['reservation_purpose']) ? e($r['reservation_purpose']) : 'Reserved' ?></p>
+        <div class="room-card__timing">
+          <span class="room-card__when"><?= fmt_range($r['reservation_start'], $r['reservation_end']) ?></span>
+          <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['reservation_start'])) ?>">Starts soon…</span>
+        </div>
+      </div>
     <?php elseif ($r['computed'] === 'unavailable'): ?>
-      <p class="room-card__off-note"><?= e($r['note'] ?: ($r['status'] === 'maintenance' ? 'Under maintenance' : 'Temporarily disabled')) ?></p>
+      <p class="room-card__off-note"><?= icon('ban') ?> <?= e($r['note'] ?: ($r['status'] === 'maintenance' ? 'Under maintenance' : 'Temporarily disabled')) ?></p>
     <?php else: ?>
-      <p class="room-card__open">Open — walk right in.</p>
+      <p class="room-card__open"><?= icon('circle-check') ?> Available to use</p>
     <?php endif; ?>
   </div>
 </article>

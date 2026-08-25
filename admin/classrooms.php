@@ -105,15 +105,13 @@ $rooms    = array_slice($allRooms, $pp['offset'], $pp['limit']);
 render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'classrooms']);
 ?>
 
-<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-  <div>
-    <h1><?= icon('door-open') ?> Classrooms</h1>
-    <p class="muted">Every registered room gets a unique QR token automatically.</p>
-  </div>
-  <button class="btn btn--primary" type="button"
+<div class="page-head">
+  <h1><?= icon('door-open') ?> Classrooms</h1>
+  <button class="btn btn--primary btn--sm" type="button"
           data-modal-form="#classroomForm"
           data-title="Add a classroom"
           data-confirm-text="Add classroom"><?= icon('plus') ?> Add classroom</button>
+  <p class="muted">Every registered room gets a unique QR token automatically.</p>
 </div>
 
 <datalist id="buildingList">
@@ -147,36 +145,27 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
 
 <div class="card">
   <table class="table">
-    <thead><tr><th>Room</th><th>Type / Capacity</th><th>Status now</th><th style="width:12rem">Set status</th><th style="width:13rem">Manage</th></tr></thead>
+    <thead><tr><th>Room &amp; Location</th><th>Type / Seats</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
       <?php foreach ($rooms as $r): ?>
       <tr>
-        <td data-label="Room">
+        <td class="cell-main" data-label="Room">
           <strong><?= e($r['room_number']) ?></strong> <span class="muted small">· <?= e($r['building']) ?> · F<?= (int)$r['floor'] ?></span>
-          <?php if ($r['note']): ?><br><span class="muted small"><?= icon('file-text') ?> <?= e($r['note']) ?></span><?php endif; ?>
+          <?php if ($r['note']): ?><div class="muted small"><?= icon('file-text') ?> <?= e($r['note']) ?></div><?php endif; ?>
         </td>
-        <td data-label="Type / seats"><?= e($r['room_type']) ?><br><span class="muted small"><?= icon('users') ?> <?= (int)$r['capacity'] ?> seats</span></td>
-        <td data-label="Status now"><?php [$lbl, $stIcon] = room_status_meta($r['computed']); ?>
-          <span class="pill pill--<?= $r['computed'] === 'unavailable' ? 'off' : $r['computed'] ?>"><?= icon($stIcon) ?> <?= e($r['status']) ?></span>
+        <td class="cell-sub" data-label="Type"><?= e($r['room_type']) ?> · <span class="muted small"><?= (int)$r['capacity'] ?> seats</span></td>
+        <td class="cell-status" data-label="Status"><?php [$lbl, $stIcon] = room_status_meta($r['computed']); ?>
+          <span class="pill pill--<?= $r['computed'] === 'unavailable' ? 'off' : $r['computed'] ?>"><?= icon($stIcon) ?> <?= ucfirst(e($r['status'])) ?></span>
           <?php if ($r['computed'] === 'occupied'): ?>
             <div class="muted small"><?= e($r['session_lecturer'] ?? '') ?> until <?= fmt_time($r['session_end']) ?></div>
           <?php endif; ?>
         </td>
-        <td class="actions-cell" data-label="Set status">
-          <?php foreach (['available' => 'Available', 'maintenance' => 'Maintenance', 'disabled' => 'Disabled'] as $k => $lbl2): ?>
-            <?php if ($r['status'] !== $k): ?>
-              <form method="post" class="inline-form"><?= csrf_field() ?>
-                <input type="hidden" name="action" value="set_status"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                <input type="hidden" name="status" value="<?= $k ?>">
-                <button class="btn btn--ghost btn--sm" type="submit"><?= $lbl2 ?></button></form>
-            <?php endif; ?>
-          <?php endforeach; ?>
-        </td>
-        <td class="actions-cell" data-label="Manage">
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Actions">
           <button class="btn btn--ghost btn--sm" type="button"
                   data-modal-form="#classroomForm"
                   data-title="Edit classroom <?= e($r['room_number']) ?>"
                   data-confirm-text="Save changes"
+                  title="Edit classroom"
                   data-prefill='<?= e(json_encode([
                       'action'      => 'update',
                       'id'          => (int)$r['id'],
@@ -186,11 +175,24 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
                       'capacity'    => (int)$r['capacity'],
                       'room_type'   => $r['room_type'],
                       'note'        => (string)($r['note'] ?? ''),
-                  ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)) ?>'><?= icon('pencil') ?> Edit</button>
-          <a class="btn btn--ghost btn--sm" href="qr_codes.php#qr-<?= (int)$r['id'] ?>">QR</a>
+                  ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)) ?>'><?= icon('pencil') ?> <span class="btn-text">Edit</span></button>
+          <a class="btn btn--ghost btn--sm" href="qr_codes.php#qr-<?= (int)$r['id'] ?>" title="QR code"><?= icon('qr-code') ?> <span class="btn-text">QR</span></a>
+          <details class="mini-details">
+            <summary class="btn btn--ghost btn--sm" title="Change Status"><?= icon('settings') ?> <span class="btn-text">Status</span></summary>
+            <div class="mini-menu">
+              <?php foreach (['available' => 'Set Available', 'maintenance' => 'Maintenance', 'disabled' => 'Disable Room'] as $k => $lbl2): ?>
+                <?php if ($r['status'] !== $k): ?>
+                  <form method="post" class="inline-form" style="width:100%"><?= csrf_field() ?>
+                    <input type="hidden" name="action" value="set_status"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="status" value="<?= $k ?>">
+                    <button class="btn btn--ghost btn--sm" type="submit" style="width:100%;justify-content:flex-start"><?= $lbl2 ?></button></form>
+                <?php endif; ?>
+              <?php endforeach; ?>
+            </div>
+          </details>
           <form method="post" class="inline-form" data-confirm="Delete this classroom permanently? Only possible while it has no usage history."><?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit">Delete</button></form>
+            <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete classroom"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
         </td>
       </tr>
       <?php endforeach; ?>

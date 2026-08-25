@@ -38,7 +38,10 @@ $pg = room_page($rooms, (int)($_GET['page'] ?? 1));
 
 if (($_GET['format'] ?? '') === 'html') {
     header('Content-Type: text/html; charset=utf-8');
-    echo room_cards_html($pg['rooms']), room_pager_html($pg['total'], $pg['page']);
+    echo '<section id="roomGrid" class="room-grid" data-refresh="' . get_setting_int('landing_refresh_seconds', 15) . '" data-page="' . $pg['page'] . '">'
+       . room_cards_html($pg['rooms'])
+       . '</section>'
+       . '<div id="roomPager">' . room_pager_html($pg['total'], $pg['page']) . '</div>';
     exit;
 }
 
@@ -58,7 +61,10 @@ json_response([
 
     // Pre-rendered card markup so the landing page needs one request per refresh.
     'html'  => ($_GET['with_html'] ?? '') === '1'
-        ? room_cards_html($pg['rooms']) . room_pager_html($pg['total'], $pg['page'])
+        ? '<section id="roomGrid" class="room-grid" data-refresh="' . get_setting_int('landing_refresh_seconds', 15) . '" data-page="' . $pg['page'] . '">'
+        . room_cards_html($pg['rooms'])
+        . '</section>'
+        . '<div id="roomPager">' . room_pager_html($pg['total'], $pg['page']) . '</div>'
         : null,
     'stats' => $stats,
 

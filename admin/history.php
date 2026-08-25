@@ -99,16 +99,11 @@ $keepQ    = array_filter(['room' => $roomId, 'user' => $userId], static fn($v) =
 $presetUrl = static fn(string $r): string => 'history.php?' . http_build_query(array_merge($keepQ, $r === '' ? [] : ['range' => $r]));
 $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
 ?>
-<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-  <div>
-    <h1><?= icon('chart-column') ?> Usage history</h1>
-    <p class="muted">
-      <?= $totalSessions ?> session<?= $totalSessions === 1 ? '' : 's' ?> · <?= human_duration($totalMinutes) ?> of room time
-      <?= $rangesOn ? ' · ' . e($rangeLabel) : '' ?>
-    </p>
-  </div>
+<div class="page-head">
+  <h1><?= icon('chart-column') ?> Usage history</h1>
   <a class="btn btn--primary btn--sm" href="history.php?<?= e(http_build_query(array_merge($_GET, ['export' => 'csv']))) ?>">
     <?= icon('download') ?> Export CSV</a>
+  <p class="muted"><?= $totalSessions ?> session<?= $totalSessions === 1 ? '' : 's' ?> · <?= human_duration($totalMinutes) ?> of room time<?= $rangesOn ? ' · ' . e($rangeLabel) : '' ?>.</p>
 </div>
 
 <div class="card">
@@ -133,8 +128,14 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
         <option value="<?= (int)$l['id'] ?>" <?= $userId === (string)$l['id'] ? 'selected' : '' ?>><?= e($l['full_name']) ?></option>
       <?php endforeach; ?>
     </select>
-    <label class="stacked">From <input type="date" name="from" value="<?= e($from) ?>"></label>
-    <label class="stacked">To <input type="date" name="to" value="<?= e($to) ?>"></label>
+    <div class="date-input-group">
+      <span class="small muted">From</span>
+      <input type="date" name="from" value="<?= e($from) ?>">
+    </div>
+    <div class="date-input-group">
+      <span class="small muted">To</span>
+      <input type="date" name="to" value="<?= e($to) ?>">
+    </div>
     <button class="btn btn--sm" type="submit">Apply</button>
     <a class="btn btn--ghost btn--sm" href="history.php">Reset</a>
   </form>
@@ -147,12 +148,16 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <tbody>
       <?php foreach ($rows as $s): ?>
       <tr>
-        <td data-label="Date"><?= fmt_date($s['start_time']) ?></td>
-        <td data-label="Room"><strong>ROOM <?= e($s['room_number']) ?></strong> <span class="muted small"><?= e($s['building']) ?></span></td>
-        <td data-label="Lecturer"><?= e($s['full_name']) ?></td>
-        <td data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td data-label="Duration"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></td>
-        <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
+        <td class="cell-main" data-label="Room">
+          <strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span>
+        </td>
+        <td class="cell-status" data-label="Status">
+          <span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span>
+          <span class="muted small"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></span>
+        </td>
+        <td class="cell-sub small" data-label="Lecturer">
+          <?= e($s['full_name']) ?> · <span class="muted"><?= fmt_date($s['start_time']) ?> (<?= fmt_range($s['start_time'], $s['end_time']) ?>)</span>
+        </td>
       </tr>
       <?php endforeach; ?>
     </tbody>

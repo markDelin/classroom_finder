@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT INTO settings (skey, svalue) VALUES
   ('school_name',              'Classroom Finder'),
-  ('reserve_window_minutes',   '45'),   -- how soon a booking turns a room 🟡 RESERVED
+  ('reserve_window_minutes',   '45'),   -- how soon a booking turns a room RESERVED
   ('min_duration_minutes',     '15'),   -- shortest occupancy a lecturer may pick
   ('max_duration_minutes',     '480'),  -- longest occupancy
   ('duration_step_minutes',    '30'),   -- +/- step in the scanner's duration picker
@@ -133,16 +133,16 @@ INSERT INTO settings (skey, svalue) VALUES
 ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);
 
 -- ------------------------------------------------------------
--- Sample classrooms (safe to delete once you add your own)
+-- Sample classrooms
 -- Tokens are generated here; regenerate any of them from
 -- Admin → QR Codes if needed.
 -- ------------------------------------------------------------
 INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status) VALUES
-  ('101', 'Main Building',   1, 40, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('102', 'Main Building',   1, 35, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('201', 'Main Building',   2, 45, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('202', 'Main Building',   2, 30, 'Seminar Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('301', 'Main Building',   3, 60, 'Auditorium',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('L1',  'Science Complex', 1, 30, 'Laboratory',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('L2',  'Science Complex', 1, 30, 'Computer Lab',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('105', 'Annex Building',  1, 25, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available');
+  ('101', 'New Building',   1, 40, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('102', 'New Building',   1, 35, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('201', 'New Building',   2, 45, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('202', 'New Building',   2, 30, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('301', 'New Building',   3, 60, 'Lecture Room',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('103',  'New Building', 1, 30, 'Lecture Room',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('104',  'New Building', 1, 30, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
+  ('105', 'New Building',  1, 25, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available');

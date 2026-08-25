@@ -86,16 +86,11 @@ $keepQ     = array_filter(['q' => $q, 'action' => $actionF], static fn($v) => $v
 $presetUrl = static fn(string $r): string => 'logs.php?' . http_build_query(array_merge($keepQ, $r === '' ? [] : ['range' => $r]));
 $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
 ?>
-<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-  <div>
-    <h1><?= icon('scroll-text') ?> Activity logs</h1>
-    <p class="muted">
-      <?= $total ?> entr<?= $total === 1 ? 'y' : 'ies' ?> recorded
-      <?= $rangesOn ? ' · ' . e($rangeLabel) : '' ?>.
-    </p>
-  </div>
+<div class="page-head">
+  <h1><?= icon('scroll-text') ?> Activity logs</h1>
   <a class="btn btn--primary btn--sm" href="logs.php?<?= e(http_build_query(array_merge($_GET, ['export' => 'csv']))) ?>">
     <?= icon('download') ?> Export CSV</a>
+  <p class="muted"><?= $total ?> entr<?= $total === 1 ? 'y' : 'ies' ?> recorded<?= $rangesOn ? ' · ' . e($rangeLabel) : '' ?>.</p>
 </div>
 
 <div class="card">
@@ -114,8 +109,14 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
         <option value="<?= e($a['action']) ?>" <?= $actionF === $a['action'] ? 'selected' : '' ?>><?= e(str_replace('_', ' ', $a['action'])) ?></option>
       <?php endforeach; ?>
     </select>
-    <label class="stacked">From <input type="date" name="from" value="<?= e($from) ?>"></label>
-    <label class="stacked">To <input type="date" name="to" value="<?= e($to) ?>"></label>
+    <div class="date-input-group">
+      <span class="small muted">From</span>
+      <input type="date" name="from" value="<?= e($from) ?>">
+    </div>
+    <div class="date-input-group">
+      <span class="small muted">To</span>
+      <input type="date" name="to" value="<?= e($to) ?>">
+    </div>
     <button class="btn btn--sm" type="submit">Filter</button>
   </form>
 
@@ -127,10 +128,12 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <tbody>
       <?php foreach ($logs as $l): ?>
       <tr>
-        <td class="small nowrap" data-label="When"><?= fmt_date($l['timestamp']) ?><br><span class="muted"><?= fmt_time($l['timestamp']) ?></span></td>
-        <td data-label="Who"><?= e($l['full_name'] ?? 'System') ?></td>
-        <td data-label="Action"><span class="pill pill--log"><?= e(strtolower(str_replace('_', ' ', $l['action']))) ?></span></td>
-        <td class="small" data-label="Details">
+        <td class="cell-main" data-label="Who">
+          <strong><?= e($l['full_name'] ?? 'System') ?></strong>
+          <span class="muted small">· <?= fmt_date($l['timestamp']) ?> <?= fmt_time($l['timestamp']) ?></span>
+        </td>
+        <td class="cell-status" data-label="Action"><span class="pill pill--log"><?= e(strtolower(str_replace('_', ' ', $l['action']))) ?></span></td>
+        <td class="cell-sub small" data-label="Details">
           <?= e($l['details'] ?: '') ?>
           <?= !empty($l['room_number']) ? '<span class="pill pill--lecturer">' . e($l['room_number']) . '</span>' : '' ?>
         </td>

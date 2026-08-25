@@ -78,20 +78,26 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <p class="muted">No active sessions right now.</p>
   <?php else: ?>
   <table class="table">
-    <thead><tr><th>Room</th><th>Lecturer</th><th>Window</th><th>Ends in</th><th style="width:9rem">Action</th></tr></thead>
+    <thead><tr><th>Room</th><th>Lecturer</th><th>Window</th><th>Ends in</th><th style="text-align:right">Action</th></tr></thead>
     <tbody>
       <?php foreach ($active as $s): ?>
       <tr>
-        <td data-label="Room"><strong><?= e($s['room_number']) ?></strong> <span class="muted small"><?= e($s['building']) ?></span></td>
-        <td data-label="Lecturer"><?= e($s['lecturer']) ?></td>
-        <td data-label="Window"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?></span></td>
+        <td class="cell-main" data-label="Room">
+          <strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span>
+        </td>
+        <td class="cell-status" data-label="Status">
+          <span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span>
+          <span class="muted small"><?= fmt_range($s['start_time'], $s['end_time']) ?></span>
+        </td>
+        <td class="cell-sub small" data-label="Lecturer">
+          <?= icon('user') ?> <?= e($s['lecturer']) ?>
+        </td>
         <td class="actions-cell" data-label="Action">
           <form method="post" data-confirm="Force-end this session now?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="force_end">
             <input type="hidden" name="session_id" value="<?= (int)$s['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit">Force end</button>
+            <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Force end</button>
           </form>
         </td>
       </tr>
@@ -111,11 +117,13 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($past as $s): ?>
       <tr>
-        <td data-label="Date"><?= fmt_date($s['start_time']) ?></td>
-        <td data-label="Room"><strong><?= e($s['room_number']) ?></strong></td>
-        <td data-label="Lecturer"><?= e($s['lecturer']) ?></td>
-        <td data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
+        <td class="cell-main" data-label="Room">
+          <strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= fmt_date($s['start_time']) ?></span>
+        </td>
+        <td class="cell-status" data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
+        <td class="cell-sub small" data-label="Lecturer">
+          <?= e($s['lecturer']) ?> · <span class="muted"><?= fmt_range($s['start_time'], $s['end_time']) ?></span>
+        </td>
       </tr>
       <?php endforeach; ?>
     </tbody>

@@ -38,7 +38,7 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <p class="muted">Live overview of classrooms, accounts and system activity.</p>
 </div>
 
-<div class="tiles">
+<div class="tiles tiles--5">
   <div class="tile"><span class="tile__num"><?= count($rooms) ?></span><span class="tile__label">Total classrooms</span></div>
   <div class="tile tile--ok"><span class="tile__num"><?= icon('circle-check') ?> <?= $count['available'] ?></span><span class="tile__label">Available</span></div>
   <div class="tile tile--danger"><span class="tile__num"><?= icon('clock') ?> <?= $count['occupied'] ?></span><span class="tile__label">Occupied</span></div>
@@ -59,10 +59,12 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($pending as $p): ?>
       <tr>
-        <td data-label="Name"><?= e($p['full_name']) ?></td>
-        <td data-label="Staff ID"><?= e($p['staff_id']) ?></td>
-        <td class="small" data-label="Email"><?= e($p['email']) ?></td>
-        <td class="muted small" data-label="Department"><?= e($p['department'] ?: '—') ?></td>
+        <td class="cell-main" data-label="Name">
+          <strong><?= e($p['full_name']) ?></strong> <span class="muted small">ID: <?= e($p['staff_id']) ?></span>
+        </td>
+        <td class="cell-sub small" data-label="Contact">
+          <?= e($p['email']) ?><?= $p['department'] ? ' · ' . e($p['department']) : '' ?>
+        </td>
         <td class="actions-cell">
           <form method="post" action="users.php" class="inline-form">
             <?= csrf_field() ?>

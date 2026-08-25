@@ -238,6 +238,10 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 
 <div class="page-head">
   <h1><?= icon('users') ?> Users</h1>
+  <button class="btn btn--primary btn--sm" type="button"
+          data-modal-form="#userForm"
+          data-title="Create an account"
+          data-confirm-text="Create account"><?= icon('user-plus') ?> Add user</button>
   <p class="muted">Approve new lecturers, manage, delete accounts and reset passwords.</p>
 </div>
 
@@ -254,45 +258,40 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   </form>
 
   <table class="table">
-    <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Contact</th><th>Created</th><th style="width:10rem">Access</th><th style="width:14rem">Manage</th></tr></thead>
+    <thead><tr><th>User</th><th>Role &amp; Status</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
       <?php foreach ($users as $u): ?>
       <tr>
-        <td data-label="Name">
-          <strong><?= e($u['full_name']) ?></strong>
-          <span class="muted small">@<?= e($u['username']) ?></span><br>
-          <span class="muted small"><?= e($u['department'] ?: '') ?></span>
+        <td class="cell-main" data-label="Name">
+          <strong><?= e($u['full_name']) ?></strong> <span class="muted small">@<?= e($u['username']) ?></span>
+          <?php if ($u['department']): ?><div class="muted small"><?= e($u['department']) ?></div><?php endif; ?>
         </td>
-        <td data-label="Role"><span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span></td>
-        <td data-label="Status">
+        <td class="cell-status" data-label="Role & Status">
+          <span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span>
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
           <span class="pill pill--<?= $badge[$u['account_status']] ?>"><?= e($u['account_status']) ?></span>
         </td>
-        <td class="small" data-label="Contact"><?= e($u['email']) ?><br><span class="muted">ID <?= e($u['staff_id']) ?></span></td>
-        <td class="small muted" data-label="Created"><?= fmt_date($u['created_at']) ?></td>
-        <td class="actions-cell" data-label="Access">
+        <td class="cell-sub small" data-label="Contact">
+          <?= e($u['email']) ?>
+          <div class="muted small">ID: <?= e($u['staff_id']) ?> · <?= fmt_date($u['created_at']) ?></div>
+        </td>
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Actions">
           <?php if ($u['account_status'] === 'pending'): ?>
             <form method="post" class="inline-form"><?= csrf_field() ?>
               <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--ok btn--sm" type="submit">Approve</button></form>
+              <button class="btn btn--ok btn--sm" type="submit" title="Approve"><?= icon('circle-check') ?> <span class="btn-text">Approve</span></button></form>
             <form method="post" class="inline-form" data-confirm="Reject this registration?"><?= csrf_field() ?>
               <input type="hidden" name="action" value="reject"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--danger btn--sm" type="submit">Reject</button></form>
+              <button class="btn btn--danger btn--sm" type="submit" title="Reject"><?= icon('ban') ?> <span class="btn-text">Reject</span></button></form>
           <?php elseif ($u['account_status'] === 'suspended'): ?>
             <form method="post" class="inline-form"><?= csrf_field() ?>
               <input type="hidden" name="action" value="reactivate"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--ok btn--sm" type="submit">Reactivate</button></form>
-          <?php elseif ($u['account_status'] === 'approved' && !((int)$u['id'] === (int)$admin['id'])): ?>
-            <form method="post" class="inline-form" data-confirm="Suspend this account? They will be logged out and blocked."><?= csrf_field() ?>
-              <input type="hidden" name="action" value="suspend"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
-              <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--danger btn--sm" type="submit">Suspend</button></form>
+              <button class="btn btn--ok btn--sm" type="submit" title="Reactivate"><?= icon('refresh-cw') ?> <span class="btn-text">Reactivate</span></button></form>
           <?php endif; ?>
-        </td>
-        <td class="actions-cell" data-label="Manage">
+
           <?php $editPrefill = e(json_encode([
               'action' => 'update', 'id' => (int)$u['id'],
               'full_name' => $u['full_name'], 'staff_id' => $u['staff_id'],
@@ -303,23 +302,30 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
                   data-modal-form="#userEditForm"
                   data-title="Edit <?= e($u['full_name']) ?>"
                   data-confirm-text="Save changes"
-                  data-prefill='<?= $editPrefill ?>'><?= icon('pencil') ?> Edit</button>
+                  title="Edit user"
+                  data-prefill='<?= $editPrefill ?>'><?= icon('pencil') ?> <span class="btn-text">Edit</span></button>
           <details class="mini-details">
-            <summary class="btn btn--ghost btn--sm">Reset pw</summary>
+            <summary class="btn btn--ghost btn--sm" title="Reset password"><?= icon('lock') ?> <span class="btn-text">Reset pw</span></summary>
             <div class="mini-menu">
               <form method="post" class="reset-form" data-confirm="Set a new password for this user?"><?= csrf_field() ?>
                 <input type="hidden" name="action" value="reset_password"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
                 <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
                 <input type="password" name="password" placeholder="New password (min 8)" minlength="8" required>
-                <button class="btn btn--sm" type="submit">Reset password</button></form>
+                <button class="btn btn--sm" type="submit">Reset</button></form>
             </div>
           </details>
           <?php if (!((int)$u['id'] === (int)$admin['id'])): ?>
+            <?php if ($u['account_status'] === 'approved'): ?>
+              <form method="post" class="inline-form" data-confirm="Suspend this account? They will be logged out and blocked."><?= csrf_field() ?>
+                <input type="hidden" name="action" value="suspend"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
+                <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
+                <button class="btn btn--ghost btn--sm" type="submit" title="Suspend user"><span class="btn-text">Suspend</span></button></form>
+            <?php endif; ?>
             <form method="post" class="inline-form"
                   data-confirm="Permanently delete <?= e($u['full_name']) ?>? Their sessions end immediately and their reservations are unlinked. This cannot be undone."><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--danger btn--sm" type="submit"><?= icon('trash-2') ?> Delete</button></form>
+              <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           <?php endif; ?>
         </td>
       </tr>
@@ -329,18 +335,6 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <?php if (!$users): ?><p class="muted">No users match.</p><?php endif; ?>
   <?= page_nav($totalUsers, $pp['page']) ?>
 </div>
-
-<div class="card">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-    <div>
-      <h3><?= icon('user-plus') ?> Create an account directly</h3>
-      <p class="muted small">Accounts created here are immediately active — no approval step needed.</p>
-    </div>
-    <button class="btn btn--primary" type="button"
-            data-modal-form="#userForm"
-            data-title="Create an account"
-            data-confirm-text="Create account"><?= icon('plus') ?> New account</button>
-  </div>
 
   <!-- shown as a SweetAlert2 modal by admin-modals.js -->
   <form method="post" class="form-grid" id="userForm" hidden style="text-align:left">
@@ -359,7 +353,6 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
       </select>
     </label>
   </form>
-</div>
 
 <!-- shown as a SweetAlert2 modal by admin-modals.js (Edit buttons prefill it) -->
 <form method="post" class="form-grid" id="userEditForm" hidden style="text-align:left">
