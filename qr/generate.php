@@ -50,8 +50,9 @@ error_reporting($oldLevel & ~(E_DEPRECATED | E_NOTICE | E_WARNING));
 require_once __DIR__ . '/lib/qrlib.php';
 
 // make sure the library's frame cache directory exists / is writable
-if (defined('QR_CACHE_DIR') && !is_dir(QR_CACHE_DIR)) {
-    @mkdir(QR_CACHE_DIR, 0775, true);
+$cacheDir = defined('QR_CACHE_DIR') ? constant('QR_CACHE_DIR') : null;
+if (is_string($cacheDir) && !is_dir($cacheDir)) {
+    @mkdir($cacheDir, 0775, true);
 }
 
 header('Cache-Control: private, max-age=0, no-cache');
