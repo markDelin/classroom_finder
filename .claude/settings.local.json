@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nohup php -S 127.0.0.1:8080 -t /public/classroom_finder >/tmp/php-server.log 2>&1 & sleep 2; curl -s -o /dev/null -w \"index: %{http_code}\\\\n\" http://127.0.0.1:8080/index.php; curl -s http://127.0.0.1:8080/index.php | grep -oE '\\(CLASSROOM FINDER|Initial System Setup|setup.php|ROOM|room-card st-[a-z]+\\)' | sort | uniq -c | sort -rn | head)",
+      "Bash(curl -sv http://127.0.0.1:8080/index.php)",
+      "Bash(nohup php -S 127.0.0.1:8093 -t /public/classroom_finder >/tmp/php-server.log 2>&1 & sleep 2; curl -s -o /dev/null -w \"index: %{http_code}\\\\n\" http://127.0.0.1:8093/index.php; curl -s http://127.0.0.1:8093/index.php | grep -oE '\\(Initial System Setup|room-card st-[a-z]+|ROOM|CLASSROOM\\)' | sort | uniq -c)",
+      "Bash(bash /tmp/e2e.sh)",
+      "Bash(curl -s -D /tmp/h.txt http://127.0.0.1:8093/setup.php -o /tmp/body.txt -w 'code=%{http_code}\\\\n')",
+      "Bash(php -l config/helpers.php)",
+      "Bash(php -l auth/auth_check.php)",
+      "Bash(curl -s http://127.0.0.1:8093/login.php)",
+      "Bash(python3 -c \"import cv2; print\\('cv2', cv2.__version__\\)\")",
+      "Bash(pip3 install *)",
+      "Bash(apk add *)",
+      "Bash(python3 -c \"import cv2; print\\('cv2 ready:', cv2.__version__\\)\")",
+      "Bash(sed -i \"s/username=r2admin&password=r2pass1234/username=admin\\\\&password=adminpass123/\" /tmp/e2e2.sh)",
+      "Bash(bash /tmp/e2e2.sh)",
+      "Read(//public/.claude/skills/frontend-design/**)",
+      "Bash(curl -sL -o sweetalert2.all.min.js https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js)",
+      "Bash(awk '{print $5\" bytes\"}')"
+    ]
+  }
+}
