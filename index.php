@@ -53,7 +53,6 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 <?php endif; ?>
 
 <section class="hero">
-  <div class="hero__rail" aria-hidden="true"></div>
   <h1><?= icon('map-pin') ?> <?= e(strtoupper($school)) ?></h1>
   <p class="hero__sub">Live availability for every classroom — see what&rsquo;s free before you walk there.</p>
 

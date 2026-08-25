@@ -1,0 +1,378 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Classroom Finder — fixed weekly class schedules (admin).
+ *
+ * Recurring class timetable per classroom. While an active slot runs on its
+ * weekday, the status engine reports the room as OCCUPIED and occupying is
+ * rejected — unless someone reported that occurrence as "not meeting"
+ * (schedule_force_open, filed instantly by lecturers from the scanner).
+ * The bottom of the page renders one printable timetable sheet per room
+ * (same @media print pipeline as the QR posters).
+ */
+
+require_once __DIR__ . '/../auth/auth_check.php';
+
+const DAY_NAMES = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
+
+$admin = require_admin();
+$fail  = function (string $m): never {
+    flash('error', $m);
+    redirect('schedules.php');
+};
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!check_csrf()) {
+        $fail('Session expired — please try again.');
+    }
+
+    $action = (string)($_POST['action'] ?? '');
+
+    if ($action === 'delete') {
+        $id = (int)($_POST['id'] ?? 0);
+        db()->prepare('DELETE FROM class_schedules WHERE id = ?')->execute([$id]);
+        log_action('SCHEDULE_DELETE', (int)$admin['id'], null, 'Deleted schedule #' . $id);
+        flash('success', 'Schedule removed.');
+        redirect('schedules.php');
+    }
+
+    if ($action === 'toggle') {
+        $id = (int)($_POST['id'] ?? 0);
+        db()->prepare('UPDATE class_schedules SET is_active = 1 - is_active WHERE id = ?')->execute([$id]);
+        log_action('SCHEDULE_TOGGLE', (int)$admin['id'], null, 'Toggled schedule #' . $id);
+        redirect('schedules.php');
+    }
+
+    if ($action === 'revert') {
+        // remove a force-open report -> today's slot blocks the room again
+        $id = (int)($_POST['id'] ?? 0);
+        db()->prepare('DELETE FROM schedule_force_open WHERE id = ?')->execute([$id]);
+        log_action('FORCE_OPEN_REVERT', (int)$admin['id'], null, 'Reverted force-open #' . $id);
+        flash('success', 'Force-open reverted — the scheduled class blocks the room again.');
+        redirect('schedules.php');
+    }
+
+    if ($action === 'create' || $action === 'update') {
+        $classroomId = (int)($_POST['classroom_id'] ?? 0);
+        $day         = (int)($_POST['day_of_week'] ?? 0);
+        $startT      = (string)($_POST['start_time'] ?? '');
+        $endT        = (string)($_POST['end_time'] ?? '');
+        $subject     = trim((string)($_POST['subject'] ?? ''));
+        $section     = trim((string)($_POST['section'] ?? ''));
+        $instructor  = trim((string)($_POST['instructor'] ?? ''));
+
+        if (!$classroomId || !isset(DAY_NAMES[$day])
+            || !preg_match('/^\d{2}:\d{2}$/', $startT) || !preg_match('/^\d{2}:\d{2}$/', $endT)) {
+            $fail('Please fill in the room, weekday and both times.');
+        }
+        foreach ([$startT, $endT] as $t) {
+            [$hh, $mm] = array_map('intval', explode(':', $t));
+            if ($hh > 23 || $mm > 59) {
+                $fail('Please use real clock times (HH:MM).');
+            }
+        }
+        if ($subject === '') {
+            $fail('Please enter the subject / course.');
+        }
+
+        $start = $startT . ':00';
+        $end   = $endT . ':00';
+        if (strcmp($end, $start) <= 0) {
+            $fail('The end time must be after the start time.');
+        }
+
+        // no overlapping ACTIVE slot on the same room+weekday (update excludes itself)
+        $id  = $action === 'update' ? (int)($_POST['id'] ?? 0) : 0;
+        $st  = db()->prepare(
+            "SELECT subject FROM class_schedules
+             WHERE classroom_id = ? AND day_of_week = ? AND is_active = 1 AND id <> ?
+               AND start_time < ? AND end_time > ?
+             LIMIT 1"
+        );
+        $st->execute([$classroomId, $day, $id, $end, $start]);
+        if ($clash = $st->fetch()) {
+            $fail('Overlaps an existing class (' . $clash['subject'] . ') on '
+                . DAY_NAMES[$day] . '. Adjust the times.');
+        }
+
+        if ($action === 'create') {
+            db()->prepare(
+                'INSERT INTO class_schedules (classroom_id, day_of_week, start_time, end_time, subject, section, instructor)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            )->execute([$classroomId, $day, $start, $end, $subject, $section ?: null, $instructor ?: null]);
+            log_action('SCHEDULE_CREATE', (int)$admin['id'], $classroomId,
+                DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
+            flash('success', 'Class schedule added. The room is blocked during this slot every ' . DAY_NAMES[$day] . '.');
+        } else {
+            if (!$id) {
+                $fail('Missing schedule to update.');
+            }
+            db()->prepare(
+                'UPDATE class_schedules
+                 SET classroom_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, section = ?, instructor = ?
+                 WHERE id = ?'
+            )->execute([$classroomId, $day, $start, $end, $subject, $section ?: null, $instructor ?: null, $id]);
+            log_action('SCHEDULE_UPDATE', (int)$admin['id'], $classroomId,
+                "Schedule #{$id}: " . DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
+            flash('success', 'Class schedule updated.');
+        }
+        redirect('schedules.php');
+    }
+
+    $fail('Unknown action.');
+}
+
+expire_stale();
+
+// room filter (also scopes the printed sheets)
+$rooms = db()->query(
+    "SELECT id, room_number, building, floor, capacity, room_type FROM classrooms ORDER BY building, room_number"
+)->fetchAll();
+$roomMap = [];
+foreach ($rooms as $r) {
+    $roomMap[(int)$r['id']] = $r;
+}
+
+$filterRoom = (int)($_GET['room'] ?? 0);
+$filterSql  = '';
+$filterParams = [];
+if ($filterRoom && isset($roomMap[$filterRoom])) {
+    $filterSql       = ' WHERE cs.classroom_id = ? ';
+    $filterParams[]  = $filterRoom;
+}
+
+$stc = db()->prepare('SELECT COUNT(*) AS n FROM class_schedules cs' . $filterSql);
+$stc->execute($filterParams);
+$total = (int)$stc->fetch()['n'];
+$pP = page_params($total, (int)($_GET['page'] ?? 1));
+
+$st = db()->prepare(
+    'SELECT cs.*, c.room_number, c.building, fo.id AS force_open_id
+     FROM class_schedules cs
+     JOIN classrooms c ON c.id = cs.classroom_id
+     LEFT JOIN schedule_force_open fo ON fo.schedule_id = cs.id AND fo.exc_date = CURDATE()
+     ' . $filterSql . '
+     ORDER BY c.building, c.room_number, cs.day_of_week, cs.start_time
+     LIMIT ' . $pP['limit'] . ' OFFSET ' . $pP['offset']
+);
+$st->execute($filterParams);
+$slots = $st->fetchAll();
+
+// this week's "not meeting" reports
+$forceOpen = db()->query(
+    'SELECT fo.*, cs.subject, cs.section, cs.instructor, cs.start_time, cs.end_time, cs.day_of_week,
+            c.room_number, c.building, u.full_name
+     FROM schedule_force_open fo
+     JOIN class_schedules cs ON cs.id = fo.schedule_id
+     JOIN classrooms c       ON c.id = fo.classroom_id
+     JOIN users u            ON u.id = fo.user_id
+     WHERE fo.exc_date >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)
+     ORDER BY fo.created_at DESC
+     LIMIT 20'
+)->fetchAll();
+
+// full week per room for the printable sheets (honours the same room filter)
+$st = db()->prepare(
+    'SELECT cs.* FROM class_schedules cs
+     WHERE cs.is_active = 1' . ($filterRoom && isset($roomMap[$filterRoom]) ? ' AND cs.classroom_id = ' . $filterRoom : '') . '
+     ORDER BY cs.classroom_id, cs.day_of_week, cs.start_time'
+);
+$st->execute();
+$weekByRoom = [];
+foreach ($st->fetchAll() as $row) {
+    $weekByRoom[(int)$row['classroom_id']][$row['day_of_week']][] = $row;
+}
+// one printable sheet, only for the room the admin picked — printing never
+// dumps every room's timetable at once
+$sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoom] : null;
+
+$school = get_setting('school_name', APP_NAME);
+
+render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' => 'schedules']);
+?>
+
+<div class="page-head">
+  <h1><?= icon('calendar-days') ?> Fixed class schedules</h1>
+  <button class="btn btn--primary btn--sm" type="button"
+          data-modal-form="#slotForm"
+          data-title="Add class schedule"
+          data-confirm-text="Add"><?= icon('plus') ?> Add schedule</button>
+  <button class="btn btn--ghost btn--sm" type="button" onclick="window.print()"><?= icon('printer') ?> Print schedule</button>
+  <p class="muted">Rooms are shown as OCCUPIED and cannot be taken during their scheduled class times. Lecturers can open a room instantly when a class is not meeting; those reports appear below.</p>
+</div>
+
+<div class="no-print">
+<form method="get" class="filter-row">
+  <select name="room" onchange="this.form.submit()">
+    <option value="">All classrooms</option>
+    <?php foreach ($rooms as $r): ?>
+      <option value="<?= (int)$r['id'] ?>" <?= $filterRoom === (int)$r['id'] ? 'selected' : '' ?>>
+        <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
+    <?php endforeach; ?>
+  </select>
+  <noscript><button class="btn btn--ghost btn--sm" type="submit">Filter</button></noscript>
+</form>
+
+<div class="card">
+  <h3>Weekly slots</h3>
+  <?php if (!$slots): ?>
+    <p class="muted">No fixed schedules yet<?= $filterRoom ? ' for this room' : '' ?>.</p>
+  <?php else: ?>
+  <table class="table table--sched">
+    <thead><tr><th>Room</th><th>Days</th><th>Time</th><th>Subject</th><th>Course</th><th>Lecturer</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>
+      <?php foreach ($slots as $s): ?>
+      <tr>
+        <td class="cell-main" data-label="Room"><strong><?= e($s['room_number']) ?></strong> <span class="muted small"><?= e($s['building']) ?></span></td>
+        <td data-label="Days"><?= DAY_NAMES[(int)$s['day_of_week']] ?></td>
+        <td data-label="Time"><?= e(fmt_range($s['start_time'], $s['end_time'])) ?></td>
+        <td data-label="Subject"><?= e($s['subject']) ?></td>
+        <td data-label="Course"><?= e($s['section'] ?: '—') ?></td>
+        <td data-label="Lecturer"><?= e($s['instructor'] ?: '—') ?></td>
+        <td class="cell-status" data-label="Status">
+          <?php if (!empty($s['force_open_id'])): ?>
+            <span class="pill pill--released">opened today</span>
+          <?php elseif ((int)$s['is_active'] === 1): ?>
+            <span class="pill pill--ok">active</span>
+          <?php else: ?>
+            <span class="pill">paused</span>
+          <?php endif; ?>
+        </td>
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+          <button class="btn btn--ghost btn--sm" type="button"
+                  data-modal-form="#slotForm"
+                  data-title="Edit schedule — Room <?= e($s['room_number']) ?>"
+                  data-confirm-text="Save"
+                  title="Edit schedule"
+                  data-prefill='<?= e(json_encode([
+                      'action'      => 'update',
+                      'id'          => (int)$s['id'],
+                      'classroom_id'=> (int)$s['classroom_id'],
+                      'day_of_week' => (int)$s['day_of_week'],
+                      'start_time'  => substr((string)$s['start_time'], 0, 5),
+                      'end_time'    => substr((string)$s['end_time'], 0, 5),
+                      'subject'     => $s['subject'],
+                      'section'     => (string)$s['section'],
+                      'instructor'  => (string)$s['instructor'],
+                  ])) ?>'><?= icon('pencil') ?> <span class="btn-text">Edit</span></button>
+          <form method="post" class="inline-form">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+            <button class="btn btn--ghost btn--sm" type="submit" title="Pause or resume this slot"><?= (int)$s['is_active'] === 1 ? '<span class="btn-text">Pause</span>' : '<span class="btn-text">Resume</span>' ?></button>
+          </form>
+          <form method="post" class="inline-form" data-confirm="Delete the <?= DAY_NAMES[(int)$s['day_of_week']] ?> <?= e(fmt_time($s['start_time'])) ?> slot for room <?= e($s['room_number']) ?>?">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
+            <button class="btn btn--danger btn--sm" type="submit" title="Delete slot"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button>
+          </form>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+  <?= page_nav($total, $pP['page'], ADMIN_PER_PAGE, 'page') ?>
+  <?php endif; ?>
+</div>
+
+<?php if ($forceOpen): ?>
+<div class="card">
+  <h3>"Class isn't meeting" reports — this week</h3>
+  <p class="muted small">Rooms were opened despite a scheduled class. Reverting blocks the room again for the rest of today's slot.</p>
+  <table class="table table--sched">
+    <thead><tr><th>Room</th><th>Days</th><th>Time</th><th>Subject</th><th>Course</th><th>Lecturer</th><th>Reported by</th><th>Reason</th><th style="text-align:right">Action</th></tr></thead>
+    <tbody>
+      <?php foreach ($forceOpen as $fo): ?>
+      <tr>
+        <td class="cell-main" data-label="Room"><strong><?= e($fo['room_number']) ?></strong> <span class="muted small"><?= e($fo['building']) ?></span></td>
+        <td data-label="Days"><?= DAY_NAMES[(int)$fo['day_of_week']] ?></td>
+        <td data-label="Time"><?= e(fmt_range($fo['start_time'], $fo['end_time'])) ?></td>
+        <td data-label="Subject"><?= e($fo['subject']) ?></td>
+        <td data-label="Course"><?= e($fo['section'] ?: '—') ?></td>
+        <td data-label="Lecturer"><?= e($fo['instructor'] ?: '—') ?></td>
+        <td data-label="Reported by"><?= e($fo['full_name']) ?><?php if ($fo['details']): ?><div class="muted small"><?= e(fmt_date($fo['created_at'])) ?> — &ldquo;<?= e($fo['details']) ?>&rdquo;</div><?php endif; ?></td>
+        <td class="cell-status" data-label="Reason"><span class="pill"><?= e(str_replace('_', ' ', $fo['reason'])) ?></span></td>
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+          <form method="post" class="inline-form" data-confirm="Block room <?= e($fo['room_number']) ?> again for the rest of today's slot?">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="revert"><input type="hidden" name="id" value="<?= (int)$fo['id'] ?>">
+            <button class="btn btn--danger btn--sm" type="submit" title="Undo this force-open"><?= icon('x') ?> <span class="btn-text">Revert</span></button>
+          </form>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+</div>
+<?php endif; ?>
+</div><!-- /.no-print -->
+
+<?php if ($sheetRoom): ?>
+<!-- printable timetable sheet for the filtered room -->
+<h3 class="tt-heading">Class timetable · <?= e($school) ?></h3>
+<div class="tt-sheets">
+  <?php $rid = (int)$sheetRoom['id']; ?>
+  <div class="card tt-sheet">
+    <div class="tt-sheet__head">
+      <strong>ROOM <?= e($sheetRoom['room_number']) ?></strong>
+      <span><?= e($sheetRoom['building']) ?> · Floor <?= (int)$sheetRoom['floor'] ?> · <?= e($sheetRoom['room_type']) ?> · <?= (int)$sheetRoom['capacity'] ?> seats</span>
+      <span>Weekly class schedule — effective <?= date('M j, Y') ?></span>
+    </div>
+    <div class="tt-scroll">
+    <table class="tt-grid">
+      <thead><tr><?php foreach (DAY_NAMES as $d): ?><th><?= $d ?></th><?php endforeach; ?></tr></thead>
+      <tbody><tr>
+        <?php foreach (array_keys(DAY_NAMES) as $dayNum): ?>
+        <td>
+          <?php foreach ($weekByRoom[$rid][$dayNum] ?? [] as $slot): ?>
+          <div class="tt-slot">
+            <span class="tt-slot__time"><?= e(fmt_range($slot['start_time'], $slot['end_time'])) ?></span>
+            <strong><?= e($slot['subject']) ?></strong>
+            <?php if ($slot['section'] || $slot['instructor']): ?>
+            <small><?= e(trim(($slot['section'] ?: '') . ($slot['section'] && $slot['instructor'] ? ' · ' : '') . ($slot['instructor'] ?: ''))) ?></small>
+            <?php endif; ?>
+          </div>
+          <?php endforeach; ?>
+          <?= empty($weekByRoom[$rid][$dayNum]) ? '<span class="tt-free">—</span>' : '' ?>
+        </td>
+        <?php endforeach; ?>
+      </tr></tbody>
+    </table>
+    </div><!-- /.tt-scroll -->
+    <p class="tt-foot"><?= e($school) ?></p>
+  </div>
+</div>
+<?php else: ?>
+<div class="card no-print">
+  <p class="muted">Choose a classroom in the filter above to load its printable timetable — printing outputs only that room's sheet.</p>
+</div>
+<?php endif; ?>
+
+<!-- shared add/edit form, opened inside a SweetAlert2 modal -->
+<form method="post" class="form-grid form-grid--5" id="slotForm" hidden style="text-align:left" data-default-action="create">
+  <?= csrf_field() ?>
+  <input type="hidden" name="action" value="create">
+  <input type="hidden" name="id" value="">
+  <label>Classroom
+    <select name="classroom_id" required>
+      <option value="">— choose —</option>
+      <?php foreach ($rooms as $r): ?>
+        <option value="<?= (int)$r['id'] ?>"><?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
+      <?php endforeach; ?>
+    </select>
+  </label>
+  <label>Weekday
+    <select name="day_of_week" required>
+      <?php foreach (DAY_NAMES as $n => $label): ?>
+        <option value="<?= $n ?>"><?= $label ?></option>
+      <?php endforeach; ?>
+    </select>
+  </label>
+  <label>Starts <input type="time" name="start_time" required step="300"></label>
+  <label>Ends <input type="time" name="end_time" required step="300"></label>
+  <label>Subject / course <input name="subject" maxlength="120" required placeholder="e.g. IT 301 — Data Structures"></label>
+  <label>Course <input name="section" maxlength="80" placeholder="e.g. BSCS 3-A"></label>
+  <label>Instructor <input name="instructor" maxlength="120" placeholder="Name on the class program"></label>
+</form>
+
+<?php render_footer(['assets/js/admin-modals.js']); ?>

@@ -99,6 +99,53 @@ CREATE TABLE IF NOT EXISTS reservations (
 ) ENGINE = InnoDB;
 
 -- ------------------------------------------------------------
+-- Fixed class schedules (recurring weekly timetable per room)
+--   The status engine treats an active slot's room as OCCUPIED for the
+--   whole slot on its weekday, and occupying is rejected when a session
+--   would overlap the slot.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS class_schedules (
+  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  classroom_id INT UNSIGNED NOT NULL,
+  day_of_week  TINYINT UNSIGNED NOT NULL,            -- 1=Mon … 7=Sun (date('N'))
+  start_time   TIME NOT NULL,
+  end_time     TIME NOT NULL,
+  subject      VARCHAR(120) NOT NULL,                -- e.g. "IT 301 — Data Structures"
+  section      VARCHAR(80)  DEFAULT NULL,
+  instructor   VARCHAR(120) DEFAULT NULL,            -- free text; may not be an app user
+  is_active    TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_sched_room_day (classroom_id, day_of_week, is_active),
+  CONSTRAINT fk_sched_room FOREIGN KEY (classroom_id)
+    REFERENCES classrooms (id) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+-- ------------------------------------------------------------
+-- Force-open reports (a scheduled class that isn't actually meeting:
+-- lecturer absent / emergency / ended early). One row per slot per day
+-- lifts the schedule block for that occurrence only; admins can revert.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS schedule_force_open (
+  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  classroom_id INT UNSIGNED NOT NULL,
+  schedule_id  INT UNSIGNED NOT NULL,                -- the affected weekly slot
+  exc_date     DATE NOT NULL,                        -- the affected occurrence
+  reason       ENUM('lecturer_absent','emergency','ended_early','other') NOT NULL,
+  details      VARCHAR(160) DEFAULT NULL,
+  user_id      INT UNSIGNED NOT NULL,                -- who reported it
+  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_force_slot (schedule_id, exc_date),  -- one report per slot per day
+  CONSTRAINT fk_force_room FOREIGN KEY (classroom_id)
+    REFERENCES classrooms (id) ON DELETE CASCADE,
+  CONSTRAINT fk_force_sched FOREIGN KEY (schedule_id)
+    REFERENCES class_schedules (id) ON DELETE CASCADE,
+  CONSTRAINT fk_force_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+-- ------------------------------------------------------------
 -- Activity logs
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS activity_logs (

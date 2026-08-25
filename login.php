@@ -44,7 +44,7 @@ render_header('Log in', ['prefix' => '']);
       <label>Password
         <input type="password" name="password" required autocomplete="current-password">
       </label>
-      <button class="btn btn--primary btn--block" type="submit">LOGIN</button>
+      <button class="btn btn--primary btn--block" type="submit">Log in</button>
     </form>
 
     <p class="muted small">New lecturer? <a href="register.php">Register for an account</a> —

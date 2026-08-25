@@ -15,7 +15,10 @@ around campus looking for a free room.
 | QR generation per classroom | `qr/generate.php` (+ bundled `qr/lib` phpqrcode) |
 | QR scanning & duration dialog | `lecturer/scanner.php`, `assets/js/scanner.js`, vendored html5-qrcode |
 | Occupying a room (server-validated) | `lecturer/occupy.php` — transaction + row lock |
-| Conflict detection | same, plus overlapping-reservation check |
+| Conflict detection | same, plus overlapping-reservation + fixed-schedule checks |
+| Fixed weekly class schedules per room | `admin/schedules.php` (table `class_schedules`) — rooms block during their slots everywhere: status engine, scan validation, occupy |
+| Printable timetable sheet per classroom | `admin/schedules.php` → *Print timetables* (same print pipeline as the QR posters) |
+| "Class isn't meeting" instant force-open | scanner dialog → `api/force_open.php` (table `schedule_force_open`); admins audit/revert under Admin → Fixed Schedules |
 | Release early | `lecturer/release.php`, also `api/release_room.php` |
 | Automatic session expiration | `expire_stale()` in `config/helpers.php` (lazy sweep) |
 | Live status feed | `api/classroom_status.php` |

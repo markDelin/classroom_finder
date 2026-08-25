@@ -13,6 +13,11 @@ const DB_PORT = '3306';
 const DB_NAME = 'classroom_finder';
 const DB_USER = 'root';
 const DB_PASS = '';
+/**
+ * Local Unix socket tried first when present (this machine starts MariaDB
+ * without TCP); falls back to host/port otherwise (e.g. stock XAMPP).
+ */
+const DB_SOCKET = '/run/mysqld/mysqld.sock';
 
 /**
  * Shared PDO handle (one per request).
@@ -26,7 +31,9 @@ function db(): PDO
         return $pdo;
     }
 
-    $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+    $dsn = file_exists(DB_SOCKET)
+        ? 'mysql:unix_socket=' . DB_SOCKET . ';dbname=' . DB_NAME . ';charset=utf8mb4'
+        : 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

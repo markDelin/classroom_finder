@@ -49,6 +49,7 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'qr',           'label' => 'QR Codes',         'href' => 'qr_codes.php',     'icon' => 'qr-code'],
             ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => 'sessions.php',     'icon' => 'clock'],
             ['key' => 'reservations', 'label' => 'Reservations',     'href' => 'reservations.php', 'icon' => 'calendar-clock'],
+            ['key' => 'schedules',    'label' => 'Fixed Schedules',  'href' => 'schedules.php',    'icon' => 'calendar-days'],
             ['key' => 'history',      'label' => 'Usage History',    'href' => 'history.php',      'icon' => 'history'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => 'logs.php',         'icon' => 'file-text'],
             ['key' => 'settings',     'label' => 'Settings',         'href' => 'settings.php',     'icon' => 'settings'],
@@ -163,6 +164,7 @@ function room_card(array $r, int $i = 0): string
 
   <div class="room-card__foot">
     <?php if ($r['computed'] === 'occupied'): ?>
+      <?php if (!empty($r['session_id'])): ?>
       <div class="room-card__occupied-info">
         <p class="room-card__who"><?= icon('user') ?> <?= e($r['session_lecturer'] ?? 'Lecturer') ?></p>
         <div class="room-card__timing">
@@ -170,6 +172,16 @@ function room_card(array $r, int $i = 0): string
           <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
         </div>
       </div>
+      <?php else: ?>
+      <!-- occupied by a fixed weekly class, not a QR session -->
+      <div class="room-card__occupied-info">
+        <p class="room-card__who"><?= icon('book-open') ?> <?= e($r['sched_subject']) ?><?= !empty($r['sched_section']) ? ' · ' . e($r['sched_section']) : '' ?></p>
+        <div class="room-card__timing">
+          <span class="room-card__when"><?= fmt_range($r['sched_start'], $r['sched_end']) ?></span>
+          <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
+        </div>
+      </div>
+      <?php endif; ?>
     <?php elseif ($r['computed'] === 'reserved'): ?>
       <div class="room-card__reserved-info">
         <p class="room-card__who"><?= icon('calendar-days') ?> <?= !empty($r['reservation_purpose']) ? e($r['reservation_purpose']) : 'Reserved' ?></p>

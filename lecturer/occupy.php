@@ -100,6 +100,30 @@ try {
         );
     }
 
+    // 4. today's fixed weekly class overlapping our window? (a slot already
+    //    reported as "not meeting" via a force-open doesn't block)
+    $startT = date('H:i:s', $now);
+    $endT   = date('H:i:s', $now + $minutes * 60);
+    $st = $pdo->prepare(
+        "SELECT cs.id, cs.subject, cs.start_time, cs.end_time
+         FROM class_schedules cs
+         LEFT JOIN schedule_force_open fo
+                ON fo.schedule_id = cs.id AND fo.exc_date = CURDATE()
+         WHERE cs.classroom_id = ? AND cs.is_active = 1
+           AND cs.day_of_week = ?
+           AND cs.start_time < ? AND cs.end_time > ?
+           AND fo.id IS NULL
+         LIMIT 1"
+    );
+    $st->execute([(int)$room['id'], (int)date('N', $now), $endT, $startT]);
+    if ($cls = $st->fetch()) {
+        throw new RuntimeException(
+            'Room ' . $room['room_number'] . ' has a scheduled class ('
+            . $cls['subject'] . ') at ' . fmt_range($cls['start_time'], $cls['end_time'])
+            . '. If the class is not meeting, you can open the room from the scanner.'
+        );
+    }
+
     // All good — record the session.
     $pdo->prepare(
         "INSERT INTO classroom_sessions (classroom_id, user_id, start_time, end_time, status)

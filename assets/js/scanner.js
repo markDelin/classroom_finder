@@ -12,6 +12,10 @@
   var readerEl = document.getElementById('reader');
   if (!readerEl || !window.Swal) { return; }
 
+  /* .reader-wrap — gets .is-live while the camera runs so the scan beam
+   * only sweeps over a real feed, not the idle placeholder. */
+  var wrapEl = readerEl.closest('.reader-wrap');
+
   var startBtn = document.getElementById('startBtn');
   var stopBtn  = document.getElementById('stopBtn');
   var torchBox = document.getElementById('torchToggle');
@@ -88,12 +92,89 @@
     e.textContent = window.cfWallClock(serverNowIso, minutes).time;
   }
 
+  /* --- "scheduled class isn't meeting" -> instant force-open --- */
+
+  function requestForceOpen(data) {
+    var num = data.room.room_number;
+    var opts = [
+      ['', '— choose a reason —'],
+      ['lecturer_absent', 'Lecturer is absent'],
+      ['emergency', 'Emergency / class suspended'],
+      ['ended_early', 'Class ended early'],
+      ['other', 'Other reason']
+    ].map(function (r) {
+      return '<option value="' + r[0] + '">' + r[1] + '</option>';
+    }).join('');
+
+    window.Swal.fire({
+      title: 'Open room ' + num,
+      html:
+        '<p class="swal-meta muted">If the scheduled class is not meeting, you can open '
+        + 'this room for other lecturers right away.</p>'
+        + '<label class="swal-field"><span>Reason</span><select id="foReason">' + opts + '</select></label>'
+        + '<label class="swal-field"><span>Details (optional)</span>'
+        + '<input id="foDetails" maxlength="160" autocomplete="off" placeholder="e.g. Professor cancelled today"></label>',
+      showCancelButton: true,
+      confirmButtonText: 'Open room',
+      cancelButtonText: 'Cancel',
+      focusConfirm: false,
+      allowOutsideClick: function () { return !window.Swal.isLoading(); },
+      preConfirm: function () {
+        var reason = document.getElementById('foReason').value;
+        if (!reason) {
+          window.Swal.showValidationMessage('Please pick a reason.');
+          return false;
+        }
+        return { reason: reason, details: document.getElementById('foDetails').value.trim() };
+      }
+    }).then(function (res) {
+      if (!res.isConfirmed || !res.value) { return; }
+      submitForceOpen(data, res.value.reason, res.value.details);
+    });
+  }
+
+  async function submitForceOpen(data, reason, details) {
+    try {
+      var resp = await fetch('../api/force_open.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
+        body: JSON.stringify({ token: data.room.token, reason: reason, details: details })
+      });
+      var out = await resp.json();
+      if (!resp.ok || !out.ok) {
+        window.cfToast && window.cfToast('error', out.error || 'Could not open the room.');
+        return;
+      }
+      window.cfToast && window.cfToast('success', out.message || 'Room opened.');
+    } catch (e) {
+      window.cfToast && window.cfToast('error', 'Network error while opening the room.');
+    } finally {
+      lastToken = null;   // next scan/manual entry sees the room as available
+    }
+  }
+
   function openDialog(data) {
     limits = readLimits(data.limits);
     serverNowIso = data.server_now || '';
     var num = data.room.room_number;
 
     if (!data.available) {
+      if (data.fixed_class) {
+        // blocked by a fixed weekly class — offer to report it as not meeting
+        window.Swal.fire({
+          icon: 'warning',
+          title: 'Room ' + num + ' has a class scheduled',
+          text: data.reason || 'A fixed schedule slot is active in this room.',
+          showDenyButton: true,
+          confirmButtonText: 'OK',
+          denyButtonText: "Class isn't happening",
+          allowOutsideClick: false
+        }).then(function (r) {
+          if (r.isDenied) { requestForceOpen(data); return; }
+          lastToken = null;
+        });
+        return;
+      }
       // §16: explain why the room can't be taken
       window.Swal.fire({
         icon: 'warning',
@@ -133,7 +214,7 @@
       title: 'ROOM ' + num,
       html: html,
       showCancelButton: true,
-      confirmButtonText: 'OCCUPY ROOM',
+      confirmButtonText: 'Occupy room',
       cancelButtonText: 'Cancel',
       focusConfirm: true,
       allowOutsideClick: function () { return !window.Swal.isLoading(); },
@@ -196,6 +277,29 @@
     }
   }
 
+  /* Translate getUserMedia failures into guidance a lecturer can act on
+   * instead of surfacing raw browser error objects. */
+  function cameraErrorMessage(err) {
+    var name = (err && err.name) || '';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      return 'Camera access is blocked. Allow camera permission for this site '
+           + '(tap the padlock in the address bar), then press Start again.';
+    }
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      return 'No camera was found on this device. Type the token under the QR poster instead.';
+    }
+    if (name === 'NotReadableError' || name === 'TrackStartError') {
+      return 'The camera seems busy in another app or tab. Close it, then press Start again.';
+    }
+    if (name === 'OverconstrainedError') {
+      return 'This device’s camera isn’t compatible with the scanner. Type the token instead.';
+    }
+    if (!window.isSecureContext) {
+      return 'Cameras need a secure (https) connection. Open the page over https or type the token instead.';
+    }
+    return 'Could not start the camera. Check permission and try again, or type the token instead.';
+  }
+
   async function startCamera() {
     try {
       scanner = new Html5Qrcode('reader', { verbose: false });
@@ -207,6 +311,7 @@
       );
       startBtn.hidden = true;
       stopBtn.hidden = false;
+      wrapEl.classList.add('is-live');
       say('Camera on — point it at the QR poster.');
       // torch support?
       try {
@@ -214,7 +319,7 @@
         if (caps && caps.torch) { torchLbl.hidden = false; }
       } catch (e) { /* not supported */ }
     } catch (err) {
-      say('Could not access the camera (' + err + '). Use manual entry instead.', true);
+      say(cameraErrorMessage(err), true);
     }
   }
 
@@ -224,6 +329,7 @@
     scanner = null;
     startBtn.hidden = false;
     stopBtn.hidden = true;
+    wrapEl.classList.remove('is-live');
     torchLbl.hidden = true;
     torchBox.checked = false;
     say('Camera stopped.');

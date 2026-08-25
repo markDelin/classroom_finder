@@ -66,11 +66,24 @@ json_response([
     'available'    => $live['computed'] === 'available',
     'room_status'  => $live['computed'],
     'reason'       => match ($live['computed']) {
-        'occupied'    => 'This room is currently occupied until ' . fmt_time($live['session_end']) . '.',
+        'occupied'    => empty($live['session_id'])
+            ? 'This room has a scheduled class (' . $live['sched_subject'] . ') until '
+              . fmt_time($live['sched_end']) . '.'
+            : 'This room is currently occupied until ' . fmt_time($live['session_end']) . '.',
         'reserved'    => 'A reservation starts at ' . fmt_time($live['reservation_start']) . '.',
         'unavailable' => 'This room is marked unavailable (' . ($live['status'] === 'maintenance' ? 'maintenance' : 'disabled') . ').',
         default       => null,
     },
+    // A fixed weekly class is blocking the room (as opposed to a lecturer's
+    // QR session). The scanner offers a "class isn't happening" force-open.
+    'fixed_class' => ($live['computed'] === 'occupied' && empty($live['session_id']) && !empty($live['sched_id'])) ? [
+        'schedule_id' => (int)$live['sched_id'],
+        'subject'     => $live['sched_subject'],
+        'section'     => $live['sched_section'],
+        'instructor'  => $live['sched_instructor'],
+        'start'       => $live['sched_start'],
+        'end'         => $live['sched_end'],
+    ] : null,
     'current_session' => empty($live['session_id']) ? null : [
         'lecturer' => $live['session_lecturer'],
         'start'    => $live['session_start'],

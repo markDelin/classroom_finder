@@ -243,6 +243,13 @@ function fetch_classrooms(array $f = []): array
     $now  = date('Y-m-d H:i:s');
     $soon = date('Y-m-d H:i:s', time() + get_setting_int('reserve_window_minutes', 45) * 60);
 
+    // Today's fixed-schedule slot (recurring weekly class timetable). MySQL's
+    // session timezone is synced from PHP on connect, so CURDATE()/CURTIME()
+    // match the date('...') values used everywhere else.
+    $dow     = (int)date('N');           // 1=Mon … 7=Sun
+    $curtime = date('H:i:s');
+    $today   = date('Y-m-d');
+
     $sql = "SELECT c.*,
                    MAX(s.id)         AS session_id,
                    MAX(s.start_time) AS session_start,
@@ -252,7 +259,14 @@ function fetch_classrooms(array $f = []): array
                    MIN(r.start_time) AS reservation_start,
                    MAX(r.end_time)   AS reservation_end,
                    MAX(r.purpose)    AS reservation_purpose,
-                   MAX(ru.full_name) AS reservation_by
+                   MAX(ru.full_name) AS reservation_by,
+                   MAX(cs.id)          AS sched_id,
+                   MAX(cs.subject)     AS sched_subject,
+                   MAX(cs.section)     AS sched_section,
+                   MAX(cs.instructor)  AS sched_instructor,
+                   MAX(cs.start_time)  AS sched_start,
+                   MAX(cs.end_time)    AS sched_end,
+                   MAX(fo.id)          AS force_open_id
             FROM classrooms c
             LEFT JOIN classroom_sessions s
                    ON s.classroom_id = c.id AND s.status = 'active'
@@ -261,14 +275,24 @@ function fetch_classrooms(array $f = []): array
             LEFT JOIN reservations r
                    ON r.classroom_id = c.id AND r.status = 'active'
                   AND r.start_time <= :soon AND r.end_time > :now3
-            LEFT JOIN users ru ON ru.id = r.user_id";
+            LEFT JOIN users ru ON ru.id = r.user_id
+            LEFT JOIN class_schedules cs
+                   ON cs.classroom_id = c.id AND cs.is_active = 1
+                  AND cs.day_of_week = :dow
+                  AND cs.start_time <= :curtime1 AND cs.end_time > :curtime2
+            LEFT JOIN schedule_force_open fo
+                   ON fo.schedule_id = cs.id AND fo.exc_date = :today";
 
     $where  = [];
     $params = [
-        ':now1' => $now,
-        ':now2' => $now,
-        ':now3' => $now,
-        ':soon' => $soon,
+        ':now1'     => $now,
+        ':now2'     => $now,
+        ':now3'     => $now,
+        ':soon'     => $soon,
+        ':dow'      => $dow,
+        ':curtime1' => $curtime,
+        ':curtime2' => $curtime,
+        ':today'    => $today,
     ];
 
     if (!empty($f['q'])) {
@@ -308,6 +332,10 @@ function fetch_classrooms(array $f = []): array
         } elseif (!empty($r['session_id'])) {
             $r['computed']     = 'occupied';
             $r['available_at'] = $r['session_end'];
+        } elseif (!empty($r['sched_id']) && empty($r['force_open_id'])) {
+            // fixed weekly class is in session (unless reported as not meeting)
+            $r['computed']     = 'occupied';
+            $r['available_at'] = $r['sched_end'];
         } elseif (!empty($r['reservation_id'])) {
             $r['computed']     = 'reserved';
             $r['available_at'] = null;

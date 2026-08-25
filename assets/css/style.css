@@ -475,10 +475,6 @@ h1 .icon, h2 .icon, h3 .icon { width: .95em; height: .95em; vertical-align: -.1e
 
 /* ---------- hero / finder (landing) ---------- */
 .hero { padding: 1.4rem 0 .2rem; }
-.hero__rail {
-  width: 2.2rem; height: 4px; background: var(--text); border-radius: 1px;
-  margin-bottom: .6rem;
-}
 .hero h1 {
   font-size: clamp(1.6rem, 4.5vw, 2.4rem);
   font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
@@ -860,6 +856,22 @@ input, select {
   position: absolute; inset: 7%;
   pointer-events: none;
 }
+/* idle state before the camera runs — sits on the black .reader box and
+   disappears with the reticle's sibling once .reader-wrap goes .is-live */
+.reader-idle {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .25rem;
+  color: rgb(255 255 255 / .72);
+  pointer-events: none;
+}
+.reader-idle .icon { width: 2rem; height: 2rem; opacity: .55; }
+.reader-idle span {
+  font-family: var(--font-display); font-size: .95rem;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.reader-idle small { color: rgb(255 255 255 / .45); font-size: .78rem; }
+.reader-wrap.is-live .reader-idle { display: none; }
 .reader-reticle i {
   position: absolute; width: 2.6rem; height: 2.6rem;
   border: 4px solid var(--bg);
@@ -874,6 +886,10 @@ input, select {
   height: 2px; border-radius: 2px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .9), transparent);
   box-shadow: 0 0 8px rgba(255, 255, 255, .45);
+  display: none;   /* no sweep until the camera feed is actually live */
+}
+.reader-wrap.is-live .reader-reticle__beam {
+  display: block;
   animation: scanbeam 2.6s ease-in-out infinite alternate;
 }
 @keyframes scanbeam {
@@ -968,9 +984,17 @@ input, select {
 .swal2-container .swal2-html-container { color: var(--text); margin: 0; }
 .swal2-container .swal2-text { text-align: left; }
 
-/* dialog body reuses app components (presets/stepper/when) */
+/* dialog body reuses app components (presets/stepper/when/swal-field) */
 .swal2-container .swal2-html-container .question { margin: .9rem 0 .6rem; }
 .swal2-container .swal2-html-container .stepper { margin-bottom: .8rem; }
+.swal2-container .swal2-html-container .swal-field {
+  display: block; text-align: left; margin: 0 0 .8rem;
+}
+.swal2-container .swal2-html-container .swal-field span {
+  display: block; font-weight: 500; font-size: .88rem; margin-bottom: .3rem;
+}
+.swal2-container .swal2-html-container .swal-field select,
+.swal2-container .swal2-html-container .swal-field input { width: 100%; }
 
 .swal2-container .swal2-actions { gap: .5rem; margin-top: 1rem; }
 .swal2-container .swal2-styled {
@@ -1061,6 +1085,48 @@ input, select {
   }
 }
 
+/* ---------- printable fixed-schedule timetable sheets ---------- */
+.tt-heading { margin-top: 1.4rem; }
+.tt-sheets { display: grid; gap: 1.1rem; margin-top: .6rem; }
+.tt-sheet__head { display: flex; flex-direction: column; gap: .15rem; }
+.tt-sheet__head strong {
+  font-family: var(--font-display);
+  font-size: 1.25rem; letter-spacing: .04em; text-transform: uppercase;
+}
+.tt-sheet__head span { color: var(--muted); font-size: .84rem; }
+.tt-grid {
+  width: 100%; border-collapse: collapse;
+  font-size: .82rem; margin-top: .7rem;
+}
+.tt-grid th {
+  border: 1px solid var(--border);
+  padding: .45rem .4rem; text-align: left;
+  font-family: var(--font-mono);
+  font-size: .66rem; letter-spacing: .1em; text-transform: uppercase;
+  background: var(--surface-2);
+}
+.tt-grid td {
+  border: 1px solid var(--border);
+  padding: .5rem .45rem; vertical-align: top;
+  width: calc(100% / 7); min-width: 5.2rem;
+}
+.tt-slot { padding: .3rem 0 .35rem; border-bottom: 1px dashed var(--border); }
+.tt-slot:last-child { border-bottom: none; padding-bottom: 0; }
+.tt-slot + .tt-slot { padding-top: .45rem; }
+.tt-slot__time {
+  display: block;
+  font-family: var(--font-mono); font-size: .72rem;
+  color: var(--muted); margin-bottom: .12rem;
+}
+.tt-slot strong { font-size: .84rem; line-height: 1.25; display: block; }
+.tt-slot small { display: block; color: var(--muted); font-size: .74rem; margin-top: .1rem; }
+.tt-free { color: var(--muted); opacity: .6; }
+.tt-foot {
+  margin-top: .7rem; padding-top: .5rem; border-top: 1px solid var(--border);
+  color: var(--muted); font-size: .74rem;
+  display: flex; justify-content: space-between; gap: 1rem;
+}
+
 /* ==========================================================================
    Print — QR posters become a clean handout sheet
    ========================================================================== */
@@ -1072,7 +1138,7 @@ input, select {
 @media print {
   /* hide the entire app shell — only the poster sheet remains */
   .topbar, .sidebar, .flashes, .no-print, .page-head, .site-footer,
-  .nav-backdrop {
+  .nav-backdrop, .tt-heading {
     display: none !important;
   }
 
@@ -1220,7 +1286,6 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* landing hero */
   .hero { padding-top: 1.15rem; }
-  .hero__rail { width: 2.2rem; margin-bottom: .6rem; }
   .hero h1 { font-size: clamp(1.45rem, 7vw, 2rem); overflow-wrap: anywhere; }
   .hero__sub { font-size: .9rem; }
 
@@ -1316,6 +1381,28 @@ html { -webkit-tap-highlight-color: transparent; }
   .table td.actions-cell .btn-text {
     display: inline !important;
   }
+
+  /* schedules tables: stacked cards re-show their column names as tiny
+     headings so Days / Time / Subject / Course / Lecturer stay identifiable */
+  .table--sched td[data-label]:not(.actions-cell):not(.cell-status)::before {
+    display: block !important;
+    content: attr(data-label);
+    font-size: .66rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--muted);
+    margin-bottom: .1rem;
+  }
+
+  /* timetable sheets keep the paper's 7-column grid on phones — the
+     columns just swipe sideways inside their card (.tt-scroll wrapper) */
+  .tt-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -.95rem;
+    padding: 0 .95rem;
+  }
+  .tt-scroll .tt-grid { min-width: 35rem; }
 
   /* page titles and action buttons stay strictly on ONE LINE */
   .page-head {
@@ -1448,4 +1535,73 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* flash strip matches the page gutter */
   .flashes { padding: 0 .8rem; }
+}
+
+/* ==========================================================================
+   Print — fixed-schedule timetable sheets (admin/schedules.php)
+   Reuses the global shell-hiding rules above; gives .tt-sheet paper styling
+   like .qr-poster gets. One bordered sheet per room, never split across pages.
+   ========================================================================== */
+@media print {
+  .tt-sheets {
+    display: block !important;
+    margin-top: 0 !important;
+  }
+  .tt-sheet {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1.5pt solid #000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    max-width: 180mm !important;
+    margin: 0 auto 8mm !important;
+    padding: 5mm 5mm 4mm !important;
+  }
+  .tt-sheet__head strong {
+    color: #000 !important;
+    font-size: 18pt !important;
+    letter-spacing: .05em !important;
+    line-height: 1.15 !important;
+  }
+  .tt-sheet__head span   { color: #333 !important; font-size: 9pt !important; }
+
+  .tt-grid th,
+  .tt-grid td {
+    border-color: #000 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  .tt-grid th {
+    background: #fff !important;
+    font-size: 8pt !important;
+    text-transform: uppercase !important;
+    letter-spacing: .08em !important;
+    padding: 1.5mm 1mm !important;
+  }
+  .tt-grid td { min-width: 0 !important; padding: 2mm 1.5mm !important; vertical-align: top !important; }
+  .tt-slot { border-bottom-color: #999 !important; }
+  .tt-slot__time {
+    font-family: 'IBM Plex Mono', 'Courier New', monospace !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    letter-spacing: .02em !important;
+    color: #000 !important;
+  }
+  .tt-slot strong { font-size: 10pt !important; line-height: 1.3 !important; }
+  .tt-slot small  { font-size: 7.5pt !important; color: #444 !important; }
+  .tt-free { display: none !important; }   /* empty days stay clean on paper */
+  .tt-foot {
+    display: block !important;
+    text-align: center !important;
+    border-top-color: #000 !important;
+    color: #333 !important;
+    font-size: 8pt !important;
+    letter-spacing: .06em !important;
+    margin-top: 3mm !important;
+  }
+  /* the phone-only swipe wrapper must never clip or shrink the paper grid */
+  .tt-scroll { overflow: visible !important; margin: 0 !important; padding: 0 !important; }
+  .tt-scroll .tt-grid { min-width: 0 !important; }
 }

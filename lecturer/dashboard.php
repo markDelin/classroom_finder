@@ -51,7 +51,7 @@ render_header('Lecturer Dashboard', ['prefix' => '../', 'nav' => 'lecturer', 'ac
   <form method="post" action="release.php" data-confirm="Release <?= e($active['room_number']) ?> now? The room will show as AVAILABLE immediately.">
     <?= csrf_field() ?>
     <input type="hidden" name="session_id" value="<?= (int)$active['id'] ?>">
-    <button class="btn btn--danger" type="submit">RELEASE CLASSROOM</button>
+    <button class="btn btn--danger" type="submit">Release classroom</button>
   </form>
 </div>
 <?php else: ?>
@@ -60,7 +60,7 @@ render_header('Lecturer Dashboard', ['prefix' => '../', 'nav' => 'lecturer', 'ac
     <p class="eyebrow">NOT IN A CLASSROOM RIGHT NOW</p>
     <p class="muted">Occupy a room by scanning its QR code — it only takes a few seconds.</p>
   </div>
-  <a class="btn btn--primary" href="scanner.php"><?= icon('scan-line') ?> SCAN CLASSROOM QR</a>
+  <a class="btn btn--primary" href="scanner.php"><?= icon('scan-line') ?> Scan classroom QR</a>
 </div>
 <?php endif; ?>
 

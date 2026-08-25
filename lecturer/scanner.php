@@ -33,7 +33,7 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   <form method="post" action="release.php" data-confirm="Release <?= e($active['room_number']) ?> now?">
     <?= csrf_field() ?>
     <input type="hidden" name="session_id" value="<?= (int)$active['id'] ?>">
-    <button class="btn btn--danger" type="submit">RELEASE CLASSROOM</button>
+    <button class="btn btn--danger" type="submit">Release classroom</button>
   </form>
 </div>
 <p class="muted small center-note">You already hold an active session — you can’t occupy another room until it ends or is released.</p>
@@ -48,6 +48,12 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
       <div class="reader-reticle" aria-hidden="true">
         <i></i><i></i><i></i><i></i>
         <span class="reader-reticle__beam"></span>
+      </div>
+      <!-- idle state: what users see before the camera runs (hidden via .is-live) -->
+      <div class="reader-idle" aria-hidden="true">
+        <?= icon('scan-line') ?>
+        <span>Camera off</span>
+        <small>Press “Start camera” to scan</small>
       </div>
     </div>
     <p class="scan-hint muted small">Align the QR poster inside the frame</p>
