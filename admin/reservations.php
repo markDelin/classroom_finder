@@ -91,6 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 expire_stale();
 
+$q = trim((string)($_GET['q'] ?? ''));
+
 $rooms = db()->query(
     "SELECT id, room_number, building FROM classrooms WHERE status <> 'disabled' ORDER BY building, room_number"
 )->fetchAll();
@@ -99,38 +101,54 @@ $lecturers = db()->query(
     "SELECT id, full_name FROM users WHERE role IN ('admin','lecturer') AND account_status = 'approved' ORDER BY full_name"
 )->fetchAll();
 
-$upcomingTotal = (int)db()->query(
-    "SELECT COUNT(*) AS n FROM reservations WHERE status = 'active'"
-)->fetch()['n'];
-$upP = page_params($upcomingTotal, (int)($_GET['up_page'] ?? 1));
+$whereUp   = ["r.status = 'active'"];
+$upParams  = [];
+if ($q !== '') {
+    $whereUp[] = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ? OR r.purpose LIKE ?)';
+    array_push($upParams, "%$q%", "%$q%", "%$q%", "%$q%");
+}
+$whereUpSql = implode(' AND ', $whereUp);
+
+$st = db()->prepare("SELECT COUNT(*) AS n FROM reservations r JOIN classrooms c ON c.id = r.classroom_id LEFT JOIN users u ON u.id = r.user_id WHERE " . $whereUpSql);
+$st->execute($upParams);
+$upcomingTotal = (int)$st->fetch()['n'];
+$upP           = page_params($upcomingTotal, (int)($_GET['up_page'] ?? 1));
 
 $st = db()->prepare(
     'SELECT r.*, c.room_number, c.building, u.full_name
      FROM reservations r
      JOIN classrooms c ON c.id = r.classroom_id
      LEFT JOIN users u ON u.id = r.user_id
-     WHERE r.status = \'active\'
+     WHERE ' . $whereUpSql . '
      ORDER BY r.start_time ASC
      LIMIT ' . $upP['limit'] . ' OFFSET ' . $upP['offset']
 );
-$st->execute();
+$st->execute($upParams);
 $upcoming = $st->fetchAll();
 
-$pastTotal = (int)db()->query(
-    "SELECT COUNT(*) AS n FROM reservations WHERE status <> 'active'"
-)->fetch()['n'];
-$pastP = page_params($pastTotal, (int)($_GET['past_page'] ?? 1));
+$wherePast  = ["r.status <> 'active'"];
+$pastParams = [];
+if ($q !== '') {
+    $wherePast[] = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ? OR r.purpose LIKE ?)';
+    array_push($pastParams, "%$q%", "%$q%", "%$q%", "%$q%");
+}
+$wherePastSql = implode(' AND ', $wherePast);
+
+$st = db()->prepare("SELECT COUNT(*) AS n FROM reservations r JOIN classrooms c ON c.id = r.classroom_id LEFT JOIN users u ON u.id = r.user_id WHERE " . $wherePastSql);
+$st->execute($pastParams);
+$pastTotal = (int)$st->fetch()['n'];
+$pastP     = page_params($pastTotal, (int)($_GET['past_page'] ?? 1));
 
 $st = db()->prepare(
     'SELECT r.*, c.room_number, c.building, u.full_name
      FROM reservations r
      JOIN classrooms c ON c.id = r.classroom_id
      LEFT JOIN users u ON u.id = r.user_id
-     WHERE r.status <> \'active\'
+     WHERE ' . $wherePastSql . '
      ORDER BY r.start_time DESC
      LIMIT ' . $pastP['limit'] . ' OFFSET ' . $pastP['offset']
 );
-$st->execute();
+$st->execute($pastParams);
 $past = $st->fetchAll();
 
 render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 'reservations']);
@@ -143,6 +161,16 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
           data-title="New reservation"
           data-confirm-text="Reserve"><?= icon('plus') ?> New reservation</button>
   <p class="muted">Book rooms in advance. Rooms show as RESERVED on the landing page before the booking starts.</p>
+</div>
+
+<div class="card" style="margin-bottom: 1.2rem;">
+  <form method="get" class="filter-row">
+    <input type="search" name="q" placeholder="Search room, applicant, purpose…" value="<?= e($q) ?>">
+    <button class="btn btn--sm" type="submit">Filter</button>
+    <?php if ($q !== ''): ?>
+      <a href="reservations.php" class="btn btn--ghost btn--sm">Reset</a>
+    <?php endif; ?>
+  </form>
 </div>
 
   <!-- shown as a SweetAlert2 modal by admin-modals.js -->
@@ -177,26 +205,30 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
   <?php if (!$upcoming): ?>
     <p class="muted">No upcoming reservations.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>Date &amp; time</th><th>Room</th><th>For</th><th>Purpose</th><th style="text-align:right">Action</th></tr></thead>
     <tbody>
       <?php foreach ($upcoming as $r): ?>
       <tr>
-        <td data-label="When"><?= fmt_date($r['start_time']) ?><br><span class="small"><?= fmt_range($r['start_time'], $r['end_time']) ?></span></td>
-        <td data-label="Room"><strong><?= e($r['room_number']) ?></strong> <span class="muted small"><?= e($r['building']) ?></span></td>
-        <td data-label="Booked for"><?= e($r['full_name'] ?? '—') ?></td>
-        <td class="small muted" data-label="Purpose"><?= e($r['purpose'] ?: '') ?></td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+        <td class="nowrap" data-label="When"><?= fmt_date($r['start_time']) ?> <span class="small muted">· <?= fmt_range($r['start_time'], $r['end_time']) ?></span></td>
+        <td class="nowrap" data-label="Room"><strong><?= e($r['room_number']) ?></strong> <span class="muted small"><?= e($r['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Booked for"><?= e($r['full_name'] ?? '—') ?></td>
+        <td class="small muted cell-truncate" data-label="Purpose"><?= e($r['purpose'] ?: '') ?></td>
+        <td data-label="Action">
+          <div class="actions-cell" style="justify-content:flex-end">
           <form method="post" data-confirm="Cancel this reservation?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="cancel"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
             <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Cancel</button>
           </form>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?= page_nav($upcomingTotal, $upP['page'], ADMIN_PER_PAGE, 'up_page') ?>
   <?php endif; ?>
 </div>
@@ -204,19 +236,21 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
 <?php if ($past): ?>
 <div class="card">
   <h3>Completed / cancelled</h3>
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>Date</th><th>Room</th><th>Time</th><th>Status</th></tr></thead>
     <tbody>
       <?php foreach ($past as $r): ?>
       <tr>
-        <td data-label="Date"><?= fmt_date($r['start_time']) ?></td>
-        <td data-label="Room"><strong><?= e($r['room_number']) ?></strong></td>
-        <td data-label="Time"><?= fmt_range($r['start_time'], $r['end_time']) ?></td>
+        <td class="nowrap" data-label="Date"><?= fmt_date($r['start_time']) ?></td>
+        <td class="nowrap" data-label="Room"><strong><?= e($r['room_number']) ?></strong></td>
+        <td class="nowrap" data-label="Time"><?= fmt_range($r['start_time'], $r['end_time']) ?></td>
         <td data-label="Status"><span class="pill pill--<?= $r['status'] === 'cancelled' ? 'danger' : '' ?>"><?= e($r['status']) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?= page_nav($pastTotal, $pastP['page'], ADMIN_PER_PAGE, 'past_page') ?>
 </div>
 <?php endif; ?>

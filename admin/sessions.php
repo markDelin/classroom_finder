@@ -35,21 +35,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'force
 
 expire_stale();
 
-$now = date('Y-m-d H:i:s');
+$q    = trim((string)($_GET['q'] ?? ''));
+$now  = date('Y-m-d H:i:s');
+
+$whereActive  = ["s.status = 'active'", 's.end_time > ?'];
+$activeParams = [$now];
+if ($q !== '') {
+    $whereActive[]  = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ? OR u.department LIKE ?)';
+    array_push($activeParams, "%$q%", "%$q%", "%$q%", "%$q%");
+}
 
 $st = db()->prepare(
     "SELECT s.*, c.room_number, c.building, u.full_name AS lecturer
      FROM classroom_sessions s
      JOIN classrooms c ON c.id = s.classroom_id
      JOIN users u ON u.id = s.user_id
-     WHERE s.status = 'active' AND s.end_time > ?
+     WHERE " . implode(' AND ', $whereActive) . "
      ORDER BY s.end_time ASC"
 );
-$st->execute([$now]);
+$st->execute($activeParams);
 $active = $st->fetchAll();
 
-$st = db()->prepare("SELECT COUNT(*) AS n FROM classroom_sessions WHERE status <> 'active'");
-$st->execute();
+$wherePast  = ["s.status <> 'active'"];
+$pastParams = [];
+if ($q !== '') {
+    $wherePast[]  = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ? OR u.department LIKE ?)';
+    array_push($pastParams, "%$q%", "%$q%", "%$q%", "%$q%");
+}
+$wherePastSql = implode(' AND ', $wherePast);
+
+$st = db()->prepare("SELECT COUNT(*) AS n FROM classroom_sessions s JOIN classrooms c ON c.id = s.classroom_id JOIN users u ON u.id = s.user_id WHERE " . $wherePastSql);
+$st->execute($pastParams);
 $pastTotal = (int)$st->fetch()['n'];
 $pp        = page_params($pastTotal, (int)($_GET['page'] ?? 1));
 
@@ -58,11 +74,11 @@ $st = db()->prepare(
      FROM classroom_sessions s
      JOIN classrooms c ON c.id = s.classroom_id
      JOIN users u ON u.id = s.user_id
-     WHERE s.status <> 'active'
+     WHERE " . $wherePastSql . "
      ORDER BY COALESCE(s.released_at, s.end_time) DESC
      LIMIT " . $pp['limit'] . ' OFFSET ' . $pp['offset']
 );
-$st->execute();
+$st->execute($pastParams);
 $past = $st->fetchAll();
 
 render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' => 'sessions']);
@@ -73,10 +89,21 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <p class="muted">Sessions expire automatically at their end time — no cleanup needed.</p>
 </div>
 
+<div class="card" style="margin-bottom: 1.2rem;">
+  <form method="get" class="filter-row">
+    <input type="search" name="q" placeholder="Search room, building, lecturer, department…" value="<?= e($q) ?>">
+    <button class="btn btn--sm" type="submit">Filter</button>
+    <?php if ($q !== ''): ?>
+      <a href="sessions.php" class="btn btn--ghost btn--sm">Reset</a>
+    <?php endif; ?>
+  </form>
+</div>
+
 <div class="card">
   <?php if (!$active): ?>
     <p class="muted">No active sessions right now.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
@@ -90,22 +117,25 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($active as $s): ?>
       <tr>
-        <td data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
-        <td data-label="Lecturer"><?= icon('user') ?> <?= e($s['lecturer']) ?></td>
+        <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= icon('user') ?> <?= e($s['lecturer']) ?></td>
         <td class="nowrap" data-label="Window"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span></td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+        <td class="nowrap" data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span></td>
+        <td data-label="Action">
+          <div class="actions-cell" style="justify-content:flex-end">
           <form method="post" data-confirm="Force-end this session now?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="force_end">
             <input type="hidden" name="session_id" value="<?= (int)$s['id'] ?>">
             <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Force end</button>
           </form>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?php endif; ?>
 </div>
 
@@ -114,6 +144,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <?php if (!$past): ?>
     <p class="muted">Nothing recorded yet.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
@@ -127,15 +158,16 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($past as $s): ?>
       <tr>
-        <td data-label="Date"><?= fmt_date($s['start_time']) ?></td>
-        <td data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
-        <td data-label="Lecturer"><?= e($s['lecturer']) ?></td>
+        <td class="nowrap" data-label="Date"><?= fmt_date($s['start_time']) ?></td>
+        <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= e($s['lecturer']) ?></td>
         <td class="nowrap" data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
         <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?= page_nav($pastTotal, $pp['page']) ?>
   <?php endif; ?>
 </div>

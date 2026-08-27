@@ -27,8 +27,39 @@ $activeSessions = array_filter($rooms, fn($r) => $r['computed'] === 'occupied');
 $recentLogs = db()->query(
     'SELECT l.*, u.full_name FROM activity_logs l
      LEFT JOIN users u ON u.id = l.user_id
-     ORDER BY l.timestamp DESC LIMIT 8'
+     ORDER BY l.timestamp DESC LIMIT 5'
 )->fetchAll();
+
+// System Analytics
+$totalCapacity = array_reduce($rooms, fn($sum, $r) => $sum + (int)($r['capacity'] ?? 0), 0);
+$totalRooms = count($rooms);
+$activeRoomsCount = $count['occupied'] + $count['reserved'];
+$utilizationRate = $totalRooms > 0 ? (int)round(($activeRoomsCount / $totalRooms) * 100) : 0;
+
+$userStats = db()->query(
+    "SELECT 
+        COUNT(*) AS total_users,
+        SUM(CASE WHEN role = 'lecturer' AND account_status = 'approved' THEN 1 ELSE 0 END) AS approved_lecturers,
+        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins
+     FROM users"
+)->fetch();
+
+$todayDayOfWeek = (int)date('N');
+$schedulesToday = (int)db()->query(
+    "SELECT COUNT(*) FROM class_schedules WHERE day_of_week = {$todayDayOfWeek} AND is_active = 1"
+)->fetchColumn();
+
+$reservationsToday = (int)db()->query(
+    "SELECT COUNT(*) FROM reservations WHERE DATE(start_time) = CURDATE() AND status != 'cancelled'"
+)->fetchColumn();
+
+$sessionsToday = (int)db()->query(
+    "SELECT COUNT(*) FROM classroom_sessions WHERE DATE(start_time) = CURDATE()"
+)->fetchColumn();
+
+$forceOpensToday = (int)db()->query(
+    "SELECT COUNT(*) FROM schedule_force_open WHERE exc_date = CURDATE()"
+)->fetchColumn();
 
 render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' => 'dashboard']);
 ?>
@@ -46,6 +77,62 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <div class="tile tile--off"><span class="tile__num"><?= icon('ban') ?> <?= $count['unavailable'] ?></span><span class="tile__label">Unavailable</span></div>
 </div>
 
+<div class="card" style="margin-bottom:1.2rem;">
+  <div class="card__head">
+    <h3><?= icon('chart-column') ?> System Analytics & Insights</h3>
+    <span class="muted small">Real-time metrics and operations overview</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .85rem; margin-top: .3rem;">
+    <!-- Room Utilization -->
+    <div style="background: var(--bg); padding: .85rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+      <div class="muted small" style="margin-bottom: .4rem; display: flex; align-items: center; justify-content: space-between;">
+        <span>Room Utilization Rate</span>
+        <strong style="color: var(--fg);"><?= $utilizationRate ?>%</strong>
+      </div>
+      <div style="width: 100%; background: var(--border); height: 7px; border-radius: 4px; overflow: hidden;">
+        <div style="width: <?= min(100, $utilizationRate) ?>%; background: var(--primary); height: 100%;"></div>
+      </div>
+      <div class="muted small" style="margin-top: .4rem;">
+        <?= $activeRoomsCount ?> of <?= $totalRooms ?> rooms in use
+      </div>
+    </div>
+
+    <!-- Seating & Timetable -->
+    <div style="background: var(--bg); padding: .85rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+      <div class="muted small" style="margin-bottom: .25rem;"><?= icon('building-2') ?> Campus Seating & Schedules</div>
+      <div style="font-size: 1.35rem; font-weight: 700; color: var(--fg); font-family: var(--font-display); line-height: 1.2;">
+        <?= number_format($totalCapacity) ?> <span style="font-size: .8rem; font-weight: normal; color: var(--muted);">total seats</span>
+      </div>
+      <div class="muted small" style="margin-top: .25rem;">
+        <?= icon('calendar-clock') ?> <?= $schedulesToday ?> timetable slots today
+      </div>
+    </div>
+
+    <!-- Operations Today -->
+    <div style="background: var(--bg); padding: .85rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+      <div class="muted small" style="margin-bottom: .25rem;"><?= icon('clock') ?> Operations Today</div>
+      <div style="font-size: 1.35rem; font-weight: 700; color: var(--fg); font-family: var(--font-display); line-height: 1.2;">
+        <?= $sessionsToday ?> <span style="font-size: .8rem; font-weight: normal; color: var(--muted);">sessions started</span>
+      </div>
+      <div class="muted small" style="margin-top: .25rem;">
+        <?= icon('calendar-days') ?> <?= $reservationsToday ?> reservations &bull; <?= $forceOpensToday ?> force-opens
+      </div>
+    </div>
+
+    <!-- Registered Accounts -->
+    <div style="background: var(--bg); padding: .85rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+      <div class="muted small" style="margin-bottom: .25rem;"><?= icon('users') ?> System Accounts</div>
+      <div style="font-size: 1.35rem; font-weight: 700; color: var(--fg); font-family: var(--font-display); line-height: 1.2;">
+        <?= (int)($userStats['total_users'] ?? 0) ?> <span style="font-size: .8rem; font-weight: normal; color: var(--muted);">registered users</span>
+      </div>
+      <div class="muted small" style="margin-top: .25rem;">
+        <?= (int)($userStats['approved_lecturers'] ?? 0) ?> lecturers &bull; <?= (int)($userStats['admins'] ?? 0) ?> admins &bull; <?= $pendingN ?> pending
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card">
   <div class="card__head">
     <h3>Pending lecturer approvals</h3>
@@ -54,6 +141,7 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <?php if (!$pending): ?>
     <p class="muted">No registrations waiting — all caught up. <?= icon('party-popper') ?></p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
@@ -67,11 +155,12 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($pending as $p): ?>
       <tr>
-        <td data-label="Name"><strong><?= e($p['full_name']) ?></strong> <span class="muted small">@<?= e($p['username']) ?></span></td>
-        <td data-label="Staff ID"><?= e($p['staff_id']) ?></td>
-        <td data-label="Email"><?= e($p['email']) ?></td>
-        <td data-label="Department"><?= e($p['department'] ?: '—') ?></td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Actions">
+        <td class="nowrap" data-label="Name"><strong><?= e($p['full_name']) ?></strong> <span class="muted small">@<?= e($p['username']) ?></span></td>
+        <td class="nowrap" data-label="Staff ID"><?= e($p['staff_id']) ?></td>
+        <td class="cell-truncate" data-label="Email"><?= e($p['email']) ?></td>
+        <td class="cell-truncate" data-label="Department"><?= e($p['department'] ?: '—') ?></td>
+        <td data-label="Actions">
+          <div class="actions-cell" style="justify-content:flex-end">
           <form method="post" action="users.php" class="inline-form">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
@@ -84,11 +173,13 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
             <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
             <button class="btn btn--danger btn--sm" type="submit">Reject</button>
           </form>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?php endif; ?>
 </div>
 

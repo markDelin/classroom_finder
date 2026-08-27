@@ -93,12 +93,21 @@
       .catch(function () { /* transient network hiccup — next tick retries */ });
   }
 
-  // search box: debounce
+  // search box: debounce & clear event handling
   var timer = null;
-  searchBox.addEventListener('input', function () {
+  function triggerSearch() {
     clearTimeout(timer);
     currentPage = 1;
     timer = setTimeout(refresh, 300);
+  }
+  searchBox.addEventListener('input', triggerSearch);
+  searchBox.addEventListener('search', triggerSearch);
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    clearTimeout(timer);
+    currentPage = 1;
+    refresh();
   });
 
   // chips

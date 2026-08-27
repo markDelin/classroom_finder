@@ -140,8 +140,10 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
   <form method="post" enctype="multipart/form-data" class="logo-form">
     <?= csrf_field() ?>
     <input type="hidden" name="logo_action" value="upload">
-    <input type="file" name="school_logo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required>
-    <button class="btn btn--primary btn--sm" type="submit"><?= icon('plus') ?> Upload logo</button>
+    <div class="file-upload-group">
+      <input type="file" name="school_logo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required>
+      <button class="btn btn--primary btn--sm" type="submit"><?= icon('plus') ?> Upload logo</button>
+    </div>
   </form>
 </div>
 

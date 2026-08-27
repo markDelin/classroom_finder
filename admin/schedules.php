@@ -134,15 +134,21 @@ foreach ($rooms as $r) {
     $roomMap[(int)$r['id']] = $r;
 }
 
+$q          = trim((string)($_GET['q'] ?? ''));
 $filterRoom = (int)($_GET['room'] ?? 0);
-$filterSql  = '';
+$where      = [];
 $filterParams = [];
 if ($filterRoom && isset($roomMap[$filterRoom])) {
-    $filterSql       = ' WHERE cs.classroom_id = ? ';
+    $where[]         = 'cs.classroom_id = ?';
     $filterParams[]  = $filterRoom;
 }
+if ($q !== '') {
+    $where[]         = '(cs.subject LIKE ? OR cs.section LIKE ? OR cs.instructor LIKE ? OR c.room_number LIKE ? OR c.building LIKE ?)';
+    array_push($filterParams, "%$q%", "%$q%", "%$q%", "%$q%", "%$q%");
+}
+$filterSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
-$stc = db()->prepare('SELECT COUNT(*) AS n FROM class_schedules cs' . $filterSql);
+$stc = db()->prepare('SELECT COUNT(*) AS n FROM class_schedules cs JOIN classrooms c ON c.id = cs.classroom_id' . $filterSql);
 $stc->execute($filterParams);
 $total = (int)$stc->fetch()['n'];
 $pP = page_params($total, (int)($_GET['page'] ?? 1));
@@ -206,6 +212,7 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 
 <div class="no-print">
 <form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search subject, section, instructor, room…" value="<?= e($q) ?>">
   <select name="room" onchange="this.form.submit()" style="flex:1; max-width:24rem">
     <option value="">All classrooms</option>
     <?php foreach ($rooms as $r): ?>
@@ -213,7 +220,10 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
         <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
     <?php endforeach; ?>
   </select>
-  <noscript><button class="btn btn--ghost btn--sm" type="submit">Filter</button></noscript>
+  <button class="btn btn--sm" type="submit">Filter</button>
+  <?php if ($q !== '' || $filterRoom): ?>
+    <a href="schedules.php" class="btn btn--ghost btn--sm">Reset</a>
+  <?php endif; ?>
 </form>
 
 <div class="card">
@@ -221,6 +231,7 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <?php if (!$slots): ?>
     <p class="muted">No fixed schedules yet<?= $filterRoom ? ' for this room' : '' ?>.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table table--sched">
     <thead><tr><th>Room</th><th>Days</th><th>Time</th><th>Subject</th><th>Course</th><th>Lecturer</th><th>Status</th><th style="text-align:right">Action</th></tr></thead>
     <tbody>
@@ -241,7 +252,8 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
             <span class="pill">paused</span>
           <?php endif; ?>
         </td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+        <td data-label="Action">
+          <div class="actions-cell" style="justify-content:flex-end">
           <button class="btn btn--ghost btn--sm" type="button"
                   data-modal-form="#slotForm"
                   data-title="Edit schedule — Room <?= e($s['room_number']) ?>"
@@ -268,11 +280,13 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
             <button class="btn btn--danger btn--sm" type="submit" title="Delete slot"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button>
           </form>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?= page_nav($total, $pP['page'], ADMIN_PER_PAGE, 'page') ?>
   <?php endif; ?>
 </div>
@@ -281,30 +295,34 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 <div class="card">
   <h3>"Class isn't meeting" reports — this week</h3>
   <p class="muted small">Rooms were opened despite a scheduled class. Reverting blocks the room again for the rest of today's slot.</p>
+  <div class="table-wrap">
   <table class="table table--sched">
     <thead><tr><th>Room</th><th>Days</th><th>Time</th><th>Subject</th><th>Course</th><th>Lecturer</th><th>Reported by</th><th>Reason</th><th style="text-align:right">Action</th></tr></thead>
     <tbody>
       <?php foreach ($forceOpen as $fo): ?>
       <tr>
-        <td class="cell-main" data-label="Room"><strong><?= e($fo['room_number']) ?></strong> <span class="muted small"><?= e($fo['building']) ?></span></td>
-        <td data-label="Days"><?= DAY_NAMES[(int)$fo['day_of_week']] ?></td>
-        <td data-label="Time"><?= e(fmt_range($fo['start_time'], $fo['end_time'])) ?></td>
-        <td data-label="Subject"><?= e($fo['subject']) ?></td>
-        <td data-label="Course"><?= e($fo['section'] ?: '—') ?></td>
-        <td data-label="Lecturer"><?= e($fo['instructor'] ?: '—') ?></td>
-        <td data-label="Reported by"><?= e($fo['full_name']) ?><?php if ($fo['details']): ?><div class="muted small"><?= e(fmt_date($fo['created_at'])) ?> — &ldquo;<?= e($fo['details']) ?>&rdquo;</div><?php endif; ?></td>
-        <td class="cell-status" data-label="Reason"><span class="pill"><?= e(str_replace('_', ' ', $fo['reason'])) ?></span></td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Action">
+        <td class="cell-main nowrap" data-label="Room"><strong><?= e($fo['room_number']) ?></strong> <span class="muted small"><?= e($fo['building']) ?></span></td>
+        <td class="nowrap" data-label="Days"><?= DAY_NAMES[(int)$fo['day_of_week']] ?></td>
+        <td class="nowrap" data-label="Time"><?= e(fmt_range($fo['start_time'], $fo['end_time'])) ?></td>
+        <td class="cell-truncate" data-label="Subject"><?= e($fo['subject']) ?></td>
+        <td class="nowrap" data-label="Course"><?= e($fo['section'] ?: '—') ?></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= e($fo['instructor'] ?: '—') ?></td>
+        <td class="cell-truncate" data-label="Reported by"><?= e($fo['full_name']) ?></td>
+        <td class="cell-status nowrap" data-label="Reason"><span class="pill"><?= e(str_replace('_', ' ', $fo['reason'])) ?></span></td>
+        <td data-label="Action">
+          <div class="actions-cell" style="justify-content:flex-end">
           <form method="post" class="inline-form" data-confirm="Block room <?= e($fo['room_number']) ?> again for the rest of today's slot?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="revert"><input type="hidden" name="id" value="<?= (int)$fo['id'] ?>">
             <button class="btn btn--danger btn--sm" type="submit" title="Undo this force-open"><?= icon('x') ?> <span class="btn-text">Revert</span></button>
           </form>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
 </div>
 <?php endif; ?>
 </div><!-- /.no-print -->
@@ -321,12 +339,6 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
             $roomSlots[] = $s;
         }
     }
-    // "IT 301 — Data Structures" prints as Course No. + Description like the
-    // registration form; subjects without a separator stay whole in Description.
-    $splitSubject = static function (string $subject): array {
-        $parts = preg_split('/\s+[—–-]\s+/u', $subject, 2) ?: [$subject];
-        return count($parts) === 2 ? [$parts[0], $parts[1]] : ['', $subject];
-    };
     $totalMin = 0;
     foreach ($roomSlots as $s) {
         $totalMin += (int)((strtotime((string)$s['end_time']) - strtotime((string)$s['start_time'])) / 60);
@@ -357,75 +369,45 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 
     <h2 class="tt-title">Room Weekly Class Schedule</h2>
 
-    <section class="tt-info">
-      <h3 class="tt-caption">Room Information</h3>
-      <div class="tt-info__grid">
-        <div class="tt-info__col">
-          <div><span class="tt-info__label">Room:</span><?= e($sheetRoom['room_number']) ?></div>
-          <div><span class="tt-info__label">Building:</span><?= e($sheetRoom['building']) ?></div>
-          <div><span class="tt-info__label">Floor / Type:</span><?= (int)$sheetRoom['floor'] ?> · <?= e(ucfirst((string)$sheetRoom['room_type'])) ?></div>
-          <div><span class="tt-info__label">Capacity:</span><?= (int)$sheetRoom['capacity'] ?> seats</div>
-        </div>
-        <div class="tt-info__col">
-          <div><span class="tt-info__label">Weekly load:</span><?= count($roomSlots) ?> class<?= count($roomSlots) === 1 ? '' : 'es' ?> · <?= $weeklyHours ?> hrs</div>
-          <div><span class="tt-info__label">Effective:</span><?= date('Y-m-d') ?></div>
-        </div>
-      </div>
-    </section>
-
     <?php if (empty($roomSlots)): ?>
       <p class="muted" style="margin: 1.2rem 0; text-align: center;">No scheduled classes recorded for this classroom.</p>
     <?php else: ?>
     <section>
-      <h3 class="tt-caption">Posted Classes and Schedule</h3>
-      <p class="tt-warning">Warning: classes held outside the posted slots give no priority over walk-in reservations.</p>
       <div class="table-wrap">
         <table class="tt-table">
           <thead>
             <tr>
-              <th style="width: 16%">Course No.</th>
-              <th style="width: 26%">Course Description</th>
-              <th style="width: 8%">Days</th>
-              <th style="width: 18%">Time</th>
-              <th style="width: 12%">Section</th>
-              <th style="width: 20%">Instructor</th>
+              <th style="width: 12%; text-align: center;">Days</th>
+              <th style="width: 22%">Time</th>
+              <th style="width: 36%">Course Description</th>
+              <th style="width: 15%">Year / Section</th>
+              <th style="width: 15%">Instructor</th>
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($roomSlots as $s): ?>
-            <?php [$code, $desc] = $splitSubject((string)$s['subject']); ?>
-            <tr>
-              <td><?= e($code ?: '—') ?></td>
-              <td><?= e($desc) ?></td>
-              <td><?= DAY_NAMES[(int)$s['day_of_week']] ?></td>
-              <td class="nowrap"><?= e(fmt_range($s['start_time'], $s['end_time'])) ?></td>
-              <td><?= e($s['section'] ?: '—') ?></td>
-              <td><?= e($s['instructor'] ?: '—') ?></td>
-            </tr>
+            <?php foreach ($weekByRoom[$rid] ?? [] as $dayNum => $daySlots): ?>
+              <?php $rowCount = count($daySlots); ?>
+              <?php foreach ($daySlots as $idx => $s): ?>
+              <tr>
+                <?php if ($idx === 0): ?>
+                  <td rowspan="<?= $rowCount ?>" class="cell-day"><?= DAY_NAMES[(int)$dayNum] ?></td>
+                <?php endif; ?>
+                <td class="nowrap"><?= e(fmt_range($s['start_time'], $s['end_time'])) ?></td>
+                <td><?= e($s['subject']) ?></td>
+                <td><?= e($s['section'] ?: '—') ?></td>
+                <td><?= e($s['instructor'] ?: '—') ?></td>
+              </tr>
+              <?php endforeach; ?>
             <?php endforeach; ?>
             <tr class="tt-table__total">
-              <td colspan="5">Total weekly class hours</td>
-              <td><?= $weeklyHours ?> hrs</td>
+              <td colspan="2" style="text-align: right;">Total weekly class hours:</td>
+              <td colspan="3"><?= $weeklyHours ?> hrs</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
     <?php endif; ?>
-
-    <div class="tt-dots"><span>Signatories</span></div>
-    <div class="tt-sign">
-      <div class="tt-sign__slot">
-        <div class="tt-sign__name"><?= e(mb_strtoupper((string)($admin['full_name'] ?: $admin['username']))) ?></div>
-        <div class="tt-sign__line"></div>
-        <div class="tt-sign__cap">Prepared by</div>
-      </div>
-      <div class="tt-sign__slot">
-        <div class="tt-sign__name">&nbsp;</div>
-        <div class="tt-sign__line"></div>
-        <div class="tt-sign__cap">Noted by</div>
-      </div>
-    </div>
   </div>
 </div>
 <?php endif; ?>

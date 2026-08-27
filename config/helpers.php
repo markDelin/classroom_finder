@@ -331,7 +331,7 @@ function fetch_classrooms(array $f = []): array
     ];
 
     if (!empty($f['q'])) {
-        $where[]              = '(c.room_number LIKE :q OR c.building LIKE :q OR c.room_type LIKE :q)';
+        $where[]              = '(c.room_number LIKE :q OR c.building LIKE :q OR c.room_type LIKE :q OR c.note LIKE :q OR cs.subject LIKE :q OR cs.instructor LIKE :q OR su.full_name LIKE :q OR ru.full_name LIKE :q)';
         $params[':q']         = '%' . trim((string)$f['q']) . '%';
     }
     if (!empty($f['building'])) {

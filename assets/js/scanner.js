@@ -117,6 +117,7 @@
       showCancelButton: true,
       confirmButtonText: 'Open room',
       cancelButtonText: 'Cancel',
+      reverseButtons: true,
       focusConfirm: false,
       allowOutsideClick: function () { return !window.Swal.isLoading(); },
       preConfirm: function () {
@@ -216,6 +217,7 @@
       showCancelButton: true,
       confirmButtonText: 'Occupy room',
       cancelButtonText: 'Cancel',
+      reverseButtons: true,
       focusConfirm: true,
       allowOutsideClick: function () { return !window.Swal.isLoading(); },
       didOpen: function () {

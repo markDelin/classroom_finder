@@ -109,6 +109,7 @@
       showCancelButton: true,
       confirmButtonText: opts.confirmText || 'Save',
       cancelButtonText: 'Cancel',
+      reverseButtons: true,
       focusConfirm: false,
       allowOutsideClick: function () { return !window.Swal.isLoading(); },
       didOpen: function () {
@@ -159,6 +160,7 @@
       showCancelButton: true,
       confirmButtonText: 'Yes, continue',
       cancelButtonText: 'Cancel',
+      reverseButtons: true,
       focusCancel: true            // destructive: safest button gets focus
     }).then(function (res) {
       if (!res.isConfirmed) { return; }
@@ -167,6 +169,72 @@
       if (f.requestSubmit) { f.requestSubmit(); } else { f.submit(); }
     });
   }, true);
+
+  /* ---------- logout confirmation modal ---------- */
+  document.addEventListener('submit', function (ev) {
+    var f = ev.target;
+    if (!(f instanceof HTMLFormElement)) { return; }
+    var action = f.getAttribute('action') || '';
+    if (action.indexOf('logout.php') !== -1 || f.hasAttribute('data-logout-confirm')) {
+      ev.preventDefault();
+      window.Swal.fire({
+        icon: 'question',
+        title: 'Log Out',
+        text: 'Are you sure you want to log out?',
+        showCancelButton: true,
+        confirmButtonText: 'Log Out',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        focusCancel: true
+      }).then(function (res) {
+        if (res.isConfirmed) {
+          f.submit();
+        }
+      });
+    }
+  }, true);
+
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('a');
+    if (!a) { return; }
+    var href = a.getAttribute('href') || '';
+    if (href.indexOf('logout.php') !== -1) {
+      ev.preventDefault();
+      window.Swal.fire({
+        icon: 'question',
+        title: 'Log Out',
+        text: 'Are you sure you want to log out?',
+        showCancelButton: true,
+        confirmButtonText: 'Log Out',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        focusCancel: true
+      }).then(function (res) {
+        if (res.isConfirmed) {
+          window.location.href = a.href;
+        }
+      });
+    }
+  });
+
+  /* ---------- search & filter row enhancements ---------- */
+  var searchTimer = null;
+  document.addEventListener('search', function (ev) {
+    var inp = ev.target;
+    if (inp instanceof HTMLInputElement && inp.type === 'search' && inp.form && inp.form.method.toLowerCase() === 'get' && inp.form.id !== 'finderForm') {
+      inp.form.submit();
+    }
+  });
+
+  document.addEventListener('input', function (ev) {
+    var inp = ev.target;
+    if (inp instanceof HTMLInputElement && inp.type === 'search' && inp.form && inp.form.method.toLowerCase() === 'get' && inp.form.id !== 'finderForm') {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        inp.form.submit();
+      }, 500);
+    }
+  });
 
   /* ---------- server flashes become toasts ---------- */
   var wrap = document.querySelector('.flashes');

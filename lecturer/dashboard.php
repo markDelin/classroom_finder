@@ -77,20 +77,22 @@ render_header('Lecturer Dashboard', ['prefix' => '../', 'nav' => 'lecturer', 'ac
   <?php if (!$recent): ?>
     <p class="muted">No sessions yet — scan a classroom QR to get started.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>Room</th><th>Date</th><th>Time</th><th>Duration</th><th>Status</th></tr></thead>
     <tbody>
       <?php foreach ($recent as $s): ?>
       <tr>
-        <td><strong><?= e($s['room_number']) ?></strong> <span class="muted small"><?= e($s['building']) ?></span></td>
-        <td><?= fmt_date($s['start_time']) ?></td>
-        <td><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></td>
+        <td class="nowrap"><strong><?= e($s['room_number']) ?></strong> <span class="muted small"><?= e($s['building']) ?></span></td>
+        <td class="nowrap"><?= fmt_date($s['start_time']) ?></td>
+        <td class="nowrap"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
+        <td class="nowrap"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></td>
         <td><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?php endif; ?>
 </div>
 

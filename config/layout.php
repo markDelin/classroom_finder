@@ -344,12 +344,12 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
 
     $html = '<nav class="pager">';
     $html .= $pp['page'] > 1
-        ? $link($pp['page'] - 1, '‹ Prev')
-        : '<span class="is-off">‹ Prev</span>';
+        ? $link($pp['page'] - 1, '< Prev')
+        : '<span class="is-off">< Prev</span>';
     if ($start > 1) {
         $html .= $link(1, '1');
         if ($start > 2) {
-            $html .= '<span class="dots">…</span>';
+            $html .= '<span class="dots">...</span>';
         }
     }
     for ($p = $start; $p <= $end; $p++) {
@@ -357,12 +357,12 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
     }
     if ($end < $pp['pages']) {
         if ($end < $pp['pages'] - 1) {
-            $html .= '<span class="dots">…</span>';
+            $html .= '<span class="dots">...</span>';
         }
         $html .= $link($pp['pages'], (string)$pp['pages']);
     }
     $html .= $pp['page'] < $pp['pages']
-        ? $link($pp['page'] + 1, 'Next ›')
-        : '<span class="is-off">Next ›</span>';
+        ? $link($pp['page'] + 1, 'Next >')
+        : '<span class="is-off">Next ></span>';
     return $html . '</nav>';
 }

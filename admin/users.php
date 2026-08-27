@@ -257,25 +257,27 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
     <button class="btn btn--sm" type="submit">Filter</button>
   </form>
 
+  <div class="table-wrap">
   <table class="table">
     <thead><tr><th>User</th><th>Role &amp; Status</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
       <?php foreach ($users as $u): ?>
       <tr>
-        <td class="cell-main" data-label="Name">
+        <td class="cell-main nowrap" data-label="Name">
           <strong><?= e($u['full_name']) ?></strong> <span class="muted small">@<?= e($u['username']) ?></span>
-          <?php if ($u['department']): ?><div class="muted small"><?= e($u['department']) ?></div><?php endif; ?>
+          <?php if ($u['department']): ?><span class="muted small"> · <?= e($u['department']) ?></span><?php endif; ?>
         </td>
-        <td class="cell-status" data-label="Role & Status">
+        <td class="cell-status nowrap" data-label="Role & Status">
           <span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span>
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
           <span class="pill pill--<?= $badge[$u['account_status']] ?>"><?= e($u['account_status']) ?></span>
         </td>
-        <td class="cell-sub small" data-label="Contact">
+        <td class="cell-sub small nowrap" data-label="Contact">
           <?= e($u['email']) ?>
-          <div class="muted small">ID: <?= e($u['staff_id']) ?> · <?= fmt_date($u['created_at']) ?></div>
+          <span class="muted small"> · ID: <?= e($u['staff_id']) ?></span>
         </td>
-        <td class="actions-cell" style="justify-content:flex-end" data-label="Actions">
+        <td data-label="Actions">
+          <div class="actions-cell" style="justify-content:flex-end">
           <?php if ($u['account_status'] === 'pending'): ?>
             <form method="post" class="inline-form"><?= csrf_field() ?>
               <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
@@ -319,7 +321,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
               <form method="post" class="inline-form" data-confirm="Suspend this account? They will be logged out and blocked."><?= csrf_field() ?>
                 <input type="hidden" name="action" value="suspend"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
                 <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-                <button class="btn btn--ghost btn--sm" type="submit" title="Suspend user"><span class="btn-text">Suspend</span></button></form>
+                <button class="btn btn--ghost btn--sm" type="submit" title="Suspend user"><?= icon('ban') ?> <span class="btn-text">Suspend</span></button></form>
             <?php endif; ?>
             <form method="post" class="inline-form"
                   data-confirm="Permanently delete <?= e($u['full_name']) ?>? Their sessions end immediately and their reservations are unlinked. This cannot be undone."><?= csrf_field() ?>
@@ -327,11 +329,13 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
               <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           <?php endif; ?>
+          </div>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?php if (!$users): ?><p class="muted">No users match.</p><?php endif; ?>
   <?= page_nav($totalUsers, $pp['page']) ?>
 </div>

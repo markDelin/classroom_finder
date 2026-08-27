@@ -10,6 +10,7 @@ require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+$q      = trim((string)($_GET['q'] ?? ''));
 $roomId = (string)($_GET['room'] ?? '');
 $userId = (string)($_GET['user'] ?? '');
 [$from, $to, $rangeLabel] = report_range();
@@ -17,6 +18,10 @@ $activeRange = (string)($_GET['range'] ?? '');
 
 $where  = [];
 $params = [];
+if ($q !== '') {
+    $where[]  = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ?)';
+    array_push($params, "%$q%", "%$q%", "%$q%");
+}
 if ($roomId !== '') {
     $where[]  = 's.classroom_id = ?';
     $params[] = (int)$roomId;
@@ -95,7 +100,7 @@ render_header('Usage History', ['prefix' => '../', 'nav' => 'admin', 'active' =>
 ?>
 
 <?php
-$keepQ    = array_filter(['room' => $roomId, 'user' => $userId], static fn($v) => $v !== '');
+$keepQ     = array_filter(['q' => $q, 'room' => $roomId, 'user' => $userId], static fn($v) => $v !== '');
 $presetUrl = static fn(string $r): string => 'history.php?' . http_build_query(array_merge($keepQ, $r === '' ? [] : ['range' => $r]));
 $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
 ?>
@@ -115,6 +120,7 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <a class="chip-btn <?= !$rangesOn ? 'is-active' : '' ?>" href="<?= $presetUrl('') ?>">All time</a>
   </div>
   <form method="get" class="filter-row">
+    <input type="search" name="q" placeholder="Search room, building, lecturer…" value="<?= e($q) ?>">
     <select name="room">
       <option value="">All rooms</option>
       <?php foreach ($rooms as $r): ?>
@@ -143,6 +149,7 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
   <?php if (!$rows): ?>
     <p class="muted">No usage recorded for this filter.</p>
   <?php else: ?>
+  <div class="table-wrap">
   <table class="table">
     <thead>
       <tr>
@@ -157,16 +164,17 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <tbody>
       <?php foreach ($rows as $s): ?>
       <tr>
-        <td data-label="Date"><?= fmt_date($s['start_time']) ?></td>
-        <td data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
-        <td data-label="Lecturer"><?= e($s['full_name']) ?></td>
+        <td class="nowrap" data-label="Date"><?= fmt_date($s['start_time']) ?></td>
+        <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= e($s['full_name']) ?></td>
         <td class="nowrap" data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-        <td data-label="Duration"><span class="muted small"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></span></td>
+        <td class="nowrap" data-label="Duration"><span class="muted small"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></span></td>
         <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
+  </div>
   <?= page_nav($totalSessions, $pp['page']) ?>
   <?php endif; ?>
 </div>
