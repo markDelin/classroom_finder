@@ -1,0 +1,16 @@
+# IDE & OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Temp / dev artefacts
+preview_tt.*
+*_dump.txt
+
+# QR library cache (generated at runtime)
+qr/lib/cache/
+
+# Uploaded files (per-deployment)
+assets/uploads/*
+!assets/uploads/.gitkeep

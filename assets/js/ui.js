@@ -104,7 +104,7 @@
 
     return window.Swal.fire({
       title: opts.title,
-      html: '<div class="swal-form-slot"></div>',
+      html: '<div class="swal-form-slot swal2-form-slot"></div>',
       customClass: { popup: 'swal2-form-modal' },
       showCancelButton: true,
       confirmButtonText: opts.confirmText || 'Save',
@@ -112,23 +112,36 @@
       focusConfirm: false,
       allowOutsideClick: function () { return !window.Swal.isLoading(); },
       didOpen: function () {
-        document.querySelector('.swal-form-slot').appendChild(f);
+        var slot = document.querySelector('.swal2-form-slot, .swal-form-slot');
+        if (slot) { slot.appendChild(f); }
         f.hidden = false;
+        f.style.display = '';
         var first = f.querySelector('input:not([type=hidden]):not([type=submit]), select');
         if (first) { first.focus(); }
       },
       preConfirm: function () {
         if (!f.reportValidity()) { return false; }   // native HTML5 validation
         return true;
+      },
+      willClose: function () {
+        f.hidden = true;
+        f.style.display = 'none';
+        if (placeholder.parentNode) {
+          placeholder.parentNode.insertBefore(f, placeholder);
+          placeholder.remove();
+        }
       }
     }).then(function (res) {
       if (res.isConfirmed) {
         f.submit();                                   // full POST as before
         return;
       }
-      // put the form back where it came from
-      placeholder.parentNode.insertBefore(f, placeholder);
-      placeholder.remove();
+      f.hidden = true;
+      f.style.display = 'none';
+      if (placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(f, placeholder);
+        placeholder.remove();
+      }
     });
   };
 

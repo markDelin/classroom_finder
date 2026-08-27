@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — classroom QR image generator (§9, §20).
+ * Classroom Finder — classroom QR image generator.
  *
  * GET qr/generate.php?id=<classroom id>[&size=8]
  *
@@ -36,15 +36,11 @@ if (!$room) {
     exit('Classroom not found.');
 }
 
-// Human-readable + machine-parseable payload: the token is what matters,
-// extract_qr_token() finds it even inside this labelled string.
-$payload = 'CLASSROOM-FINDER | ' . $room['building'] . ' ' . $room['room_number'] . ' | TOKEN:' . $room['qr_token'];
+$payload = $room['building'] . ' ' . $room['room_number'] . ' | TOKEN:' . $room['qr_token'];
 
 $size   = min(12, max(3, (int)($_GET['size'] ?? 6)));
 $margin = 2;
 
-// phpqrcode is an older library: silence its PHP 8 deprecation notices so
-// they never leak into (or corrupt) the image stream.
 $oldLevel = error_reporting();
 error_reporting($oldLevel & ~(E_DEPRECATED | E_NOTICE | E_WARNING));
 require_once __DIR__ . '/lib/qrlib.php';

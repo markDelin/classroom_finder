@@ -2,13 +2,13 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — occupy a classroom (§11).
+ * Classroom Finder — occupy a classroom.
  *
  * POST lecturer/occupy.php  { token, minutes, csrf }
  *
  * The scanner dialog already showed availability, but the frontend is never
  * trusted: every check runs again here inside a transaction with a row lock,
- * so two lecturers confirming at the same instant cannot both win (§16).
+ * so two lecturers confirming at the same instant cannot both win.
  */
 
 require_once __DIR__ . '/../auth/auth_check.php';
@@ -69,7 +69,7 @@ try {
         );
     }
 
-    // 2. any active/overlapping session? (conflict detection §16)
+    // 2. any active/overlapping session? (conflict detection)
     $st = $pdo->prepare(
         "SELECT s.id, s.start_time, s.end_time, u.full_name
          FROM classroom_sessions s JOIN users u ON u.id = s.user_id

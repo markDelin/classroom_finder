@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — user management (§5, §7).
+ * Classroom Finder — user management.
  *
  * Approve / reject / suspend / reactivate accounts, create lecturer or admin
  * accounts directly, and reset passwords. Guards: an admin can never suspend
@@ -340,13 +340,13 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <form method="post" class="form-grid" id="userForm" hidden style="text-align:left">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="create">
-    <label>Full name <input name="full_name" required maxlength="120"></label>
-    <label>Staff ID <input name="staff_id" required maxlength="40"></label>
-    <label>Email <input type="email" name="email" required maxlength="120"></label>
-    <label>Department <input name="department" maxlength="80"></label>
-    <label>Username <input name="username" required pattern="[A-Za-z0-9_.]{3,40}" maxlength="40"></label>
-    <label>Password <input type="password" name="password" required minlength="8"></label>
-    <label>Role
+    <label class="full-width">Full name <input name="full_name" required maxlength="120" placeholder="e.g. Dr. Jane Smith"></label>
+    <label>Staff ID <input name="staff_id" required maxlength="40" placeholder="STF-1024"></label>
+    <label>Department <input name="department" maxlength="80" placeholder="Computer Science"></label>
+    <label class="full-width">Email <input type="email" name="email" required maxlength="120" placeholder="jane@univ.edu"></label>
+    <label>Username <input name="username" required pattern="[A-Za-z0-9_.]{3,40}" maxlength="40" placeholder="janesmith"></label>
+    <label>Password <input type="password" name="password" required minlength="8" placeholder="••••••••"></label>
+    <label class="full-width">Role
       <select name="role">
         <option value="lecturer">Lecturer</option>
         <option value="admin">Administrator</option>
@@ -359,10 +359,10 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <?= csrf_field() ?>
   <input type="hidden" name="action" value="update">
   <input type="hidden" name="id" value="">
-  <label>Full name <input name="full_name" required maxlength="120"></label>
+  <label class="full-width">Full name <input name="full_name" required maxlength="120"></label>
   <label>Staff ID <input name="staff_id" required maxlength="40"></label>
-  <label>Email <input type="email" name="email" required maxlength="120"></label>
   <label>Department <input name="department" maxlength="80"></label>
+  <label class="full-width">Email <input type="email" name="email" required maxlength="120"></label>
   <label>Username <input name="username" required pattern="[A-Za-z0-9_.]{3,40}" maxlength="40"></label>
   <label>Role
     <select name="role">

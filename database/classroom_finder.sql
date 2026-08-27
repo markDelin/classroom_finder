@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS reservations (
   PRIMARY KEY (id),
   KEY idx_res_room_active (classroom_id, status),
   KEY idx_res_start (start_time),
+  KEY idx_res_end (end_time),
   CONSTRAINT fk_res_room FOREIGN KEY (classroom_id)
     REFERENCES classrooms (id) ON DELETE CASCADE,
   CONSTRAINT fk_res_user FOREIGN KEY (user_id)
@@ -171,7 +172,10 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE = InnoDB;
 
 INSERT INTO settings (skey, svalue) VALUES
-  ('school_name',              'Classroom Finder'),
+  ('app_name',                 'Classroom Finder'),   -- this system's own name (top bar / browser title)
+  ('school_name',              ''),                   -- the institution (landing hero / printed sheets); set in Admin → Settings
+  ('school_address',           ''),                   -- printed under the school name on sheets, e.g. "Odiong, Roxas, Oriental Mindoro"
+  ('school_contact',           ''),                   -- tel / email line printed under the address
   ('reserve_window_minutes',   '45'),   -- how soon a booking turns a room RESERVED
   ('min_duration_minutes',     '15'),   -- shortest occupancy a lecturer may pick
   ('max_duration_minutes',     '480'),  -- longest occupancy

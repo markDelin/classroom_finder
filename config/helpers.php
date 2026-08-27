@@ -51,6 +51,30 @@ date_default_timezone_set('Asia/Manila'); // change to your campus timezone
 
 const APP_NAME = 'Classroom Finder';
 
+/* Branding: this system (app_name) and the campus it runs for (school_name)
+ * are two independent settings — Admin → Settings edits each one. The
+ * helpers fall back to APP_NAME / '' when the settings table is missing. */
+function app_name(): string
+{
+    $v = trim(get_setting('app_name', ''));
+    return $v !== '' ? $v : APP_NAME;
+}
+
+function school_name(): string
+{
+    return trim(get_setting('school_name', ''));
+}
+
+function school_address(): string
+{
+    return trim(get_setting('school_address', ''));
+}
+
+function school_contact(): string
+{
+    return trim(get_setting('school_contact', ''));
+}
+
 /* ==========================================================================
  * Session / output basics
  * ========================================================================*/
@@ -161,20 +185,23 @@ function is_logged_in(): bool
  * Settings
  * ========================================================================*/
 
+/** @var array<string,string>|null $settings_cache request-wide settings cache */
+$settings_cache = null;
+
 function get_setting(string $key, string $default = ''): string
 {
-    static $cache = null;
-    if ($cache === null) {
-        $cache = [];
+    global $settings_cache;
+    if ($settings_cache === null) {
+        $settings_cache = [];
         try {
             foreach (db()->query('SELECT skey, svalue FROM settings') as $row) {
-                $cache[$row['skey']] = $row['svalue'];
+                $settings_cache[$row['skey']] = $row['svalue'];
             }
         } catch (Throwable) {
             // settings table missing -> fall back to defaults
         }
     }
-    return $cache[$key] ?? $default;
+    return $settings_cache[$key] ?? $default;
 }
 
 function get_setting_int(string $key, int $default): int
@@ -183,14 +210,22 @@ function get_setting_int(string $key, int $default): int
     return $v === false ? $default : $v;
 }
 
+/** Invalidate the request-local settings cache. Called automatically by
+ *  set_setting() so a write in this request is immediately visible to the
+ *  next get_setting() in the same request. */
+function bust_settings_cache(): void
+{
+    global $settings_cache;
+    $settings_cache = null;
+}
+
 function set_setting(string $key, string $value): void
 {
     db()->prepare(
         'INSERT INTO settings (skey, svalue) VALUES (?, ?)
          ON DUPLICATE KEY UPDATE svalue = VALUES(svalue)'
     )->execute([$key, $value]);
-    // bust this request's cache
-    // (static cache lives in get_setting; simplest is a fresh request next time)
+    bust_settings_cache();
 }
 
 /* ==========================================================================
@@ -352,15 +387,92 @@ function fetch_classrooms(array $f = []): array
     return $rooms;
 }
 
-/** Single room by primary key (with live status fields). */
+/** Single room by primary key (with live status fields).
+ *  Targeted single-row query: no full-table scan, no needless joins. */
+function get_room_with_status(int $id): ?array
+{
+    if ($id <= 0) {
+        return null;
+    }
+    expire_stale();
+
+    $now  = date('Y-m-d H:i:s');
+    $soon = date('Y-m-d H:i:s', time() + get_setting_int('reserve_window_minutes', 45) * 60);
+    $dow  = (int)date('N');
+    $curt = date('H:i:s');
+    $today = date('Y-m-d');
+
+    $st = db()->prepare(
+        "SELECT c.*,
+                s.id            AS session_id,
+                s.start_time    AS session_start,
+                s.end_time      AS session_end,
+                su.full_name    AS session_lecturer,
+                r.id            AS reservation_id,
+                r.start_time    AS reservation_start,
+                r.end_time      AS reservation_end,
+                r.purpose       AS reservation_purpose,
+                ru.full_name    AS reservation_by,
+                cs.id           AS sched_id,
+                cs.subject      AS sched_subject,
+                cs.section      AS sched_section,
+                cs.instructor   AS sched_instructor,
+                cs.start_time   AS sched_start,
+                cs.end_time     AS sched_end,
+                fo.id           AS force_open_id
+         FROM classrooms c
+         LEFT JOIN classroom_sessions s
+                ON s.classroom_id = c.id AND s.status = 'active'
+               AND s.start_time <= :now1 AND s.end_time > :now2
+         LEFT JOIN users su ON su.id = s.user_id
+         LEFT JOIN reservations r
+                ON r.classroom_id = c.id AND r.status = 'active'
+               AND r.start_time <= :soon AND r.end_time > :now3
+         LEFT JOIN users ru ON ru.id = r.user_id
+         LEFT JOIN class_schedules cs
+                ON cs.classroom_id = c.id AND cs.is_active = 1
+               AND cs.day_of_week = :dow
+               AND cs.start_time <= :curt1 AND cs.end_time > :curt2
+         LEFT JOIN schedule_force_open fo
+                ON fo.schedule_id = cs.id AND fo.exc_date = :today
+         WHERE c.id = :id
+         LIMIT 1"
+    );
+    $st->execute([
+        ':now1' => $now, ':now2' => $now, ':now3' => $now, ':soon' => $soon,
+        ':dow'  => $dow, ':curt1' => $curt, ':curt2' => $curt,
+        ':today' => $today, ':id' => $id,
+    ]);
+    $r = $st->fetch();
+    if (!$r) {
+        return null;
+    }
+
+    // Same status-priority logic as fetch_classrooms()
+    if ($r['status'] !== 'available') {
+        $r['computed']     = 'unavailable';
+        $r['available_at'] = null;
+    } elseif (!empty($r['session_id'])) {
+        $r['computed']     = 'occupied';
+        $r['available_at'] = $r['session_end'];
+    } elseif (!empty($r['sched_id']) && empty($r['force_open_id'])) {
+        $r['computed']     = 'occupied';
+        $r['available_at'] = $r['sched_end'];
+    } elseif (!empty($r['reservation_id'])) {
+        $r['computed']     = 'reserved';
+        $r['available_at'] = null;
+    } else {
+        $r['computed']     = 'available';
+        $r['available_at'] = null;
+    }
+    return $r;
+}
+
+/** Backward-compat wrapper: existing callers (e.g. api/classroom_status.php)
+ *  get a one-row lookup without the full table scan. */
 function get_room(int $id): ?array
 {
-    foreach (fetch_classrooms() as $r) { // small scale: fine, keeps status logic in one place
-        if ((int)$r['id'] === $id) {
-            return $r;
-        }
-    }
-    return null;
+    return get_room_with_status($id);
 }
 
 /** Look up a classroom by its secret QR token. */
@@ -536,7 +648,9 @@ function stream_csv(string $filename, array $headers, iterable $rows): never
     foreach ($rows as $row) {
         fputcsv($out, array_map(static function ($v): string {
             $v = (string)$v;
-            return preg_match('/^[=+\-@\t\r]/', $v) ? "'" . $v : $v;
+            // Excel/Sheets strip leading whitespace before evaluating a formula,
+            // so prefix the apostrophe if the FIRST non-space char is dangerous.
+            return preg_match('/^\s*[=+\-@\t\r]/', $v) ? "'" . $v : $v;
         }, array_values((array)$row)));
     }
     fclose($out);

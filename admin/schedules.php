@@ -187,24 +187,26 @@ foreach ($st->fetchAll() as $row) {
 // dumps every room's timetable at once
 $sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoom] : null;
 
-$school = get_setting('school_name', APP_NAME);
+$school = school_name();
 
 render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' => 'schedules']);
 ?>
 
 <div class="page-head">
   <h1><?= icon('calendar-days') ?> Fixed class schedules</h1>
-  <button class="btn btn--primary btn--sm" type="button"
-          data-modal-form="#slotForm"
-          data-title="Add class schedule"
-          data-confirm-text="Add"><?= icon('plus') ?> Add schedule</button>
-  <button class="btn btn--ghost btn--sm" type="button" onclick="window.print()"><?= icon('printer') ?> Print schedule</button>
+  <div class="page-head__actions">
+    <button class="btn btn--primary btn--sm" type="button"
+            data-modal-form="#slotForm"
+            data-title="Add class schedule"
+            data-confirm-text="Add"><?= icon('plus') ?> Add <span class="hide-mobile">schedule</span></button>
+    <button class="btn btn--ghost btn--sm" type="button" onclick="window.print()"><?= icon('printer') ?> Print <span class="hide-mobile">schedule</span></button>
+  </div>
   <p class="muted">Rooms are shown as OCCUPIED and cannot be taken during their scheduled class times. Lecturers can open a room instantly when a class is not meeting; those reports appear below.</p>
 </div>
 
 <div class="no-print">
 <form method="get" class="filter-row">
-  <select name="room" onchange="this.form.submit()">
+  <select name="room" onchange="this.form.submit()" style="flex:1; max-width:24rem">
     <option value="">All classrooms</option>
     <?php foreach ($rooms as $r): ?>
       <option value="<?= (int)$r['id'] ?>" <?= $filterRoom === (int)$r['id'] ? 'selected' : '' ?>>
@@ -308,43 +310,123 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 </div><!-- /.no-print -->
 
 <?php if ($sheetRoom): ?>
-<!-- printable timetable sheet for the filtered room -->
-<h3 class="tt-heading">Class timetable · <?= e($school) ?></h3>
+<!-- printable schedule sheet for the filtered room — registrar-form layout -->
+<h3 class="tt-heading">Printable schedule sheet · <?= e($sheetRoom['building']) ?> — Room <?= e($sheetRoom['room_number']) ?></h3>
 <div class="tt-sheets">
-  <?php $rid = (int)$sheetRoom['id']; ?>
+  <?php
+    $rid = (int)$sheetRoom['id'];
+    $roomSlots = [];
+    foreach ($weekByRoom[$rid] ?? [] as $daySlots) {
+        foreach ($daySlots as $s) {
+            $roomSlots[] = $s;
+        }
+    }
+    // "IT 301 — Data Structures" prints as Course No. + Description like the
+    // registration form; subjects without a separator stay whole in Description.
+    $splitSubject = static function (string $subject): array {
+        $parts = preg_split('/\s+[—–-]\s+/u', $subject, 2) ?: [$subject];
+        return count($parts) === 2 ? [$parts[0], $parts[1]] : ['', $subject];
+    };
+    $totalMin = 0;
+    foreach ($roomSlots as $s) {
+        $totalMin += (int)((strtotime((string)$s['end_time']) - strtotime((string)$s['start_time'])) / 60);
+    }
+    $weeklyHours = rtrim(rtrim(number_format($totalMin / 60, 1), '0'), '.');
+    $sheetLogo    = get_setting('school_logo', '');
+    $hasLogoImg   = $sheetLogo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $sheetLogo);
+    $sheetAddr    = school_address();
+    $sheetContact = school_contact();
+  ?>
   <div class="card tt-sheet">
-    <div class="tt-sheet__head">
-      <strong>ROOM <?= e($sheetRoom['room_number']) ?></strong>
-      <span><?= e($sheetRoom['building']) ?> · Floor <?= (int)$sheetRoom['floor'] ?> · <?= e($sheetRoom['room_type']) ?> · <?= (int)$sheetRoom['capacity'] ?> seats</span>
-      <span>Weekly class schedule — effective <?= date('M j, Y') ?></span>
+    <header class="tt-head">
+      <div class="tt-head__brand">
+        <?php if ($hasLogoImg): ?>
+          <img class="tt-head__logo" src="../assets/uploads/<?= e($sheetLogo) ?>" alt="">
+        <?php endif; ?>
+        <div>
+          <div class="tt-head__school"><?= e($school !== '' ? $school : APP_NAME) ?></div>
+          <?php if ($sheetAddr !== ''): ?><div class="tt-head__line"><?= e($sheetAddr) ?></div><?php endif; ?>
+          <?php if ($sheetContact !== ''): ?><div class="tt-head__line"><?= e($sheetContact) ?></div><?php endif; ?>
+        </div>
+      </div>
+      <div class="tt-head__meta">
+        <div>Schedule No.: SC-<?= str_pad((string)$rid, 3, '0', STR_PAD_LEFT) ?>-<?= date('Ymd') ?></div>
+        <div>Date: <?= date('Y-m-d H:i:s') ?></div>
+      </div>
+    </header>
+
+    <h2 class="tt-title">Room Weekly Class Schedule</h2>
+
+    <section class="tt-info">
+      <h3 class="tt-caption">Room Information</h3>
+      <div class="tt-info__grid">
+        <div class="tt-info__col">
+          <div><span class="tt-info__label">Room:</span><?= e($sheetRoom['room_number']) ?></div>
+          <div><span class="tt-info__label">Building:</span><?= e($sheetRoom['building']) ?></div>
+          <div><span class="tt-info__label">Floor / Type:</span><?= (int)$sheetRoom['floor'] ?> · <?= e(ucfirst((string)$sheetRoom['room_type'])) ?></div>
+          <div><span class="tt-info__label">Capacity:</span><?= (int)$sheetRoom['capacity'] ?> seats</div>
+        </div>
+        <div class="tt-info__col">
+          <div><span class="tt-info__label">Weekly load:</span><?= count($roomSlots) ?> class<?= count($roomSlots) === 1 ? '' : 'es' ?> · <?= $weeklyHours ?> hrs</div>
+          <div><span class="tt-info__label">Effective:</span><?= date('Y-m-d') ?></div>
+        </div>
+      </div>
+    </section>
+
+    <?php if (empty($roomSlots)): ?>
+      <p class="muted" style="margin: 1.2rem 0; text-align: center;">No scheduled classes recorded for this classroom.</p>
+    <?php else: ?>
+    <section>
+      <h3 class="tt-caption">Posted Classes and Schedule</h3>
+      <p class="tt-warning">Warning: classes held outside the posted slots give no priority over walk-in reservations.</p>
+      <div class="table-wrap">
+        <table class="tt-table">
+          <thead>
+            <tr>
+              <th style="width: 16%">Course No.</th>
+              <th style="width: 26%">Course Description</th>
+              <th style="width: 8%">Days</th>
+              <th style="width: 18%">Time</th>
+              <th style="width: 12%">Section</th>
+              <th style="width: 20%">Instructor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($roomSlots as $s): ?>
+            <?php [$code, $desc] = $splitSubject((string)$s['subject']); ?>
+            <tr>
+              <td><?= e($code ?: '—') ?></td>
+              <td><?= e($desc) ?></td>
+              <td><?= DAY_NAMES[(int)$s['day_of_week']] ?></td>
+              <td class="nowrap"><?= e(fmt_range($s['start_time'], $s['end_time'])) ?></td>
+              <td><?= e($s['section'] ?: '—') ?></td>
+              <td><?= e($s['instructor'] ?: '—') ?></td>
+            </tr>
+            <?php endforeach; ?>
+            <tr class="tt-table__total">
+              <td colspan="5">Total weekly class hours</td>
+              <td><?= $weeklyHours ?> hrs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <?php endif; ?>
+
+    <div class="tt-dots"><span>Signatories</span></div>
+    <div class="tt-sign">
+      <div class="tt-sign__slot">
+        <div class="tt-sign__name"><?= e(mb_strtoupper((string)($admin['full_name'] ?: $admin['username']))) ?></div>
+        <div class="tt-sign__line"></div>
+        <div class="tt-sign__cap">Prepared by</div>
+      </div>
+      <div class="tt-sign__slot">
+        <div class="tt-sign__name">&nbsp;</div>
+        <div class="tt-sign__line"></div>
+        <div class="tt-sign__cap">Noted by</div>
+      </div>
     </div>
-    <div class="tt-scroll">
-    <table class="tt-grid">
-      <thead><tr><?php foreach (DAY_NAMES as $d): ?><th><?= $d ?></th><?php endforeach; ?></tr></thead>
-      <tbody><tr>
-        <?php foreach (array_keys(DAY_NAMES) as $dayNum): ?>
-        <td>
-          <?php foreach ($weekByRoom[$rid][$dayNum] ?? [] as $slot): ?>
-          <div class="tt-slot">
-            <span class="tt-slot__time"><?= e(fmt_range($slot['start_time'], $slot['end_time'])) ?></span>
-            <strong><?= e($slot['subject']) ?></strong>
-            <?php if ($slot['section'] || $slot['instructor']): ?>
-            <small><?= e(trim(($slot['section'] ?: '') . ($slot['section'] && $slot['instructor'] ? ' · ' : '') . ($slot['instructor'] ?: ''))) ?></small>
-            <?php endif; ?>
-          </div>
-          <?php endforeach; ?>
-          <?= empty($weekByRoom[$rid][$dayNum]) ? '<span class="tt-free">—</span>' : '' ?>
-        </td>
-        <?php endforeach; ?>
-      </tr></tbody>
-    </table>
-    </div><!-- /.tt-scroll -->
-    <p class="tt-foot"><?= e($school) ?></p>
   </div>
-</div>
-<?php else: ?>
-<div class="card no-print">
-  <p class="muted">Choose a classroom in the filter above to load its printable timetable — printing outputs only that room's sheet.</p>
 </div>
 <?php endif; ?>
 
@@ -353,15 +435,15 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <?= csrf_field() ?>
   <input type="hidden" name="action" value="create">
   <input type="hidden" name="id" value="">
-  <label>Classroom
+  <label class="full-width">Classroom
     <select name="classroom_id" required>
-      <option value="">— choose —</option>
+      <option value="">— choose classroom —</option>
       <?php foreach ($rooms as $r): ?>
         <option value="<?= (int)$r['id'] ?>"><?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
       <?php endforeach; ?>
     </select>
   </label>
-  <label>Weekday
+  <label class="full-width">Weekday
     <select name="day_of_week" required>
       <?php foreach (DAY_NAMES as $n => $label): ?>
         <option value="<?= $n ?>"><?= $label ?></option>
@@ -370,9 +452,9 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   </label>
   <label>Starts <input type="time" name="start_time" required step="300"></label>
   <label>Ends <input type="time" name="end_time" required step="300"></label>
-  <label>Subject / course <input name="subject" maxlength="120" required placeholder="e.g. IT 301 — Data Structures"></label>
-  <label>Course <input name="section" maxlength="80" placeholder="e.g. BSCS 3-A"></label>
-  <label>Instructor <input name="instructor" maxlength="120" placeholder="Name on the class program"></label>
+  <label class="full-width">Subject / course <input name="subject" maxlength="120" required placeholder="e.g. IT 301 — Data Structures"></label>
+  <label>Course / Section <input name="section" maxlength="80" placeholder="e.g. BSCS 3-A"></label>
+  <label>Instructor <input name="instructor" maxlength="120" placeholder="Name on the program"></label>
 </form>
 
 <?php render_footer(['assets/js/admin-modals.js']); ?>

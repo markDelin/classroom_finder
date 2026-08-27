@@ -15,7 +15,7 @@ $fail  = function (string $msg, string $back = 'classrooms.php'): never {
     redirect($back);
 };
 
-const ROOM_TYPES = ['Lecture Room', 'Laboratory', 'Computer Lab', 'Seminar Room', 'Auditorium', 'Other'];
+const ROOM_TYPES = ['Lecture Room', 'Highschool Comlab', 'College Comlab', 'Highschool Room', 'Other'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
@@ -132,15 +132,15 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
   </label>
   <label>Floor <input type="number" name="floor" min="1" max="99" value="1"></label>
   <label>Capacity <input type="number" name="capacity" min="1" max="9999" value="40"></label>
-  <label>Room type
+  <label class="full-width">Room type
     <select name="room_type">
       <?php foreach (ROOM_TYPES as $t): ?>
         <option><?= e($t) ?></option>
       <?php endforeach; ?>
     </select>
   </label>
-  <label>Note <small>(optional — shown on the landing page)</small>
-    <input name="note" maxlength="160"></label>
+  <label class="full-width">Note <small>(optional — shown on the landing page)</small>
+    <input name="note" maxlength="160" placeholder="e.g. undergoing maintenance"></label>
 </form>
 
 <div class="card">

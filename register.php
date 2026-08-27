@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — lecturer self-registration (§7).
+ * Classroom Finder — lecturer self-registration.
  *
  * New accounts start as Role=Lecturer / Status=Pending and cannot use any
  * scanning feature until an administrator approves them.
@@ -88,7 +88,7 @@ render_header('Lecturer Registration', ['prefix' => '']);
           <input type="email" name="email" required maxlength="120" value="<?= $old('email') ?>">
         </label>
         <label>Department
-          <input name="department" maxlength="80" placeholder="e.g. College of Engineering" value="<?= $old('department') ?>">
+          <input name="department" maxlength="80" placeholder="e.g. Bachelor of Science in Information Systems" value="<?= $old('department') ?>">
         </label>
         <label>Username
           <input name="username" required maxlength="40" pattern="[A-Za-z0-9_.]{3,40}" value="<?= $old('username') ?>">

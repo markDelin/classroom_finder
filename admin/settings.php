@@ -75,10 +75,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('settings.php');
     }
 
-    // text settings
-    $school = trim((string)($_POST['school_name'] ?? ''));
-    if ($school !== '' && mb_strlen($school) <= 80) {
-        set_setting('school_name', $school);
+    // text settings — the app (this system) and the school are stored separately
+    $appName  = trim((string)($_POST['app_name'] ?? ''));
+    if ($appName !== '' && mb_strlen($appName) <= 80) {
+        set_setting('app_name', $appName);
+    }
+    // an empty school name is saved too: it clears the field and printables
+    // fall back to the app name
+    $schoolName = trim((string)($_POST['school_name'] ?? ''));
+    if (mb_strlen($schoolName) <= 80) {
+        set_setting('school_name', $schoolName);
+    }
+    // letterhead lines shown under the school name on printed sheets
+    $schoolAddress = trim((string)($_POST['school_address'] ?? ''));
+    if (mb_strlen($schoolAddress) <= 120) {
+        set_setting('school_address', $schoolAddress);
+    }
+    $schoolContact = trim((string)($_POST['school_contact'] ?? ''));
+    if (mb_strlen($schoolContact) <= 120) {
+        set_setting('school_contact', $schoolContact);
     }
 
     foreach ($intKeys as $key => [$min, $max, $label]) {
@@ -109,7 +124,7 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 
 <div class="card">
   <h3>School logo</h3>
-  <p class="muted small">Shown next to “Classroom Finder” in the top bar. PNG, JPG or WebP — up to 2&nbsp;MB.</p>
+  <p class="muted small">Shown next to “<?= e(app_name()) ?>” in the top bar. PNG, JPG or WebP — up to 2&nbsp;MB.</p>
   <?php $logo = get_setting('school_logo', ''); ?>
   <?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
     <div class="logo-preview">
@@ -137,10 +152,26 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
   </div>
   <form method="post">
     <?= csrf_field() ?>
-    <div style="margin-bottom: 1.2rem;">
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.2rem;">
       <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">Title / School name</span>
-        <input name="school_name" maxlength="80" value="<?= e(get_setting('school_name', APP_NAME)) ?>" style="width:100%">
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">App name</span>
+        <input name="app_name" maxlength="80" value="<?= e(app_name()) ?>" style="width:100%">
+        <small class="muted" style="display:block;margin-top:.3rem">This system’s own name — top bar, browser title.</small>
+      </label>
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">School name</span>
+        <input name="school_name" maxlength="80" value="<?= e(school_name()) ?>" style="width:100%">
+        <small class="muted" style="display:block;margin-top:.3rem">Your institution — landing page hero and printed sheets.</small>
+      </label>
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">School address</span>
+        <input name="school_address" maxlength="120" value="<?= e(school_address()) ?>" style="width:100%" placeholder="e.g. Odiong, Roxas, Oriental Mindoro">
+        <small class="muted" style="display:block;margin-top:.3rem">Printed under the school name on sheets.</small>
+      </label>
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">School contact</span>
+        <input name="school_contact" maxlength="120" value="<?= e(school_contact()) ?>" style="width:100%" placeholder="e.g. Tel No. (043) 289-7056 / email@school.com">
+        <small class="muted" style="display:block;margin-top:.3rem">Tel / email line printed under the address.</small>
       </label>
     </div>
 

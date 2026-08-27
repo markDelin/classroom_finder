@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — release a classroom early (§14). Plain-form variant of
+ * Classroom Finder — release a classroom early. Plain-form variant of
  * api/release_room.php; only the owner can release their own session.
  */
 

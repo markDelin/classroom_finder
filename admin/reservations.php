@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — reservations (§23).
+ * Classroom Finder — reservations.
  * Admins book rooms in advance; upcoming bookings surface as RESERVED on
  * the landing page within the configured reserve window, and block occupying.
  */
@@ -149,15 +149,15 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
   <form method="post" class="form-grid form-grid--5" id="reservationForm" hidden style="text-align:left">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="create">
-    <label>Classroom
+    <label class="full-width">Classroom
       <select name="classroom_id" required>
-        <option value="">— choose —</option>
+        <option value="">— choose classroom —</option>
         <?php foreach ($rooms as $r): ?>
           <option value="<?= (int)$r['id'] ?>"><?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
         <?php endforeach; ?>
       </select>
     </label>
-    <label>For (optional)
+    <label class="full-width">For (optional)
       <select name="user_id">
         <option value="">Unassigned</option>
         <?php foreach ($lecturers as $l): ?>
@@ -165,10 +165,10 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
         <?php endforeach; ?>
       </select>
     </label>
-    <label>Date <input type="date" name="date" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>"></label>
+    <label class="full-width">Date <input type="date" name="date" required min="<?= date('Y-m-d') ?>" value="<?= date('Y-m-d') ?>"></label>
     <label>Starts <input type="time" name="start_time" required step="300"></label>
     <label>Ends <input type="time" name="end_time" required step="300"></label>
-    <label>Purpose <input name="purpose" maxlength="160" placeholder="e.g. Thesis defense panel"></label>
+    <label class="full-width">Purpose <input name="purpose" maxlength="160" placeholder="e.g. Thesis defense panel"></label>
   </form>
 </div>
 

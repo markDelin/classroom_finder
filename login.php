@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — login page (§8).
+ * Classroom Finder — login page.
  */
 
 require_once __DIR__ . '/config/helpers.php';
@@ -28,7 +28,7 @@ render_header('Log in', ['prefix' => '']);
   <div class="card auth-card">
     <h1 class="auth-card__title"><?= icon('lock') ?> Log in</h1>
     <p class="muted">Lecturers and administrators sign in here. Students don’t need an account —
-      the <a href="index.php">Classroom Finder</a> is open to everyone.</p>
+      the <a href="index.php"><?= e(app_name()) ?></a> is open to everyone.</p>
 
     <?php if ($needsSetup): ?>
       <div class="flash flash--warn">

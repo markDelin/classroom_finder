@@ -124,16 +124,21 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <p class="muted">No log entries match.</p>
   <?php else: ?>
   <table class="table">
-    <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Details</th></tr></thead>
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Who</th>
+        <th>Action</th>
+        <th>Details</th>
+      </tr>
+    </thead>
     <tbody>
       <?php foreach ($logs as $l): ?>
       <tr>
-        <td class="cell-main" data-label="Who">
-          <strong><?= e($l['full_name'] ?? 'System') ?></strong>
-          <span class="muted small">· <?= fmt_date($l['timestamp']) ?> <?= fmt_time($l['timestamp']) ?></span>
-        </td>
-        <td class="cell-status" data-label="Action"><span class="pill pill--log"><?= e(strtolower(str_replace('_', ' ', $l['action']))) ?></span></td>
-        <td class="cell-sub small" data-label="Details">
+        <td class="nowrap" data-label="When"><?= fmt_date($l['timestamp']) ?> <span class="muted small"><?= fmt_time($l['timestamp']) ?></span></td>
+        <td data-label="Who"><strong><?= e($l['full_name'] ?? 'System') ?></strong></td>
+        <td data-label="Action"><span class="pill pill--log"><?= e(strtolower(str_replace('_', ' ', $l['action']))) ?></span></td>
+        <td data-label="Details">
           <?= e($l['details'] ?: '') ?>
           <?= !empty($l['room_number']) ? '<span class="pill pill--lecturer">' . e($l['room_number']) . '</span>' : '' ?>
         </td>

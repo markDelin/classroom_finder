@@ -36,29 +36,44 @@ function render_header(string $title, array $opts = []): void
     $nav     = $opts['nav'] ?? null;
     $active  = $opts['active'] ?? '';
     $user    = function_exists('current_user') ? current_user() : null;
-    $school  = get_setting('school_name', APP_NAME);
     $logo    = get_setting('school_logo', '');
     $logoPath = $prefix . 'assets/uploads/' . $logo;
     $flashes = take_flashes();
 
+    // If nav wasn't explicitly set (e.g. index.php) but the user is logged in, show their role's nav menu & burger
+    if ($nav === null && $user && isset($user['role'])) {
+        $nav = $user['role'];
+        if ($active === '') {
+            $active = 'finder';
+        }
+    }
+
+    $adminHref = function (string $file) use ($prefix): string {
+        return ($prefix === '' ? 'admin/' : '') . $file;
+    };
+    $lecturerHref = function (string $file) use ($prefix): string {
+        return ($prefix === '' ? 'lecturer/' : '') . $file;
+    };
+
     $menus = [
         'admin' => [
-            ['key' => 'dashboard',    'label' => 'Dashboard',        'href' => 'dashboard.php',    'icon' => 'layout-dashboard'],
-            ['key' => 'users',        'label' => 'Users',            'href' => 'users.php',        'icon' => 'users'],
-            ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => 'classrooms.php',   'icon' => 'door-open'],
-            ['key' => 'qr',           'label' => 'QR Codes',         'href' => 'qr_codes.php',     'icon' => 'qr-code'],
-            ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => 'sessions.php',     'icon' => 'clock'],
-            ['key' => 'reservations', 'label' => 'Reservations',     'href' => 'reservations.php', 'icon' => 'calendar-clock'],
-            ['key' => 'schedules',    'label' => 'Fixed Schedules',  'href' => 'schedules.php',    'icon' => 'calendar-days'],
-            ['key' => 'history',      'label' => 'Usage History',    'href' => 'history.php',      'icon' => 'history'],
-            ['key' => 'logs',         'label' => 'Activity Logs',    'href' => 'logs.php',         'icon' => 'file-text'],
-            ['key' => 'settings',     'label' => 'Settings',         'href' => 'settings.php',     'icon' => 'settings'],
+            ['key' => 'dashboard',    'label' => 'Dashboard',        'href' => $adminHref('dashboard.php'),    'icon' => 'layout-dashboard'],
+            ['key' => 'users',        'label' => 'Users',            'href' => $adminHref('users.php'),        'icon' => 'users'],
+            ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => $adminHref('classrooms.php'),   'icon' => 'door-open'],
+            ['key' => 'qr',           'label' => 'QR Codes',         'href' => $adminHref('qr_codes.php'),     'icon' => 'qr-code'],
+            ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => $adminHref('sessions.php'),     'icon' => 'clock'],
+            ['key' => 'reservations', 'label' => 'Reservations',     'href' => $adminHref('reservations.php'), 'icon' => 'calendar-clock'],
+            ['key' => 'schedules',    'label' => 'Fixed Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],
+            ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
+            ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
+            ['key' => 'settings',     'label' => 'Settings',         'href' => $adminHref('settings.php'),     'icon' => 'settings'],
+            ['key' => 'finder',       'label' => 'Find Rooms',       'href' => $prefix . 'index.php',          'icon' => 'search'],
         ],
         'lecturer' => [
-            ['key' => 'scanner',   'label' => 'Scan QR Code', 'href' => 'scanner.php',   'icon' => 'scan-line'],
-            ['key' => 'dashboard', 'label' => 'My Dashboard', 'href' => 'dashboard.php', 'icon' => 'layout-dashboard'],
-            ['key' => 'history',   'label' => 'My History',   'href' => 'history.php',   'icon' => 'history'],
-            ['key' => 'finder',    'label' => 'Find Rooms',   'href' => $prefix . 'index.php', 'icon' => 'search'],
+            ['key' => 'scanner',   'label' => 'Scan QR Code', 'href' => $lecturerHref('scanner.php'),   'icon' => 'scan-line'],
+            ['key' => 'dashboard', 'label' => 'My Dashboard', 'href' => $lecturerHref('dashboard.php'), 'icon' => 'layout-dashboard'],
+            ['key' => 'history',   'label' => 'My History',   'href' => $lecturerHref('history.php'),   'icon' => 'history'],
+            ['key' => 'finder',    'label' => 'Find Rooms',   'href' => $prefix . 'index.php',          'icon' => 'search'],
         ],
     ];
 
@@ -67,7 +82,7 @@ function render_header(string $title, array $opts = []): void
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e($title) ?> · <?= e(APP_NAME) ?></title>
+<title><?= e($title) ?> · <?= e(app_name()) ?></title>
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 </head>
@@ -81,7 +96,7 @@ function render_header(string $title, array $opts = []): void
   <?php endif; ?>
   <a class="brand" href="<?= $prefix ?>index.php"><?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
     <img class="brand__logo" src="<?= e($logoPath) ?>" alt="">
-  <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(APP_NAME) ?></a>
+  <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(app_name()) ?></a>
   <div class="topbar__right">
     <?php if ($user): ?>
       <span class="user-chip" title="<?= e($user['username']) ?>">
@@ -141,7 +156,7 @@ function render_footer(array $scripts = []): void
 }
 
 /* ==========================================================================
- * Landing-page room cards (§12)
+ * Landing-page room cards
  * ========================================================================*/
 
 function room_card(array $r, int $i = 0): string

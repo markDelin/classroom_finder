@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — usage history (§21).
+ * Classroom Finder — usage history.
  * Filterable record of every session: who used which room, when, how long.
  */
 
@@ -144,20 +144,25 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <p class="muted">No usage recorded for this filter.</p>
   <?php else: ?>
   <table class="table">
-    <thead><tr><th>Date</th><th>Room</th><th>Lecturer</th><th>Time</th><th>Duration</th><th>Status</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Room</th>
+        <th>Lecturer</th>
+        <th>Time</th>
+        <th>Duration</th>
+        <th>Status</th>
+      </tr>
+    </thead>
     <tbody>
       <?php foreach ($rows as $s): ?>
       <tr>
-        <td class="cell-main" data-label="Room">
-          <strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span>
-        </td>
-        <td class="cell-status" data-label="Status">
-          <span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span>
-          <span class="muted small"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></span>
-        </td>
-        <td class="cell-sub small" data-label="Lecturer">
-          <?= e($s['full_name']) ?> · <span class="muted"><?= fmt_date($s['start_time']) ?> (<?= fmt_range($s['start_time'], $s['end_time']) ?>)</span>
-        </td>
+        <td data-label="Date"><?= fmt_date($s['start_time']) ?></td>
+        <td data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td data-label="Lecturer"><?= e($s['full_name']) ?></td>
+        <td class="nowrap" data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
+        <td data-label="Duration"><span class="muted small"><?= human_duration(minutes_between($s['start_time'], $s['end_time'])) ?></span></td>
+        <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
       </tr>
       <?php endforeach; ?>
     </tbody>

@@ -43,6 +43,44 @@ function db(): PDO
         // Keep MySQL's clock aligned with PHP's so every comparison in this
         // app can go through PHP-formatted datetimes.
         $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
+
+        // Auto-ensure required tables exist (self-healing schema). This is
+        // a FRIENDLY FALLBACK for users who skip the SQL import in phpMyAdmin;
+        // the canonical schema is database/classroom_finder.sql. Any column
+        // added here MUST be added to that file too — and vice versa.
+        static $checked = false;
+        if (!$checked) {
+            $checked = true;
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS class_schedules (
+                  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  classroom_id INT UNSIGNED NOT NULL,
+                  day_of_week  TINYINT UNSIGNED NOT NULL,
+                  start_time   TIME NOT NULL,
+                  end_time     TIME NOT NULL,
+                  subject      VARCHAR(120) NOT NULL,
+                  section      VARCHAR(80)  DEFAULT NULL,
+                  instructor   VARCHAR(120) DEFAULT NULL,
+                  is_active    TINYINT(1)   NOT NULL DEFAULT 1,
+                  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (id),
+                  KEY idx_sched_room_day (classroom_id, day_of_week, is_active)
+                ) ENGINE = InnoDB;
+
+                CREATE TABLE IF NOT EXISTS schedule_force_open (
+                  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                  classroom_id INT UNSIGNED NOT NULL,
+                  schedule_id  INT UNSIGNED NOT NULL,
+                  exc_date     DATE NOT NULL,
+                  reason       ENUM('lecturer_absent','emergency','ended_early','other') NOT NULL,
+                  details      VARCHAR(160) DEFAULT NULL,
+                  user_id      INT UNSIGNED NOT NULL,
+                  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  PRIMARY KEY (id),
+                  UNIQUE KEY uq_force_slot (schedule_id, exc_date)
+                ) ENGINE = InnoDB;
+            ");
+        }
     } catch (PDOException $e) {
         $msg = 'Could not connect to MySQL: ' . $e->getMessage();
         if (defined('CF_WANTS_JSON')) {

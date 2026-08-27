@@ -1,5 +1,5 @@
 /**
- * Classroom Finder — lecturer QR scanner (§10).
+ * Classroom Finder — lecturer QR scanner.
  *
  * Flow: camera decode (html5-qrcode) -> POST token to api/scan_qr.php
  *       -> SweetAlert2 confirmation with duration picker -> native form

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — first-time setup (§6).
+ * Classroom Finder — first-time setupS.
  *
  * Only reachable while NO user exists at all. The very first visitor creates
  * the initial administrator; afterwards this page permanently redirects away,

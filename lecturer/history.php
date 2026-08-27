@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — lecturer's own usage history (§5).
+ * Classroom Finder — lecturer's own usage history.
  */
 
 require_once __DIR__ . '/../auth/auth_check.php';

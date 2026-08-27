@@ -66,16 +66,20 @@ if (!$slot) {
 $today = date('Y-m-d');
 
 // Idempotent: an earlier report for this same slot/day already opened it.
-$st = db()->prepare('SELECT id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
+// Re-read the user_id so we can tell the lecturer whose report it was.
+$st = db()->prepare('SELECT id, user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
 $st->execute([(int)$slot['id'], $today]);
 if ($existing = $st->fetch()) {
+    $isOurs = (int)$existing['user_id'] === (int)$user['id'];
     log_action('FORCE_OPEN_DUP', (int)$user['id'], (int)$room['id'],
-        'Slot already opened today (#' . (int)$existing['id'] . ')');
+        'Slot already opened today (#' . (int)$existing['id'] . ', ' . ($isOurs ? 'self' : 'other') . ')');
     json_response([
-        'ok'        => true,
-        'already'   => true,
-        'until'     => date('Y-m-d ') . $slot['end_time'],
-        'message'   => 'Room ' . $room['room_number'] . ' was already opened for today.',
+        'ok'      => true,
+        'already' => true,
+        'until'   => date('Y-m-d ') . $slot['end_time'],
+        'message' => $isOurs
+            ? 'Room ' . $room['room_number'] . ' is already open from your earlier report.'
+            : 'Room ' . $room['room_number'] . ' was just opened by another lecturer.',
     ]);
 }
 
@@ -85,12 +89,19 @@ try {
          VALUES (?, ?, ?, ?, ?, ?)'
     )->execute([(int)$room['id'], (int)$slot['id'], $today, $reason, $details ?: null, (int)$user['id']]);
 } catch (Throwable $e) {
-    // lost a race against another reporter's unique (schedule_id, exc_date) row
+    // Lost the race against another reporter's unique (schedule_id, exc_date) row.
+    // Re-read it so we can report whose report actually won.
+    $st = db()->prepare('SELECT user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
+    $st->execute([(int)$slot['id'], $today]);
+    $winner = $st->fetch();
+    $isOurs = $winner && (int)$winner['user_id'] === (int)$user['id'];
     json_response([
         'ok'      => true,
         'already' => true,
         'until'   => date('Y-m-d ') . $slot['end_time'],
-        'message' => 'Room ' . $room['room_number'] . ' was just opened by someone else.',
+        'message' => $isOurs
+            ? 'Room ' . $room['room_number'] . ' is already open from your earlier report.'
+            : 'Room ' . $room['room_number'] . ' was just opened by another lecturer.',
     ]);
 }
 

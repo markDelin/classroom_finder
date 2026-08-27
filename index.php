@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — public landing page (§12).
+ * Classroom Finder — public landing page.
  *
  * Open to everyone: search + filter classrooms and see live availability.
  * assets/js/landing.js keeps it fresh by polling api/classroom_status.php
@@ -42,7 +42,8 @@ try {
 } catch (Throwable) {
 }
 
-$school = get_setting('school_name', APP_NAME);
+$school    = school_name();
+$heroTitle = strtoupper($school !== '' ? $school : app_name());
 render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 ?>
 
@@ -53,7 +54,7 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 <?php endif; ?>
 
 <section class="hero">
-  <h1><?= icon('map-pin') ?> <?= e(strtoupper($school)) ?></h1>
+  <h1><?= icon('map-pin') ?> <?= e($heroTitle) ?></h1>
   <p class="hero__sub">Live availability for every classroom — see what&rsquo;s free before you walk there.</p>
 
   <form id="finderForm" class="finder" method="get" action="index.php">
@@ -148,7 +149,7 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 </div>
 
 <footer class="site-footer">
-  <span><?= e($school) ?> · Classroom Finder</span>
+  <span><?= e($school !== '' ? $school . ' · ' . app_name() : app_name()) ?></span>
   <span>Lecturer? <a href="login.php">Log in to occupy a room via QR</a></span>
 </footer>
 

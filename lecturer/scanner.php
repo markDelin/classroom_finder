@@ -2,12 +2,12 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — QR scanner page (§10).
+ * Classroom Finder — QR scanner page.
  *
  * Uses the vendored html5-qrcode library. After a successful decode, JS posts
  * the token to api/scan_qr.php; if the room is free this dialog collects the
  * usage duration and submits to occupy.php, which validates everything again
- * server-side before creating a session (§11).
+ * server-side before creating a session.
  */
 
 require_once __DIR__ . '/../auth/auth_check.php';
@@ -43,8 +43,6 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   <div class="card scanner-card">
     <div class="reader-wrap">
       <div id="reader" class="reader" aria-label="Camera preview"></div>
-      <!-- QR viewfinder overlay: html5-qrcode wipes #reader on start(), so the
-           reticle lives beside it and is layered on top with CSS. -->
       <div class="reader-reticle" aria-hidden="true">
         <i></i><i></i><i></i><i></i>
         <span class="reader-reticle__beam"></span>
@@ -63,14 +61,14 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
       <label class="torch-toggle" hidden><input type="checkbox" id="torchToggle"> <?= icon('flashlight') ?> Torch</label>
     </div>
     <p id="scanStatus" class="scan-status muted"></p>
-  </div>
 
-  <div class="card scanner-side">
-    <h3>No camera handy?</h3>
-    <p class="muted small">The token is printed under every QR poster.</p>
-    <form id="manualForm">
-      <input name="token" placeholder="Paste / type the 32-character token" maxlength="120" autocomplete="off">
-      <button class="btn btn--block" type="submit">Look up room</button>
+    <div class="scanner-divider">
+      <span>or enter token manually</span>
+    </div>
+
+    <form id="manualForm" class="manual-token-form">
+      <input name="token" placeholder="Paste or type 32-character token..." maxlength="120" autocomplete="off" required>
+      <button class="btn btn--primary" type="submit">Look up</button>
     </form>
   </div>
 </div>
@@ -81,7 +79,7 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
 </div>
 <?php endif; ?>
 
-<!-- §10 confirmation: SweetAlert2 renders the dialog; this hidden form
+<!-- confirmation: SweetAlert2 renders the dialog; this hidden form
      carries the actual POST to occupy.php, which re-validates server-side. -->
 <form method="post" action="occupy.php" id="occupyForm" hidden>
   <?= csrf_field() ?>

@@ -55,17 +55,23 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <p class="muted">No registrations waiting — all caught up. <?= icon('party-popper') ?></p>
   <?php else: ?>
   <table class="table">
-    <thead><tr><th>Name</th><th>Staff ID</th><th>Email</th><th>Department</th><th style="width:13rem">Actions</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Staff ID</th>
+        <th>Email</th>
+        <th>Department</th>
+        <th style="text-align:right">Actions</th>
+      </tr>
+    </thead>
     <tbody>
       <?php foreach ($pending as $p): ?>
       <tr>
-        <td class="cell-main" data-label="Name">
-          <strong><?= e($p['full_name']) ?></strong> <span class="muted small">ID: <?= e($p['staff_id']) ?></span>
-        </td>
-        <td class="cell-sub small" data-label="Contact">
-          <?= e($p['email']) ?><?= $p['department'] ? ' · ' . e($p['department']) : '' ?>
-        </td>
-        <td class="actions-cell">
+        <td data-label="Name"><strong><?= e($p['full_name']) ?></strong> <span class="muted small">@<?= e($p['username']) ?></span></td>
+        <td data-label="Staff ID"><?= e($p['staff_id']) ?></td>
+        <td data-label="Email"><?= e($p['email']) ?></td>
+        <td data-label="Department"><?= e($p['department'] ?: '—') ?></td>
+        <td class="actions-cell" style="justify-content:flex-end" data-label="Actions">
           <form method="post" action="users.php" class="inline-form">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
