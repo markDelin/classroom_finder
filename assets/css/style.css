@@ -1284,82 +1284,34 @@ label .password-toggle-wrapper,
 .swal2-container.swal2-top-end,
 .swal2-container.swal2-top,
 .swal2-container.swal2-top-start {
-  padding: .4rem .5rem !important;
+  padding: .75rem 1rem !important;
 }
 
 .swal2-container .swal2-popup.swal2-toast {
-  display: inline-flex !important;
-  align-items: center !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  padding: .35rem .75rem .35rem .5rem !important;
-  margin: 0 !important;
-  width: auto !important;
-  max-width: min(28rem, calc(100vw - 1.5rem)) !important;
-  min-height: 0 !important;
-  border-radius: var(--radius-sm, 8px) !important;
+  border-radius: var(--radius, 10px) !important;
   border: 1px solid var(--border) !important;
   background: var(--surface) !important;
   color: var(--text) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08) !important;
+  padding: .75rem 1rem !important;
   font-family: var(--font-body) !important;
-  gap: .35rem !important;
+  align-items: center !important;
 }
 
-/* Scaled down icon without breaking internal SweetAlert2 checkmark geometry */
-.swal2-container .swal2-popup.swal2-toast .swal2-icon {
-  transform: scale(0.55) !important;
-  transform-origin: center center !important;
-  margin: -.25rem .15rem -.25rem 0 !important;
-  flex-shrink: 0 !important;
-}
-
-/* Single line or multi-line title formatting */
 .swal2-container .swal2-popup.swal2-toast .swal2-title {
   font-family: var(--font-body) !important;
-  font-size: .84rem !important;
-  font-weight: 500 !important;
-  line-height: 1.35 !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  color: var(--text) !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: left !important;
-  white-space: normal !important;
-  width: max-content !important;
-  max-width: 100% !important;
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
-  flex: 0 1 auto !important;
-}
-
-.swal2-container .swal2-popup.swal2-toast .swal2-html-container {
-  font-size: .8rem !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  text-align: left !important;
-  white-space: normal !important;
-  width: max-content !important;
-  max-width: 100% !important;
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
-}
-
-.swal2-container .swal2-popup.swal2-toast .swal2-close {
-  width: 1rem !important;
-  height: 1rem !important;
   font-size: .9rem !important;
-  line-height: 1 !important;
-  margin: 0 0 0 .25rem !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  color: var(--text) !important;
+  margin: 0 0 0 .5rem !important;
   padding: 0 !important;
-  flex-shrink: 0 !important;
+  text-align: left !important;
 }
 
 .swal2-container .swal2-popup.swal2-toast .swal2-timer-progress-bar {
-  height: 2px !important;
+  height: 3px !important;
   background: var(--accent, #2563eb) !important;
-  border-radius: 0 0 8px 8px !important;
 }
 
 /* add/edit forms shown inside a modal — clean 2-column responsive layout, door-plate labels. */
