@@ -154,7 +154,7 @@ function render_footer(array $scripts = []): void
     $prefix = $GLOBALS['cf_prefix'] ?? '';
     ?></main>
 <script src="<?= $prefix ?>assets/js/vendor/sweetalert2.all.min.js"></script>
-<script src="<?= $prefix ?>assets/js/vendor/toastify.min.js"></script>
+<script src="<?= $prefix ?>assets/js/vendor/toastify.min.js?v=<?= is_file(__DIR__ . '/../assets/js/vendor/toastify.min.js') ? filemtime(__DIR__ . '/../assets/js/vendor/toastify.min.js') : 0 ?>"></script>
 <script src="<?= $prefix ?>assets/js/ui.js?v=<?= filemtime(__DIR__ . '/../assets/js/ui.js') ?>"></script>
 <?php foreach ($scripts as $src): ?>
 <?php $cf_js = __DIR__ . '/../assets/js/' . basename($src); // pages pass "assets/js/x.js" ?>
