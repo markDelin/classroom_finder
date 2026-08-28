@@ -191,11 +191,6 @@ function room_card(array $r, int $i = 0): string
     <span class="pill pill--<?= $cls ?>"><?= icon($statusIcon) ?> <?= $label ?></span>
   </div>
 
-  <div class="room-card__meta">
-    <span class="room-card__type"><?= e($r['room_type']) ?></span>
-    <span class="room-card__cap" title="Capacity"><?= icon('users') ?> <?= (int)$r['capacity'] ?> seats</span>
-  </div>
-
   <div class="room-card__foot">
     <?php if ($r['computed'] === 'occupied'): ?>
       <?php if (!empty($r['session_id'])): ?>
@@ -227,6 +222,11 @@ function room_card(array $r, int $i = 0): string
     <?php elseif ($r['computed'] === 'unavailable'): ?>
       <p class="room-card__off-note"><?= icon('ban') ?> <?= e($r['note'] ?: ($r['status'] === 'maintenance' ? 'Under maintenance' : 'Temporarily disabled')) ?></p>
     <?php endif; ?>
+  </div>
+
+  <div class="room-card__meta">
+    <span class="room-card__type"><?= e($r['room_type']) ?></span>
+    <span class="room-card__cap" title="Capacity"><?= icon('users') ?> <?= (int)$r['capacity'] ?> seats</span>
   </div>
 </article>
 <?php

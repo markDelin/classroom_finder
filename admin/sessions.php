@@ -98,79 +98,77 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
 </form>
 
 <div class="card">
-  <div style="margin-bottom: 1.5rem;">
-    <h3 style="margin-bottom: 0.75rem;">Active sessions</h3>
-    <?php if (!$active): ?>
-      <p class="muted">No active sessions right now.</p>
-    <?php else: ?>
-    <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Room</th>
-          <th>Lecturer</th>
-          <th>Window</th>
-          <th>Ends in</th>
-          <th style="text-align:right">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($active as $s): ?>
-        <tr>
-          <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
-          <td class="cell-truncate" data-label="Lecturer"><?= icon('user') ?> <?= e($s['lecturer']) ?></td>
-          <td class="nowrap" data-label="Window"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-          <td class="nowrap" data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span></td>
-          <td data-label="Action">
-            <div class="actions-cell" style="justify-content:flex-end">
-            <form method="post" data-confirm="Force-end this session now?">
-              <?= csrf_field() ?>
-              <input type="hidden" name="action" value="force_end">
-              <input type="hidden" name="session_id" value="<?= (int)$s['id'] ?>">
-              <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Force end</button>
-            </form>
-            </div>
-          </td>
-        </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-    </div>
-    <?php endif; ?>
+  <h3 style="margin-bottom: 0.75rem;">Active sessions</h3>
+  <?php if (!$active): ?>
+    <p class="muted">No active sessions right now.</p>
+  <?php else: ?>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Room</th>
+        <th>Lecturer</th>
+        <th>Window</th>
+        <th>Ends in</th>
+        <th style="text-align:right">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($active as $s): ?>
+      <tr>
+        <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= icon('user') ?> <?= e($s['lecturer']) ?></td>
+        <td class="nowrap" data-label="Window"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
+        <td class="nowrap" data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span></td>
+        <td data-label="Action">
+          <div class="actions-cell" style="justify-content:flex-end">
+          <form method="post" data-confirm="Force-end this session now?">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="force_end">
+            <input type="hidden" name="session_id" value="<?= (int)$s['id'] ?>">
+            <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Force end</button>
+          </form>
+          </div>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
   </div>
+  <?php endif; ?>
+</div>
 
-  <div style="padding-top: 1.5rem; border-top: 1px solid var(--border);">
-    <h3 style="margin-bottom: 0.75rem;">Recently finished</h3>
-    <?php if (!$past): ?>
-      <p class="muted">Nothing recorded yet.</p>
-    <?php else: ?>
-    <div class="table-wrap">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Room</th>
-          <th>Lecturer</th>
-          <th>Time</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php foreach ($past as $s): ?>
-        <tr>
-          <td class="nowrap" data-label="Date"><?= fmt_date($s['start_time']) ?></td>
-          <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
-          <td class="cell-truncate" data-label="Lecturer"><?= e($s['lecturer']) ?></td>
-          <td class="nowrap" data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
-          <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
-        </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-    </div>
-    <?= page_nav($pastTotal, $pp['page']) ?>
-    <?php endif; ?>
+<div class="card">
+  <h3 style="margin-bottom: 0.75rem;">Recently finished</h3>
+  <?php if (!$past): ?>
+    <p class="muted">Nothing recorded yet.</p>
+  <?php else: ?>
+  <div class="table-wrap">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Room</th>
+        <th>Lecturer</th>
+        <th>Time</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($past as $s): ?>
+      <tr>
+        <td class="nowrap" data-label="Date"><?= fmt_date($s['start_time']) ?></td>
+        <td class="nowrap" data-label="Room"><strong>Room <?= e($s['room_number']) ?></strong> <span class="muted small">· <?= e($s['building']) ?></span></td>
+        <td class="cell-truncate" data-label="Lecturer"><?= e($s['lecturer']) ?></td>
+        <td class="nowrap" data-label="Time"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
+        <td data-label="Status"><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
   </div>
+  <?= page_nav($pastTotal, $pp['page']) ?>
+  <?php endif; ?>
 </div>
 
 <?php render_footer(); ?>

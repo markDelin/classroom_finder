@@ -273,7 +273,7 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
           <form method="post" class="inline-form">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
-            <button class="btn btn--ghost btn--sm" type="submit" title="Pause or resume this slot"><?= (int)$s['is_active'] === 1 ? '<span class="btn-text">Pause</span>' : '<span class="btn-text">Resume</span>' ?></button>
+            <button class="btn btn--ghost btn--sm" type="submit" title="<?= (int)$s['is_active'] === 1 ? 'Pause slot' : 'Resume slot' ?>"><?= (int)$s['is_active'] === 1 ? icon('pause') . ' <span class="btn-text">Pause</span>' : icon('play') . ' <span class="btn-text">Resume</span>' ?></button>
           </form>
           <form method="post" class="inline-form" data-confirm="Delete the <?= DAY_NAMES[(int)$s['day_of_week']] ?> <?= e(fmt_time($s['start_time'])) ?> slot for room <?= e($s['room_number']) ?>?">
             <?= csrf_field() ?>

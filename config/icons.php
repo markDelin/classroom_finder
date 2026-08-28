@@ -12,6 +12,8 @@ declare(strict_types=1);
  */
 
 const LUCIDE_ICONS = [
+        'pause' => '<rect width="4" height="16" x="6" y="4" rx="1" /> <rect width="4" height="16" x="14" y="4" rx="1" />',
+        'play' => '<polygon points="6 3 20 12 6 21 6 3" />',
         'circle-check' => '<circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" />',
         'clock' => '<circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" />',
         'calendar-clock' => '<path d="M16 14v2.2l1.6 1" /> <path d="M16 2v3" /> <path d="M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338" /> <path d="M3 9h5.859" /> <path d="M8 2v3" /> <circle cx="16" cy="16" r="6" />',
