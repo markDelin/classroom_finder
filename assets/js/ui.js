@@ -55,35 +55,32 @@
     syncTop();
   }
 
-  /* ---------- alert modal factory (SweetAlert2 Modal Alert) ---------- */
+  /* ---------- toast notification factory (SweetAlert2 Toast) ---------- */
   window.cfToast = function (type, message) {
     if (!window.Swal) {
       alert(message || '');
       return Promise.resolve();
     }
     var icon = 'info';
-    var title = 'Notice';
+    if (type === 'success') { icon = 'success'; }
+    else if (type === 'error') { icon = 'error'; }
+    else if (type === 'warning' || type === 'warn') { icon = 'warning'; }
 
-    if (type === 'success') {
-      icon = 'success';
-      title = 'Success';
-    } else if (type === 'error') {
-      icon = 'error';
-      title = 'Error';
-    } else if (type === 'warning' || type === 'warn') {
-      icon = 'warning';
-      title = 'Warning';
-    } else if (type === 'info') {
-      icon = 'info';
-      title = 'Information';
-    }
-
-    return window.Swal.fire({
-      icon: icon,
-      title: title,
-      text: message || '',
+    var toastMixin = window.Swal.mixin({
+      toast: true,
+      position: 'top-end',
       showConfirmButton: false,
-      timer: 2000
+      timer: 2000,
+      timerProgressBar: true,
+      didOpen: function (t) {
+        t.addEventListener('mouseenter', window.Swal.stopTimer);
+        t.addEventListener('mouseleave', window.Swal.resumeTimer);
+      }
+    });
+
+    return toastMixin.fire({
+      icon: icon,
+      title: message || ''
     });
   };
 
