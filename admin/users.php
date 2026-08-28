@@ -245,17 +245,18 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <p class="muted">Approve new lecturers, manage, delete accounts and reset passwords.</p>
 </div>
 
+<form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search name, username, email, staff ID…" value="<?= e($q) ?>">
+  <select name="status">
+    <option value="">All statuses</option>
+    <?php foreach (['pending' => 'Pending', 'approved' => 'Approved', 'suspended' => 'Suspended', 'rejected' => 'Rejected'] as $k => $lbl): ?>
+      <option value="<?= $k ?>" <?= $statusF === $k ? 'selected' : '' ?>><?= $lbl ?></option>
+    <?php endforeach; ?>
+  </select>
+  <button class="btn" type="submit">Filter</button>
+</form>
+
 <div class="card">
-  <form method="get" class="filter-row">
-    <input type="search" name="q" placeholder="Search name, username, email, staff ID…" value="<?= e($q) ?>">
-    <select name="status">
-      <option value="">All statuses</option>
-      <?php foreach (['pending' => 'Pending', 'approved' => 'Approved', 'suspended' => 'Suspended', 'rejected' => 'Rejected'] as $k => $lbl): ?>
-        <option value="<?= $k ?>" <?= $statusF === $k ? 'selected' : '' ?>><?= $lbl ?></option>
-      <?php endforeach; ?>
-    </select>
-    <button class="btn btn--sm" type="submit">Filter</button>
-  </form>
 
   <div class="table-wrap">
   <table class="table">

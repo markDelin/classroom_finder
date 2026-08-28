@@ -163,15 +163,13 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
   <p class="muted">Book rooms in advance. Rooms show as RESERVED on the landing page before the booking starts.</p>
 </div>
 
-<div class="card" style="margin-bottom: 1.2rem;">
-  <form method="get" class="filter-row">
-    <input type="search" name="q" placeholder="Search room, applicant, purpose…" value="<?= e($q) ?>">
-    <button class="btn btn--sm" type="submit">Filter</button>
-    <?php if ($q !== ''): ?>
-      <a href="reservations.php" class="btn btn--ghost btn--sm">Reset</a>
-    <?php endif; ?>
-  </form>
-</div>
+<form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search room, applicant, purpose…" value="<?= e($q) ?>">
+  <button class="btn" type="submit">Filter</button>
+  <?php if ($q !== ''): ?>
+    <a href="reservations.php" class="btn btn--ghost">Reset</a>
+  <?php endif; ?>
+</form>
 
   <!-- shown as a SweetAlert2 modal by admin-modals.js -->
   <form method="post" class="form-grid form-grid--5" id="reservationForm" hidden style="text-align:left">

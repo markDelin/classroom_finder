@@ -44,15 +44,13 @@ render_header('My Usage History', ['prefix' => '../', 'nav' => 'lecturer', 'acti
   <p class="muted"><?= count($rows) ?> session(s) · <?= human_duration($totalMinutes) ?> total</p>
 </div>
 
-<div class="card" style="margin-bottom: 1.2rem;">
-  <form method="get" class="filter-row">
-    <input type="search" name="q" placeholder="Search room number, building…" value="<?= e($q) ?>">
-    <button class="btn btn--sm" type="submit">Filter</button>
-    <?php if ($q !== ''): ?>
-      <a href="history.php" class="btn btn--ghost btn--sm">Reset</a>
-    <?php endif; ?>
-  </form>
-</div>
+<form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search room number, building…" value="<?= e($q) ?>">
+  <button class="btn" type="submit">Filter</button>
+  <?php if ($q !== ''): ?>
+    <a href="history.php" class="btn btn--ghost">Reset</a>
+  <?php endif; ?>
+</form>
 
 <div class="card">
   <?php if (!$rows): ?>

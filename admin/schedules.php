@@ -220,9 +220,9 @@ render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
         <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
     <?php endforeach; ?>
   </select>
-  <button class="btn btn--sm" type="submit">Filter</button>
+  <button class="btn" type="submit">Filter</button>
   <?php if ($q !== '' || $filterRoom): ?>
-    <a href="schedules.php" class="btn btn--ghost btn--sm">Reset</a>
+    <a href="schedules.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>
 </form>
 

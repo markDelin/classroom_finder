@@ -111,40 +111,41 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
   <p class="muted"><?= $totalSessions ?> session<?= $totalSessions === 1 ? '' : 's' ?> · <?= human_duration($totalMinutes) ?> of room time<?= $rangesOn ? ' · ' . e($rangeLabel) : '' ?>.</p>
 </div>
 
-<div class="card">
-  <div class="range-presets">
-    <span class="muted small">Range</span>
-    <a class="chip-btn <?= $activeRange === 'today' ? 'is-active' : '' ?>" href="<?= $presetUrl('today') ?>">Today</a>
-    <a class="chip-btn <?= $activeRange === 'week' ? 'is-active' : '' ?>" href="<?= $presetUrl('week') ?>">This week</a>
-    <a class="chip-btn <?= $activeRange === 'month' ? 'is-active' : '' ?>" href="<?= $presetUrl('month') ?>">This month</a>
-    <a class="chip-btn <?= !$rangesOn ? 'is-active' : '' ?>" href="<?= $presetUrl('') ?>">All time</a>
+<div class="range-presets" style="margin-bottom: .6rem;">
+  <span class="muted small">Range</span>
+  <a class="chip-btn <?= $activeRange === 'today' ? 'is-active' : '' ?>" href="<?= $presetUrl('today') ?>">Today</a>
+  <a class="chip-btn <?= $activeRange === 'week' ? 'is-active' : '' ?>" href="<?= $presetUrl('week') ?>">This week</a>
+  <a class="chip-btn <?= $activeRange === 'month' ? 'is-active' : '' ?>" href="<?= $presetUrl('month') ?>">This month</a>
+  <a class="chip-btn <?= !$rangesOn ? 'is-active' : '' ?>" href="<?= $presetUrl('') ?>">All time</a>
+</div>
+<form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search room, building, lecturer…" value="<?= e($q) ?>">
+  <select name="room">
+    <option value="">All rooms</option>
+    <?php foreach ($rooms as $r): ?>
+      <option value="<?= (int)$r['id'] ?>" <?= $roomId === (string)$r['id'] ? 'selected' : '' ?>>
+        <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
+    <?php endforeach; ?>
+  </select>
+  <select name="user">
+    <option value="">All lecturers</option>
+    <?php foreach ($lecturers as $l): ?>
+      <option value="<?= (int)$l['id'] ?>" <?= $userId === (string)$l['id'] ? 'selected' : '' ?>><?= e($l['full_name']) ?></option>
+    <?php endforeach; ?>
+  </select>
+  <div class="date-input-group">
+    <span class="small muted">From</span>
+    <input type="date" name="from" value="<?= e($from) ?>">
   </div>
-  <form method="get" class="filter-row">
-    <input type="search" name="q" placeholder="Search room, building, lecturer…" value="<?= e($q) ?>">
-    <select name="room">
-      <option value="">All rooms</option>
-      <?php foreach ($rooms as $r): ?>
-        <option value="<?= (int)$r['id'] ?>" <?= $roomId === (string)$r['id'] ? 'selected' : '' ?>>
-          <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
-      <?php endforeach; ?>
-    </select>
-    <select name="user">
-      <option value="">All lecturers</option>
-      <?php foreach ($lecturers as $l): ?>
-        <option value="<?= (int)$l['id'] ?>" <?= $userId === (string)$l['id'] ? 'selected' : '' ?>><?= e($l['full_name']) ?></option>
-      <?php endforeach; ?>
-    </select>
-    <div class="date-input-group">
-      <span class="small muted">From</span>
-      <input type="date" name="from" value="<?= e($from) ?>">
-    </div>
-    <div class="date-input-group">
-      <span class="small muted">To</span>
-      <input type="date" name="to" value="<?= e($to) ?>">
-    </div>
-    <button class="btn btn--sm" type="submit">Apply</button>
-    <a class="btn btn--ghost btn--sm" href="history.php">Reset</a>
-  </form>
+  <div class="date-input-group">
+    <span class="small muted">To</span>
+    <input type="date" name="to" value="<?= e($to) ?>">
+  </div>
+  <button class="btn" type="submit">Apply</button>
+  <a class="btn btn--ghost" href="history.php">Reset</a>
+</form>
+
+<div class="card">
 
   <?php if (!$rows): ?>
     <p class="muted">No usage recorded for this filter.</p>

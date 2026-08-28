@@ -120,23 +120,21 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
   <p class="muted">Every registered room gets a unique QR token automatically.</p>
 </div>
 
-<div class="card" style="margin-bottom: 1.2rem;">
-  <form method="get" class="filter-row">
-    <input type="search" name="q" placeholder="Search room number, building, type or note…" value="<?= e($q) ?>">
-    <select name="status" onchange="this.form.submit()">
-      <option value="">All statuses</option>
-      <option value="available" <?= $statusF === 'available' ? 'selected' : '' ?>>Available</option>
-      <option value="occupied" <?= $statusF === 'occupied' ? 'selected' : '' ?>>Occupied</option>
-      <option value="reserved" <?= $statusF === 'reserved' ? 'selected' : '' ?>>Reserved</option>
-      <option value="maintenance" <?= $statusF === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
-      <option value="disabled" <?= $statusF === 'disabled' ? 'selected' : '' ?>>Disabled</option>
-    </select>
-    <button class="btn btn--sm" type="submit">Filter</button>
-    <?php if ($q !== '' || $statusF !== ''): ?>
-      <a href="classrooms.php" class="btn btn--ghost btn--sm">Reset</a>
-    <?php endif; ?>
-  </form>
-</div>
+<form method="get" class="filter-row">
+  <input type="search" name="q" placeholder="Search room number, building, type or note…" value="<?= e($q) ?>">
+  <select name="status" onchange="this.form.submit()">
+    <option value="">All statuses</option>
+    <option value="available" <?= $statusF === 'available' ? 'selected' : '' ?>>Available</option>
+    <option value="occupied" <?= $statusF === 'occupied' ? 'selected' : '' ?>>Occupied</option>
+    <option value="reserved" <?= $statusF === 'reserved' ? 'selected' : '' ?>>Reserved</option>
+    <option value="maintenance" <?= $statusF === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
+    <option value="disabled" <?= $statusF === 'disabled' ? 'selected' : '' ?>>Disabled</option>
+  </select>
+  <button class="btn" type="submit">Filter</button>
+  <?php if ($q !== '' || $statusF !== ''): ?>
+    <a href="classrooms.php" class="btn btn--ghost">Reset</a>
+  <?php endif; ?>
+</form>
 
 <datalist id="buildingList">
   <?php foreach (array_unique(array_column($allRooms, 'building')) as $b): ?>

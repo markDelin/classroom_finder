@@ -72,7 +72,6 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
             ['key' => 'settings',     'label' => 'Settings',         'href' => $adminHref('settings.php'),     'icon' => 'settings'],
-            ['key' => 'change_password', 'label' => 'Change Password', 'href' => $prefix . 'change_password.php', 'icon' => 'key-round'],
             ['key' => 'finder',       'label' => 'Find Rooms',       'href' => $prefix . 'index.php',          'icon' => 'search'],
         ],
         'lecturer' => [
@@ -107,7 +106,11 @@ function render_header(string $title, array $opts = []): void
   <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(app_name()) ?></a>
   <div class="topbar__right">
     <?php if ($user): ?>
-      <a href="<?= $prefix ?>change_password.php" class="user-chip" title="Change Password (<?= e($user['username']) ?>)">
+      <?php
+        $userChipHref = ($user['role'] === 'admin') ? $adminHref('users.php') : ($prefix . 'change_password.php');
+        $userChipTitle = ($user['role'] === 'admin') ? ('Users (' . e($user['username']) . ')') : ('Change Password (' . e($user['username']) . ')');
+      ?>
+      <a href="<?= $userChipHref ?>" class="user-chip" title="<?= $userChipTitle ?>">
         <span class="avatar"><?= e(mb_strtoupper(mb_substr($user['full_name'], 0, 1))) ?></span>
         <span class="user-chip__name"><?= e($user['full_name']) ?>
           <small><?= e(ucfirst($user['role'])) ?></small></span>
@@ -223,8 +226,6 @@ function room_card(array $r, int $i = 0): string
       </div>
     <?php elseif ($r['computed'] === 'unavailable'): ?>
       <p class="room-card__off-note"><?= icon('ban') ?> <?= e($r['note'] ?: ($r['status'] === 'maintenance' ? 'Under maintenance' : 'Temporarily disabled')) ?></p>
-    <?php else: ?>
-      <p class="room-card__open"><?= icon('circle-check') ?> Available to use</p>
     <?php endif; ?>
   </div>
 </article>

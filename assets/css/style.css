@@ -639,7 +639,7 @@ input:focus, select:focus, textarea:focus {
 /* ---------- room cards: modern 16:9 layout ---------- */
 .room-grid {
   display: grid; gap: 0.9rem;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin: 1rem 0 2rem;
 }
 .room-card {
@@ -925,6 +925,7 @@ label .password-toggle-wrapper,
 .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin-bottom: .9rem; }
 .filter-row input[type="search"] { flex: 1 1 14rem; min-width: 10rem; }
 .filter-row select { flex: 0 1 auto; max-width: 14rem; }
+.filter-row .btn { padding: .5rem .85rem; font-size: .92rem; line-height: 1.25; border-radius: var(--radius-sm); box-sizing: border-box; }
 .date-input-group {
   display: inline-flex; align-items: center; gap: .4rem;
   background: var(--surface);
@@ -1718,10 +1719,13 @@ html { -webkit-tap-highlight-color: transparent; }
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
+  .room-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 1024px) {
   .room-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (max-width: 960px) {
+@media (max-width: 768px) {
   .room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -1923,12 +1927,12 @@ html { -webkit-tap-highlight-color: transparent; }
     font-size: .74rem;
   }
 
-  /* filter bars on mobile: clean inline wrapping layout */
+  /* filter bars on mobile: clean single-line layout joining search, options, and filter button */
   .filter-row {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: .5rem;
+    gap: .4rem;
     padding-bottom: 0;
     margin-bottom: .85rem;
     width: 100%;
@@ -1936,30 +1940,31 @@ html { -webkit-tap-highlight-color: transparent; }
   .filter-row > * {
     box-sizing: border-box;
   }
-  .filter-row input[type="search"] {
-    flex: 1 1 11rem;
+  .filter-row input[type="search"],
+  .filter-row input[type="text"] {
+    flex: 1 1 auto;
     min-width: 0;
-    padding: .48rem .65rem;
-    font-size: .88rem;
-  }
-  .filter-row select {
-    flex: 1 1 calc(50% - .25rem);
-    min-width: 110px;
-    max-width: 100%;
-    padding: .48rem .65rem;
+    padding: .48rem .55rem;
     font-size: .85rem;
   }
+  .filter-row select {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 40%;
+    padding: .48rem .5rem;
+    font-size: .83rem;
+  }
   .filter-row .date-input-group {
-    flex: 1 1 calc(50% - .25rem);
-    min-width: 120px;
+    flex: 0 1 auto;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
-    gap: .35rem;
+    gap: .25rem;
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: .35rem .6rem;
-    font-size: .82rem;
+    padding: .35rem .45rem;
+    font-size: .8rem;
   }
   .filter-row .date-input-group span {
     color: var(--muted);

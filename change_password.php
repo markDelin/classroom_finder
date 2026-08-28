@@ -12,6 +12,10 @@ require_once __DIR__ . '/auth/auth_check.php';
 
 $user = require_login();
 
+if ($user['role'] === 'admin') {
+    redirect('admin/users.php');
+}
+
 // Re-fetch user record from database to get fresh password hash & status
 $st = db()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
 $st->execute([(int)$user['id']]);
