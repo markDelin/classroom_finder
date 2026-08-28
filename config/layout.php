@@ -91,6 +91,7 @@ function render_header(string $title, array $opts = []): void
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> · <?= e(app_name()) ?></title>
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
+<link rel="stylesheet" href="<?= $prefix ?>assets/css/vendor/toastify.min.css?v=<?= is_file(__DIR__ . '/../assets/css/vendor/toastify.min.css') ? filemtime(__DIR__ . '/../assets/css/vendor/toastify.min.css') : 0 ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 </head>
 <body class="<?= $nav ? 'has-sidebar' : '' ?>" data-prefix="<?= $prefix ?>">
@@ -153,6 +154,7 @@ function render_footer(array $scripts = []): void
     $prefix = $GLOBALS['cf_prefix'] ?? '';
     ?></main>
 <script src="<?= $prefix ?>assets/js/vendor/sweetalert2.all.min.js"></script>
+<script src="<?= $prefix ?>assets/js/vendor/toastify.min.js"></script>
 <script src="<?= $prefix ?>assets/js/ui.js?v=<?= filemtime(__DIR__ . '/../assets/js/ui.js') ?>"></script>
 <?php foreach ($scripts as $src): ?>
 <?php $cf_js = __DIR__ . '/../assets/js/' . basename($src); // pages pass "assets/js/x.js" ?>

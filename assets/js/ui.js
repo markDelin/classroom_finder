@@ -1,11 +1,11 @@
 /**
  * Classroom Finder — shared UI layer (all roles).
  *
- * SweetAlert2 drives every modal, confirmation and toast in the app:
+ * SweetAlert2 drives every modal, confirmation and alert in the app:
  *   - any form marked data-confirm="…" gets an SWAL confirm before submitting
- *   - server-side flash messages are converted into SWAL toasts on load
+ *   - server-side flash messages are converted into SWAL modal alerts on load
  *
- * Exposes window.cfToast(type, message) for ad-hoc client-side feedback.
+ * Exposes window.cfToast(type, message) for ad-hoc client-side feedback (uses SweetAlert2 modal alerts).
  */
 (function () {
   'use strict';
@@ -55,23 +55,36 @@
     syncTop();
   }
 
-  if (!window.Swal) { return; }
-
-  /* ---------- toast factory ---------- */
-  var Toast = window.Swal.mixin({
-    toast: true,
-    position: 'top-end',
-    showConfirmButton: false,
-    timer: 4000,
-    timerProgressBar: true,
-    didOpen: function (t) {
-      t.addEventListener('mouseenter', window.Swal.stopTimer);
-      t.addEventListener('mouseleave', window.Swal.resumeTimer);
-    }
-  });
-
+  /* ---------- alert modal factory (SweetAlert2 Modal Alert) ---------- */
   window.cfToast = function (type, message) {
-    Toast.fire({ icon: type, title: message });
+    if (!window.Swal) {
+      alert(message || '');
+      return Promise.resolve();
+    }
+    var icon = 'info';
+    var title = 'Notice';
+
+    if (type === 'success') {
+      icon = 'success';
+      title = 'Success';
+    } else if (type === 'error') {
+      icon = 'error';
+      title = 'Error';
+    } else if (type === 'warning' || type === 'warn') {
+      icon = 'warning';
+      title = 'Warning';
+    } else if (type === 'info') {
+      icon = 'info';
+      title = 'Information';
+    }
+
+    return window.Swal.fire({
+      icon: icon,
+      title: title,
+      text: message || '',
+      confirmButtonText: 'OK',
+      confirmButtonColor: 'var(--accent, #2563eb)'
+    });
   };
 
   /* ---------- server wall-clock formatting (timezone-safe) ----------
@@ -98,6 +111,7 @@
    * The real form keeps posting to its normal action with CSRF intact;
    * SWAL is only the shell. Used by classroom/user/reservation add+edit.  */
   window.cfFormModal = function (opts) {
+    if (!window.Swal) { return; }
     var f = opts.form;
     var placeholder = document.createElement('div');
     f.parentNode.insertBefore(placeholder, f);
@@ -149,7 +163,7 @@
   /* ---------- destructive-action confirmation ---------- */
   document.addEventListener('submit', function (ev) {
     var f = ev.target;
-    if (!(f instanceof HTMLFormElement) || !f.dataset.confirm) { return; }
+    if (!(f instanceof HTMLFormElement) || !f.dataset.confirm || !window.Swal) { return; }
     ev.preventDefault();
 
     var msg = f.getAttribute('data-confirm');
@@ -259,22 +273,28 @@
     }
   });
 
-  /* ---------- server flashes become toasts ---------- */
+  /* ---------- server flashes become SweetAlert2 modal alerts ---------- */
   var wrap = document.querySelector('.flashes');
   if (!wrap) { return; }
   var map = { success: 'success', error: 'error', warn: 'warning', info: 'info' };
   var items = [];
-  wrap.querySelectorAll('.flash').forEach(function (el, i) {
+  wrap.querySelectorAll('.flash').forEach(function (el) {
     var icon = 'info';
     Object.keys(map).forEach(function (c) {
       if (el.classList.contains('flash--' + c)) { icon = map[c]; }
     });
-    items.push([icon, el.textContent.trim(), i]);
+    var text = el.textContent.trim();
+    if (text) {
+      items.push({ type: icon, text: text });
+    }
   });
   if (items.length) {
     wrap.hidden = true;
+    var chain = Promise.resolve();
     items.forEach(function (it) {
-      window.setTimeout(function () { window.cfToast(it[0], it[1]); }, it[2] * 350);
+      chain = chain.then(function () {
+        return window.cfToast(it.type, it.text);
+      });
     });
   }
 })();
