@@ -55,33 +55,50 @@
     syncTop();
   }
 
-  /* ---------- toast notification factory (SweetAlert2 Toast) ---------- */
+  /* ---------- toast notification factory (Toastify JS) ---------- */
   window.cfToast = function (type, message) {
-    if (!window.Swal) {
-      alert(message || '');
+    if (!message) { return Promise.resolve(); }
+
+    if (window.Toastify) {
+      var t = type === 'warn' ? 'warning' : (type || 'info');
+      var cls = 'cf-toast cf-toast--' + t;
+      var iconSvg = '';
+      if (t === 'success') {
+        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+      } else if (t === 'error') {
+        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>';
+      } else if (t === 'warning') {
+        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      } else {
+        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      }
+
+      var html = iconSvg + '<span class="cf-toast__body">' + String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+
+      Toastify({
+        text: html,
+        escapeHTML: false,
+        duration: 2000,
+        gravity: 'top',
+        position: 'right',
+        className: cls,
+        stopOnFocus: true
+      }).showToast();
+
       return Promise.resolve();
     }
-    var icon = 'info';
-    if (type === 'success') { icon = 'success'; }
-    else if (type === 'error') { icon = 'error'; }
-    else if (type === 'warning' || type === 'warn') { icon = 'warning'; }
 
-    var toastMixin = window.Swal.mixin({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      timerProgressBar: true,
-      didOpen: function (t) {
-        t.addEventListener('mouseenter', window.Swal.stopTimer);
-        t.addEventListener('mouseleave', window.Swal.resumeTimer);
-      }
-    });
+    if (window.Swal) {
+      return window.Swal.fire({
+        icon: type === 'warn' ? 'warning' : (type || 'info'),
+        title: message,
+        showConfirmButton: false,
+        timer: 2000
+      });
+    }
 
-    return toastMixin.fire({
-      icon: icon,
-      title: message || ''
-    });
+    alert(message);
+    return Promise.resolve();
   };
 
   /* ---------- server wall-clock formatting (timezone-safe) ----------
