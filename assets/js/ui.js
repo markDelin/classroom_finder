@@ -83,7 +83,7 @@
       title: title,
       text: message || '',
       showConfirmButton: false,
-      timer: 500
+      timer: 2000
     });
   };
 
