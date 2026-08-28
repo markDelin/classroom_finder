@@ -82,8 +82,7 @@
       icon: icon,
       title: title,
       text: message || '',
-      confirmButtonText: 'OK',
-      confirmButtonColor: 'var(--accent, #2563eb)'
+      confirmButtonText: 'OK'
     });
   };
 
