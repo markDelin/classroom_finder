@@ -1034,8 +1034,8 @@ label .password-toggle-wrapper,
 }
 
 /* ---------- scanner ---------- */
-.scanner-layout { display: grid; gap: 1.1rem; }
-@media (min-width: 850px) { .scanner-layout { grid-template-columns: 2fr 1fr; } }
+.scanner-container { max-width: 44rem; margin: 0 auto; width: 100%; }
+.scanner-layout { display: flex; flex-direction: column; gap: 1.1rem; width: 100%; }
 /* labeled rule between the camera view and manual token entry */
 .scanner-divider {
   display: flex; align-items: center; gap: .7rem;

@@ -18,6 +18,7 @@ $active = get_active_session_for((int)$user['id']);
 
 render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'active' => 'scanner']);
 ?>
+<div class="scanner-container">
 <div class="page-head">
   <h1><?= icon('scan-line') ?> Scan a classroom QR code</h1>
   <p class="muted">Point your camera at the QR poster outside the room. You can also type the token manually below.</p>
@@ -71,6 +72,7 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
       <button class="btn btn--primary" type="submit">Look up</button>
     </form>
   </div>
+</div>
 </div>
 
 <?php if ($active): ?>
