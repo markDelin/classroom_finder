@@ -79,6 +79,10 @@ function school_contact(): string
  * Session / output basics
  * ========================================================================*/
 
+/**
+ * Initializes and configures the secure session if not already active.
+ * Sets HttpOnly and SameSite cookie options for security.
+ */
 function boot_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -94,12 +98,23 @@ function boot_session(): void
 }
 boot_session();
 
-/** HTML-escape for output. */
+/**
+ * Safely HTML-escapes a string for XSS prevention.
+ *
+ * @param string|null $v String to escape
+ * @return string Escaped string safe for HTML output
+ */
 function e(?string $v): string
 {
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Sends a HTTP Location header redirect and exits script execution.
+ *
+ * @param string $url Target URL to redirect to
+ * @return never
+ */
 function redirect(string $url): never
 {
     header('Location: ' . $url);
@@ -110,6 +125,11 @@ function redirect(string $url): never
  * CSRF protection
  * ========================================================================*/
 
+/**
+ * Returns or generates the session CSRF protection token.
+ *
+ * @return string 64-character hex CSRF token
+ */
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf'])) {
@@ -118,6 +138,11 @@ function csrf_token(): string
     return $_SESSION['csrf'];
 }
 
+/**
+ * Returns a hidden HTML input containing the current CSRF token.
+ *
+ * @return string HTML hidden input tag markup
+ */
 function csrf_field(): string
 {
     return '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
@@ -152,6 +177,12 @@ function take_flashes(): array
  * Current user (row for the signed-in account, or null)
  * ========================================================================*/
 
+/**
+ * Fetches the currently authenticated user's database record.
+ * Returns null if unauthenticated, suspended, or deleted.
+ *
+ * @return array|null User record array or null
+ */
 function current_user(): ?array
 {
     static $user = false;
@@ -176,6 +207,11 @@ function current_user(): ?array
     return $user;
 }
 
+/**
+ * Checks whether a valid user session is active.
+ *
+ * @return bool True if a user is logged in
+ */
 function is_logged_in(): bool
 {
     return current_user() !== null;

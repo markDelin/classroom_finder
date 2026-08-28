@@ -33,6 +33,11 @@
   /* scan_qr.php reports {min_minutes, max_minutes, step}; accept that shape
    * (or plain {min,max}) and always fall back to sane numbers — an undefined
    * limit here used to turn every duration into NaN. */
+  /**
+   * Normalizes duration boundary options with fallback values.
+   * @param {Object} raw Raw limits object from scan endpoint
+   * @returns {{min: number, max: number, step: number}} Sanitized limits object
+   */
   function readLimits(raw) {
     raw = raw || {};
     function num(v, fallback) {
@@ -51,12 +56,22 @@
   var lastAt      = 0;
   var busy        = false;
 
+  /**
+   * Updates scanner status text and error state.
+   * @param {string} msg Message to display
+   * @param {boolean} [isErr=false] Whether this status represents an error
+   */
   function say(msg, isErr) {
     statusEl.textContent = msg;
     statusEl.classList.toggle('scan-status--err', !!isErr);
     if (isErr) { readerEl.classList.add('reader--err'); }
   }
 
+  /**
+   * Formats raw minutes into a human-readable duration string (e.g. "1h 30m").
+   * @param {number} m Number of minutes
+   * @returns {string} Formatted duration string
+   */
   function humanMins(m) {
     var h = Math.floor(m / 60), r = m % 60;
     if (h && r) { return h + 'h ' + r + 'm'; }

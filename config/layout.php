@@ -11,7 +11,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
 
-/** Label / Lucide icon / CSS class per computed status. */
+/**
+ * Returns metadata (display label, icon name, CSS modifier) for a computed room status.
+ *
+ * @param string $status Computed status ('occupied', 'reserved', 'unavailable', or 'available')
+ * @return array{0:string, 1:string, 2:string} Tuple of [label, icon_name, css_class]
+ */
 function room_status_meta(string $status): array
 {
     return match ($status) {
@@ -67,13 +72,15 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
             ['key' => 'settings',     'label' => 'Settings',         'href' => $adminHref('settings.php'),     'icon' => 'settings'],
+            ['key' => 'change_password', 'label' => 'Change Password', 'href' => $prefix . 'change_password.php', 'icon' => 'key-round'],
             ['key' => 'finder',       'label' => 'Find Rooms',       'href' => $prefix . 'index.php',          'icon' => 'search'],
         ],
         'lecturer' => [
-            ['key' => 'scanner',   'label' => 'Scan QR Code', 'href' => $lecturerHref('scanner.php'),   'icon' => 'scan-line'],
-            ['key' => 'dashboard', 'label' => 'My Dashboard', 'href' => $lecturerHref('dashboard.php'), 'icon' => 'layout-dashboard'],
-            ['key' => 'history',   'label' => 'My History',   'href' => $lecturerHref('history.php'),   'icon' => 'history'],
-            ['key' => 'finder',    'label' => 'Find Rooms',   'href' => $prefix . 'index.php',          'icon' => 'search'],
+            ['key' => 'scanner',         'label' => 'Scan QR Code',     'href' => $lecturerHref('scanner.php'),   'icon' => 'scan-line'],
+            ['key' => 'dashboard',       'label' => 'My Dashboard',     'href' => $lecturerHref('dashboard.php'), 'icon' => 'layout-dashboard'],
+            ['key' => 'history',         'label' => 'My History',       'href' => $lecturerHref('history.php'),   'icon' => 'history'],
+            ['key' => 'change_password', 'label' => 'Change Password',  'href' => $prefix . 'change_password.php', 'icon' => 'key-round'],
+            ['key' => 'finder',          'label' => 'Find Rooms',       'href' => $prefix . 'index.php',          'icon' => 'search'],
         ],
     ];
 
@@ -99,11 +106,11 @@ function render_header(string $title, array $opts = []): void
   <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(app_name()) ?></a>
   <div class="topbar__right">
     <?php if ($user): ?>
-      <span class="user-chip" title="<?= e($user['username']) ?>">
+      <a href="<?= $prefix ?>change_password.php" class="user-chip" title="Change Password (<?= e($user['username']) ?>)">
         <span class="avatar"><?= e(mb_strtoupper(mb_substr($user['full_name'], 0, 1))) ?></span>
         <span class="user-chip__name"><?= e($user['full_name']) ?>
           <small><?= e(ucfirst($user['role'])) ?></small></span>
-      </span>
+      </a>
       <form method="post" action="<?= $prefix ?>logout.php" class="inline-form">
         <?= csrf_field() ?>
         <button class="btn btn--ghost btn--sm" type="submit"
@@ -159,6 +166,13 @@ function render_footer(array $scripts = []): void
  * Landing-page room cards
  * ========================================================================*/
 
+/**
+ * Renders an individual classroom card element for the landing page grid.
+ *
+ * @param array $r Classroom record with computed status fields
+ * @param int $i Loop index for layout/animation ordering
+ * @return string Rendered HTML markup for the room card
+ */
 function room_card(array $r, int $i = 0): string
 {
     [$label, $statusIcon, $cls] = room_status_meta($r['computed']);
@@ -216,6 +230,12 @@ function room_card(array $r, int $i = 0): string
     return (string)ob_get_clean();
 }
 
+/**
+ * Renders HTML markup for an array of classroom cards or an empty state message.
+ *
+ * @param array<int, array> $rooms List of classroom records
+ * @return string Rendered HTML cards container content
+ */
 function room_cards_html(array $rooms): string
 {
     if (!$rooms) {

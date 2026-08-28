@@ -263,7 +263,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
     <tbody>
       <?php foreach ($users as $u): ?>
       <tr>
-        <td class="cell-main nowrap" data-label="Name">
+        <td class="cell-main" data-label="Name">
           <strong><?= e($u['full_name']) ?></strong> <span class="muted small">@<?= e($u['username']) ?></span>
           <?php if ($u['department']): ?><span class="muted small"> · <?= e($u['department']) ?></span><?php endif; ?>
         </td>
@@ -272,7 +272,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
           <span class="pill pill--<?= $badge[$u['account_status']] ?>"><?= e($u['account_status']) ?></span>
         </td>
-        <td class="cell-sub small nowrap" data-label="Contact">
+        <td class="cell-sub small" data-label="Contact">
           <?= e($u['email']) ?>
           <span class="muted small"> · ID: <?= e($u['staff_id']) ?></span>
         </td>
@@ -312,7 +312,12 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
               <form method="post" class="reset-form" data-confirm="Set a new password for this user?"><?= csrf_field() ?>
                 <input type="hidden" name="action" value="reset_password"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
                 <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-                <input type="password" name="password" placeholder="New password (min 8)" minlength="8" required>
+                <div class="password-toggle-wrapper">
+                  <input type="password" name="password" placeholder="New password (min 8)" minlength="8" required>
+                  <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password">
+                    <?= icon('eye', 'icon-eye') ?><?= icon('eye-off', 'icon-eye-off') ?>
+                  </button>
+                </div>
                 <button class="btn btn--sm" type="submit">Reset</button></form>
             </div>
           </details>
@@ -349,7 +354,14 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
     <label>Department <input name="department" maxlength="80" placeholder="Computer Science"></label>
     <label class="full-width">Email <input type="email" name="email" required maxlength="120" placeholder="jane@univ.edu"></label>
     <label>Username <input name="username" required pattern="[A-Za-z0-9_.]{3,40}" maxlength="40" placeholder="janesmith"></label>
-    <label>Password <input type="password" name="password" required minlength="8" placeholder="••••••••"></label>
+    <label>Password
+      <div class="password-toggle-wrapper">
+        <input type="password" name="password" required minlength="8" placeholder="••••••••">
+        <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password">
+          <?= icon('eye', 'icon-eye') ?><?= icon('eye-off', 'icon-eye-off') ?>
+        </button>
+      </div>
+    </label>
     <label class="full-width">Role
       <select name="role">
         <option value="lecturer">Lecturer</option>

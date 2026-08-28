@@ -42,7 +42,12 @@ render_header('Log in', ['prefix' => '']);
         <input name="username" required autofocus autocomplete="username" maxlength="40">
       </label>
       <label>Password
-        <input type="password" name="password" required autocomplete="current-password">
+        <div class="password-toggle-wrapper">
+          <input type="password" name="password" required autocomplete="current-password">
+          <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password">
+            <?= icon('eye', 'icon-eye') ?><?= icon('eye-off', 'icon-eye-off') ?>
+          </button>
+        </div>
       </label>
       <button class="btn btn--primary btn--block" type="submit">Log in</button>
     </form>

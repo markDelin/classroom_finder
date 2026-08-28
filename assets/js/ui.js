@@ -236,6 +236,29 @@
     }
   });
 
+  /* ---------- password visibility toggle ---------- */
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.password-toggle-btn');
+    if (!btn) return;
+
+    var wrapper = btn.closest('.password-toggle-wrapper') || btn.parentElement;
+    var input = wrapper ? wrapper.querySelector('input') : null;
+    if (!input) return;
+
+    ev.preventDefault();
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.classList.add('is-visible');
+      btn.setAttribute('aria-label', 'Hide password');
+      btn.setAttribute('title', 'Hide password');
+    } else {
+      input.type = 'password';
+      btn.classList.remove('is-visible');
+      btn.setAttribute('aria-label', 'Show password');
+      btn.setAttribute('title', 'Show password');
+    }
+  });
+
   /* ---------- server flashes become toasts ---------- */
   var wrap = document.querySelector('.flashes');
   if (!wrap) { return; }

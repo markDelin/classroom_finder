@@ -95,10 +95,20 @@ render_header('Initial System Setup', ['prefix' => '']);
         <input name="username" required maxlength="40" pattern="[A-Za-z0-9_.]{3,40}" value="<?= e($_POST['username'] ?? '') ?>">
       </label>
       <label>Password <small>(min. 8 characters)</small>
-        <input type="password" name="password" required minlength="8">
+        <div class="password-toggle-wrapper">
+          <input type="password" name="password" required minlength="8">
+          <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password">
+            <?= icon('eye', 'icon-eye') ?><?= icon('eye-off', 'icon-eye-off') ?>
+          </button>
+        </div>
       </label>
       <label>Confirm password
-        <input type="password" name="confirm_password" required minlength="8">
+        <div class="password-toggle-wrapper">
+          <input type="password" name="confirm_password" required minlength="8">
+          <button type="button" class="password-toggle-btn" aria-label="Show password" title="Show password">
+            <?= icon('eye', 'icon-eye') ?><?= icon('eye-off', 'icon-eye-off') ?>
+          </button>
+        </div>
       </label>
       <button class="btn btn--primary btn--block" type="submit">Create Administrator</button>
     </form>
