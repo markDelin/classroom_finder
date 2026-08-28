@@ -82,7 +82,8 @@
       icon: icon,
       title: title,
       text: message || '',
-      confirmButtonText: 'OK'
+      showConfirmButton: false,
+      timer: 500
     });
   };
 
