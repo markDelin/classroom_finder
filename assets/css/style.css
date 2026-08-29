@@ -55,6 +55,11 @@
   --border:    #d2d5cc;
   --track:     rgb(27 30 27 / .07);
 
+  /* primary branding & accent */
+  --primary:       #0F3B6E;
+  --primary-hover: #0b2c53;
+  --accent:        var(--primary);
+
   /* state colors are the ONLY saturated colors */
   --ok:          #217a36;
   --ok-soft:     #dcead9;
@@ -78,7 +83,7 @@
   --swal2-success: var(--ok);
   --swal2-error: var(--danger);
   --swal2-warning: var(--warn);
-  --swal2-info: var(--accent);
+  --swal2-info: var(--primary);
   --swal2-toast-border: none;
 }
 
@@ -88,6 +93,14 @@
     --bg:        #141614;
     --surface:   #1d201d;
     --surface-2: #242824;
+    --text:      #e9ebe5;
+    --muted:     #9aa29a;
+    --border:    #30352f;
+    --track:     rgb(233 235 229 / .09);
+
+    --primary:       #205a9e;
+    --primary-hover: #194a85;
+    --accent:        var(--primary);
     --text:      #e9ebe5;
     --muted:     #9aa29a;
     --border:    #30352f;
@@ -405,9 +418,11 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
 }
 .btn:hover { filter: brightness(.97); }
 .btn:active { transform: translateY(1px); box-shadow: none; }
-.btn--primary { background: var(--text); border-color: var(--text); color: var(--bg); }
+.btn--primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
+.btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #ffffff; }
 @media (prefers-color-scheme: dark) {
-  .btn--primary { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .btn--primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
+  .btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #ffffff; }
 }
 .btn--ok      { background: var(--ok);     border-color: var(--ok);     color: #fff; }
 .btn--danger  { background: var(--danger); border-color: var(--danger); color: #fff; }
@@ -1260,9 +1275,16 @@ label .password-toggle-wrapper,
   transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 .swal2-container .swal2-styled.swal2-confirm {
+  background-color: var(--primary, #0F3B6E) !important;
+  border-color: var(--primary, #0F3B6E) !important;
+  color: #ffffff !important;
   box-shadow: none;
   order: 2;
   margin-left: 0 !important;
+}
+.swal2-container .swal2-styled.swal2-confirm:hover {
+  background-color: var(--primary-hover, #0b2c53) !important;
+  border-color: var(--primary-hover, #0b2c53) !important;
 }
 .swal2-container .swal2-styled.swal2-cancel {
   background-color: transparent !important;

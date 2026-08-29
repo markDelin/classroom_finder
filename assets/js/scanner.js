@@ -30,6 +30,42 @@
   var scanner     = null;
   var limits      = { min: 15, max: 480, step: 30 };
 
+  /* Sound effects for scanner feedback */
+  var successAudio = document.getElementById('scanSuccessSound') || new Audio('../assets/sound/success.mp3');
+  var errorAudio   = document.getElementById('scanErrorSound')   || new Audio('../assets/sound/error.mp3');
+
+  function playSound(audio) {
+    if (!audio) { return; }
+    try {
+      audio.currentTime = 0;
+      var p = audio.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(function () { /* autoplay restriction fallback */ });
+      }
+    } catch (e) {
+      /* ignore audio errors */
+    }
+  }
+
+  function playSuccess() {
+    playSound(successAudio);
+  }
+
+  function playError() {
+    playSound(errorAudio);
+  }
+
+  function unlockAudio() {
+    [successAudio, errorAudio].forEach(function (sound) {
+      if (sound && typeof sound.load === 'function') {
+        sound.load();
+      }
+    });
+  }
+
+  document.addEventListener('click', unlockAudio, { once: true });
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+
   /* scan_qr.php reports {min_minutes, max_minutes, step}; accept that shape
    * (or plain {min,max}) and always fall back to sane numbers — an undefined
    * limit here used to turn every duration into NaN. */
@@ -64,7 +100,10 @@
   function say(msg, isErr) {
     statusEl.textContent = msg;
     statusEl.classList.toggle('scan-status--err', !!isErr);
-    if (isErr) { readerEl.classList.add('reader--err'); }
+    if (isErr) {
+      readerEl.classList.add('reader--err');
+      playError();
+    }
   }
 
   /**
@@ -159,11 +198,14 @@
       var out = await resp.json();
       if (!resp.ok || !out.ok) {
         window.cfToast && window.cfToast('error', out.error || 'Could not open the room.');
+        playError();
         return;
       }
       window.cfToast && window.cfToast('success', out.message || 'Room opened.');
+      playSuccess();
     } catch (e) {
       window.cfToast && window.cfToast('error', 'Network error while opening the room.');
+      playError();
     } finally {
       lastToken = null;   // next scan/manual entry sees the room as available
     }
@@ -175,6 +217,7 @@
     var num = data.room.room_number;
 
     if (!data.available) {
+      playError();
       if (data.fixed_class) {
         // blocked by a fixed weekly class — offer to report it as not meeting
         window.Swal.fire({
@@ -284,6 +327,9 @@
         say(data.error || 'Could not validate this QR code.', true);
         window.cfToast && window.cfToast('error', data.error || 'Could not validate this QR code.');
         return;
+      }
+      if (data.available) {
+        playSuccess();
       }
       say('Room found: ' + data.room.building + ' ' + data.room.room_number);
       openDialog(data);

@@ -89,5 +89,9 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   <input type="hidden" name="minutes" id="fMinutes" value="">
 </form>
 
+<!-- preloaded sound effects for scanner -->
+<audio id="scanSuccessSound" src="../assets/sound/success.mp3" preload="auto"></audio>
+<audio id="scanErrorSound" src="../assets/sound/error.mp3" preload="auto"></audio>
+
 <script src="../assets/js/vendor/html5-qrcode.min.js"></script>
 <?php render_footer(['assets/js/scanner.js']); ?>
