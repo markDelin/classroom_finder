@@ -120,14 +120,14 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
 </div>
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search room, building, lecturer…" value="<?= e($q) ?>">
-  <select name="room">
+  <select name="room" onchange="this.form.submit()">
     <option value="">All rooms</option>
     <?php foreach ($rooms as $r): ?>
       <option value="<?= (int)$r['id'] ?>" <?= $roomId === (string)$r['id'] ? 'selected' : '' ?>>
         <?= e($r['building']) ?> · <?= e($r['room_number']) ?></option>
     <?php endforeach; ?>
   </select>
-  <select name="user">
+  <select name="user" onchange="this.form.submit()">
     <option value="">All lecturers</option>
     <?php foreach ($lecturers as $l): ?>
       <option value="<?= (int)$l['id'] ?>" <?= $userId === (string)$l['id'] ? 'selected' : '' ?>><?= e($l['full_name']) ?></option>
@@ -135,13 +135,13 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
   </select>
   <div class="date-input-group">
     <span class="small muted">From</span>
-    <input type="date" name="from" value="<?= e($from) ?>">
+    <input type="date" name="from" value="<?= e($from) ?>" onchange="this.form.submit()">
   </div>
   <div class="date-input-group">
     <span class="small muted">To</span>
-    <input type="date" name="to" value="<?= e($to) ?>">
+    <input type="date" name="to" value="<?= e($to) ?>" onchange="this.form.submit()">
   </div>
-  <button class="btn" type="submit">Apply</button>
+  <button class="btn btn--primary" type="button">Filter</button>
   <a class="btn btn--ghost" href="history.php">Reset</a>
 </form>
 

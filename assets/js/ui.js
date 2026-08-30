@@ -149,6 +149,12 @@
         if (slot) { slot.appendChild(f); }
         f.hidden = false;
         f.style.display = '';
+        var onFormSubmit = function (e) {
+          e.preventDefault();
+          window.Swal.clickConfirm();
+        };
+        f._cfModalSubmit = onFormSubmit;
+        f.addEventListener('submit', onFormSubmit);
         var first = f.querySelector('input:not([type=hidden]):not([type=submit]), select');
         if (first) { first.focus(); }
       },
@@ -157,6 +163,10 @@
         return true;
       },
       willClose: function () {
+        if (f._cfModalSubmit) {
+          f.removeEventListener('submit', f._cfModalSubmit);
+          delete f._cfModalSubmit;
+        }
         f.hidden = true;
         f.style.display = 'none';
         if (placeholder.parentNode) {
@@ -269,6 +279,62 @@
   });
 
   /* ---------- password visibility toggle ---------- */
+  /* ---------- exclusive popover & click-outside for details menus ---------- */
+  document.addEventListener('click', function (ev) {
+    var openDetails = document.querySelectorAll('details.mini-details[open]');
+    if (!openDetails.length) return;
+    openDetails.forEach(function (det) {
+      if (!det.contains(ev.target)) {
+        det.removeAttribute('open');
+        var tr = det.closest('tr');
+        if (tr) tr.classList.remove('has-open-details');
+        var td = det.closest('td');
+        if (td) td.classList.remove('has-open-details');
+        var tw = det.closest('.table-wrap');
+        if (tw) tw.classList.remove('has-open-details');
+        var ac = det.closest('.actions-cell');
+        if (ac) ac.classList.remove('has-open-details');
+      }
+    });
+  });
+
+  document.addEventListener('toggle', function (ev) {
+    var det = ev.target;
+    if (det && det.matches && det.matches('details.mini-details')) {
+      var tr = det.closest('tr');
+      var td = det.closest('td');
+      var tw = det.closest('.table-wrap');
+      var ac = det.closest('.actions-cell');
+
+      if (det.open) {
+        document.querySelectorAll('details.mini-details[open]').forEach(function (other) {
+          if (other !== det) {
+            other.removeAttribute('open');
+            var otr = other.closest('tr');
+            if (otr) otr.classList.remove('has-open-details');
+            var otd = other.closest('td');
+            if (otd) otd.classList.remove('has-open-details');
+            var otw = other.closest('.table-wrap');
+            if (otw) otw.classList.remove('has-open-details');
+            var oac = other.closest('.actions-cell');
+            if (oac) oac.classList.remove('has-open-details');
+          }
+        });
+        det.classList.add('is-open');
+        if (tr) tr.classList.add('has-open-details');
+        if (td) td.classList.add('has-open-details');
+        if (tw) tw.classList.add('has-open-details');
+        if (ac) ac.classList.add('has-open-details');
+      } else {
+        det.classList.remove('is-open');
+        if (tr) tr.classList.remove('has-open-details');
+        if (td) td.classList.remove('has-open-details');
+        if (tw) tw.classList.remove('has-open-details');
+        if (ac) ac.classList.remove('has-open-details');
+      }
+    }
+  }, true);
+
   document.addEventListener('click', function (ev) {
     var btn = ev.target.closest('.password-toggle-btn');
     if (!btn) return;

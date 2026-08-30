@@ -130,7 +130,7 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
     <option value="maintenance" <?= $statusF === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
     <option value="disabled" <?= $statusF === 'disabled' ? 'selected' : '' ?>>Disabled</option>
   </select>
-  <button class="btn" type="submit">Filter</button>
+  <button class="btn btn--primary" type="button">Filter</button>
   <?php if ($q !== '' || $statusF !== ''): ?>
     <a href="classrooms.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>
@@ -201,12 +201,12 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
                       'note'        => (string)($r['note'] ?? ''),
                   ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)) ?>'><?= icon('pencil') ?> <span class="btn-text">Edit</span></button>
           <a class="btn btn--ghost btn--sm" href="qr_codes.php#qr-<?= (int)$r['id'] ?>" title="QR code"><?= icon('qr-code') ?> <span class="btn-text">QR</span></a>
-          <details class="mini-details">
+          <details class="mini-details" name="status-dropdown">
             <summary class="btn btn--ghost btn--sm" title="Change Status"><?= icon('settings') ?> <span class="btn-text">Status</span></summary>
             <div class="mini-menu">
               <?php foreach (['available' => 'Set Available', 'maintenance' => 'Maintenance', 'disabled' => 'Disable Room'] as $k => $lbl2): ?>
                 <?php if ($r['status'] !== $k): ?>
-                  <form method="post" class="inline-form" style="width:100%"><?= csrf_field() ?>
+                  <form method="post" class="inline-form" style="width:100%" data-confirm="Change status of classroom <?= e($r['room_number']) ?> to <?= e($lbl2) ?>?"><?= csrf_field() ?>
                     <input type="hidden" name="action" value="set_status"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
                     <input type="hidden" name="status" value="<?= $k ?>">
                     <button class="btn btn--ghost btn--sm" type="submit" style="width:100%;justify-content:flex-start"><?= $lbl2 ?></button></form>

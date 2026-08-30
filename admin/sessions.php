@@ -91,7 +91,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
 
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search room, building, lecturer, department…" value="<?= e($q) ?>">
-  <button class="btn" type="submit">Filter</button>
+  <button class="btn btn--primary" type="button">Filter</button>
   <?php if ($q !== ''): ?>
     <a href="sessions.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>

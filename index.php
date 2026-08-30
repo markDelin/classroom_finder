@@ -98,6 +98,7 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
             </label>
           </div>
           <div class="finder__dropdown-actions">
+            <button class="btn btn--primary btn--sm" type="submit" id="applyFilters">Filter</button>
             <button class="btn btn--ghost btn--sm" type="button" id="clearFilters">Reset filters</button>
           </div>
         </div>
@@ -137,7 +138,7 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
   </p>
 </section>
 
-<div id="roomResults">
+<div id="roomResults" aria-live="polite">
   <section id="roomGrid" class="room-grid" data-refresh="<?= get_setting_int('landing_refresh_seconds', 15) ?>" data-page="<?= $pg['page'] ?>">
     <?= room_cards_html($rooms) ?>
   </section>

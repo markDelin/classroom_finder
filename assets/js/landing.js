@@ -20,7 +20,9 @@
 
   var chipButtons = form.querySelectorAll('.chip-btn');
   var selects     = form.querySelectorAll('select, input[type="number"]');
-  var currentStatus = '';
+  var activeChip  = form.querySelector('.chip-btn.is-active');
+  var currentStatus = activeChip ? (activeChip.dataset.status || '') : '';
+  var activeRequestId = 0;
 
   function params() {
     var p = new URLSearchParams();
@@ -67,14 +69,28 @@
   }
 
   function refresh() {
+    var reqId = ++activeRequestId;
     var qs = params();
+    var cleanQs = new URLSearchParams(qs);
     qs.set('with_html', '1');
-    fetch(grid.dataset.endpoint || 'api/classroom_status.php?' + qs.toString(), {
+
+    var baseEndpoint = grid.dataset.endpoint || 'api/classroom_status.php';
+    var sep = baseEndpoint.indexOf('?') === -1 ? '?' : '&';
+    var fetchUrl = baseEndpoint + sep + qs.toString();
+
+    fetch(fetchUrl, {
       headers: { 'X-Requested-With': 'fetch' }
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
+        if (reqId !== activeRequestId) { return; } // ignore stale response from older search
         if (!data.ok || !data.html) { return; }
+
+        if (window.history && window.history.replaceState) {
+          var newUrl = window.location.pathname + (cleanQs.toString() ? '?' + cleanQs.toString() : '');
+          window.history.replaceState(null, '', newUrl);
+        }
+
         if (results) {
           results.innerHTML = data.html;           // cards + pager
           grid = document.getElementById('roomGrid') || grid;
@@ -98,7 +114,7 @@
   function triggerSearch() {
     clearTimeout(timer);
     currentPage = 1;
-    timer = setTimeout(refresh, 300);
+    timer = setTimeout(refresh, 500);
   }
   searchBox.addEventListener('input', triggerSearch);
   searchBox.addEventListener('search', triggerSearch);
@@ -108,6 +124,8 @@
     clearTimeout(timer);
     currentPage = 1;
     refresh();
+    var details = form.querySelector('.finder__more');
+    if (details) { details.removeAttribute('open'); }
   });
 
   // chips
@@ -153,8 +171,12 @@
     if (g && g.scrollIntoView) { g.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 
-  // auto-refresh, paused while hidden
-  setInterval(function () { if (!document.hidden) { refresh(); } }, refreshSecs * 1000);
+  // auto-refresh, paused while hidden or while user is focused on search box
+  setInterval(function () {
+    if (!document.hidden && document.activeElement !== searchBox) {
+      refresh();
+    }
+  }, refreshSecs * 1000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden) { refresh(); }
   });

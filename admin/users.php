@@ -247,13 +247,16 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search name, username, email, staff ID…" value="<?= e($q) ?>">
-  <select name="status">
+  <select name="status" onchange="this.form.submit()">
     <option value="">All statuses</option>
     <?php foreach (['pending' => 'Pending', 'approved' => 'Approved', 'suspended' => 'Suspended', 'rejected' => 'Rejected'] as $k => $lbl): ?>
       <option value="<?= $k ?>" <?= $statusF === $k ? 'selected' : '' ?>><?= $lbl ?></option>
     <?php endforeach; ?>
   </select>
-  <button class="btn" type="submit">Filter</button>
+  <button class="btn btn--primary" type="button">Filter</button>
+  <?php if ($q !== '' || $statusF !== ''): ?>
+    <a href="users.php" class="btn btn--ghost">Reset</a>
+  <?php endif; ?>
 </form>
 
 <div class="card">
@@ -307,7 +310,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
                   data-confirm-text="Save changes"
                   title="Edit user"
                   data-prefill='<?= $editPrefill ?>'><?= icon('pencil') ?> <span class="btn-text">Edit</span></button>
-          <details class="mini-details">
+          <details class="mini-details" name="user-pw-dropdown">
             <summary class="btn btn--ghost btn--sm" title="Reset password"><?= icon('lock') ?> <span class="btn-text">Reset pw</span></summary>
             <div class="mini-menu">
               <form method="post" class="reset-form" data-confirm="Set a new password for this user?"><?= csrf_field() ?>

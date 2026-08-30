@@ -91,10 +91,15 @@ function boot_session(): void
     session_set_cookie_params([
         'httponly' => true,
         'samesite' => 'Lax',
-        // 'secure' => true once the app is served over HTTPS
+        'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
     ]);
     session_name('classroomfinder');
     session_start();
+    if (!headers_sent()) {
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+    }
 }
 boot_session();
 

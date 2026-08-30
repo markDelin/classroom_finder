@@ -46,7 +46,7 @@ render_header('My Usage History', ['prefix' => '../', 'nav' => 'lecturer', 'acti
 
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search room number, building…" value="<?= e($q) ?>">
-  <button class="btn" type="submit">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <?php if ($q !== ''): ?>
     <a href="history.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>
