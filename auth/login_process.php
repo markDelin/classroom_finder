@@ -28,6 +28,20 @@ if ($username === '' || $password === '') {
     $back('Enter your username and password.');
 }
 
+// Brute-force rate-limiting: 5 failed attempts within 10 minutes locks out for 10 minutes.
+$recentFailsStmt = db()->prepare(
+    "SELECT COUNT(*) AS fail_count FROM activity_logs
+     WHERE action = 'LOGIN_FAILED'
+       AND details = ?
+       AND timestamp >= (NOW() - INTERVAL 10 MINUTE)"
+);
+$recentFailsStmt->execute(['Username: ' . $username]);
+$failCount = (int)($recentFailsStmt->fetch()['fail_count'] ?? 0);
+if ($failCount >= 5) {
+    log_action('LOGIN_LOCKOUT', null, null, 'Username: ' . $username);
+    $back('Too many failed login attempts. Please wait 10 minutes before trying again.');
+}
+
 // Brute-force damping: tiny constant-time-ish delay per failed attempt.
 $st = db()->prepare(
     'SELECT id, password, role, account_status, full_name FROM users WHERE username = ? LIMIT 1'

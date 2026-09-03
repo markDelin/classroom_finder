@@ -141,7 +141,7 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     <span class="small muted">To</span>
     <input type="date" name="to" value="<?= e($to) ?>" onchange="this.form.submit()">
   </div>
-  <button class="btn btn--primary" type="button">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <a class="btn btn--ghost" href="history.php">Reset</a>
 </form>
 

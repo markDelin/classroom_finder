@@ -2,27 +2,45 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — database connection (PDO / MySQL).
+ * Classroom Finder — Database connection configuration and PDO initialization.
  *
- * These are the stock XAMPP credentials. Change DB_USER / DB_PASS if your
- * MySQL root account has a password, then import database/classroom_finder.sql.
+ * Provides database connection parameters and a singleton PDO instance getter `db()`.
+ * Handles self-healing schema creation for optional/extended tables when running.
+ *
+ * @package ClassroomFinder\Config
  */
 
+/** @var string Database server hostname or IP address. */
 const DB_HOST = '127.0.0.1';
+
+/** @var string Database server TCP port. */
 const DB_PORT = '3306';
+
+/** @var string Database name. */
 const DB_NAME = 'classroom_finder';
+
+/** @var string Database connection username. */
 const DB_USER = 'root';
+
+/** @var string Database connection password. */
 const DB_PASS = '';
+
 /**
- * Local Unix socket tried first when present (this machine starts MariaDB
- * without TCP); falls back to host/port otherwise (e.g. stock XAMPP).
+ * Local Unix socket tried first when present (e.g. MariaDB socket);
+ * falls back to host/port TCP connection otherwise (e.g. stock XAMPP).
+ *
+ * @var string
  */
 const DB_SOCKET = '/run/mysqld/mysqld.sock';
 
 /**
- * Shared PDO handle (one per request).
- * API entry points can define CF_WANTS_JSON before their first db() call to
- * get a JSON error instead of an HTML one.
+ * Retreive or initialize the shared PDO database connection handle (singleton pattern).
+ *
+ * Initializes the PDO connection, sets timezone alignment with PHP, and ensures
+ * optional tables exist. If connection fails, outputs appropriate JSON or HTML error response.
+ *
+ * @throws PDOException When PDO connection fails and execution terminates.
+ * @return PDO Active database connection instance.
  */
 function db(): PDO
 {
@@ -99,3 +117,4 @@ function db(): PDO
     }
     return $pdo;
 }
+

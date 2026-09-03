@@ -381,4 +381,12 @@
       });
     });
   }
+
+  /* ---------- PWA Service Worker Registration ---------- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      var prefix = document.body.dataset.prefix || '';
+      navigator.serviceWorker.register(prefix + 'sw.js').catch(function () {});
+    });
+  }
 })();

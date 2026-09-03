@@ -790,6 +790,7 @@ input:focus, select:focus, textarea:focus {
 .auth-card--wide { max-width: 34rem; }
 .auth-card__title { font-size: 1.9rem; text-transform: uppercase; margin-bottom: .2rem; }
 .auth-card form label { display: block; margin: .7rem 0; }
+.auth-card form .form-grid label { margin: 0; }
 .auth-card form input {
   width: 100%; margin-top: .25rem;
   padding: .55rem .7rem;
@@ -797,6 +798,129 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface); color: var(--text); font: inherit;
 }
 .auth-card form button[type="submit"], .auth-card form .btn { margin-top: .8rem; }
+
+/* ---------- step wizard (registration) ---------- */
+.wizard-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.3rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem;
+  margin: 1.2rem 0 1.4rem;
+}
+.wizard-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.5rem;
+  border-radius: calc(var(--radius-sm) - 2px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+  user-select: none;
+  width: 100%;
+}
+.wizard-step__num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.12rem 0.38rem;
+  border-radius: 3px;
+  background: rgba(0,0,0,.06);
+  color: var(--muted);
+  line-height: 1;
+}
+.wizard-step.is-active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.wizard-step.is-active .wizard-step__num {
+  background: var(--primary);
+  color: #fff;
+}
+.wizard-step.is-completed {
+  color: var(--ok);
+}
+.wizard-step.is-completed .wizard-step__num {
+  background: rgba(22, 101, 52, 0.12);
+  color: var(--ok);
+}
+.wizard-step:hover:not(.is-active) {
+  color: var(--text);
+  background: rgba(0,0,0,.02);
+}
+
+.form-step {
+  display: none;
+}
+.form-step.is-active {
+  display: block;
+  animation: wizardFadeIn .18s cubic-bezier(.16, 1, .3, 1);
+}
+
+@keyframes wizardFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-step__header {
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed var(--border);
+}
+.form-step__title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0;
+}
+.form-step__subtitle {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.form-step__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.form-step__actions .btn {
+  margin-top: 0 !important;
+}
+.form-step__actions .btn--next,
+.form-step__actions button[type="submit"] {
+  margin-left: auto;
+}
+
+/* Custom Inline Validation */
+.field-error-msg {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--danger);
+  margin-top: 0.35rem;
+  animation: wizardFadeIn .15s ease;
+}
+input.is-invalid, select.is-invalid {
+  border-color: var(--danger) !important;
+  background-color: rgb(220 38 38 / 0.03) !important;
+  box-shadow: 0 0 0 2px rgb(220 38 38 / 0.15) !important;
+}
 
 /* ---------- forms (generic) ---------- */
 label { font-weight: 500; font-size: .88rem; }
@@ -1199,7 +1323,7 @@ label .password-toggle-wrapper,
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: 0 10px 28px rgba(0,0,0,0.2), 0 4px 10px rgba(0,0,0,0.12);
-  min-width: 11rem;
+  min-width: 16.5rem;
   isolation: isolate;
   white-space: nowrap;
 }
@@ -1214,8 +1338,32 @@ label .password-toggle-wrapper,
   display: flex;
   margin: 0;
 }
-.mini-menu .reset-form { display: flex; gap: .35rem; }
-.mini-menu .reset-form input { min-width: 0; flex: 1; font-size: .8rem; padding: .3rem .45rem; }
+.mini-menu .reset-form {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.mini-menu .reset-form .password-toggle-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+.mini-menu .reset-form input {
+  min-width: 0;
+  width: 100%;
+  font-size: .8rem;
+  padding: .35rem 2rem .35rem .5rem;
+}
+.mini-menu .reset-form .password-toggle-btn {
+  padding: .2rem;
+  right: .25rem;
+}
+.mini-menu .reset-form .btn {
+  width: auto;
+  flex: 0 0 auto;
+  justify-content: center;
+  text-align: center;
+}
 
 /* ---------- pager ---------- */
 .pager { display: flex; gap: .3rem; margin-top: .8rem; flex-wrap: wrap; align-items: center; }
@@ -2287,3 +2435,20 @@ html { -webkit-tap-highlight-color: transparent; }
   color: #aaaaaa;
   cursor: not-allowed;
 }
+
+/* Session progress indicator on room cards */
+.room-card__progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--border, #e2e8f0);
+  border-radius: 2px;
+  margin-top: .45rem;
+  overflow: hidden;
+}
+.room-card__progress-bar {
+  height: 100%;
+  background: var(--danger, #ef4444);
+  border-radius: 2px;
+  transition: width .3s ease;
+}
+

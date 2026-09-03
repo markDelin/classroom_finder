@@ -52,8 +52,7 @@ render_header('Log in', ['prefix' => '']);
       <button class="btn btn--primary btn--block" type="submit">Log in</button>
     </form>
 
-    <p class="muted small">New lecturer? <a href="register.php">Register for an account</a> —
-      activation requires administrator approval.</p>
+    <p class="muted small">Need an account? Contact an administrator to create one for you.</p>
   </div>
 </div>
 <?php render_footer(); ?>

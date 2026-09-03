@@ -92,6 +92,8 @@ function render_header(string $title, array $opts = []): void
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/vendor/toastify.min.css?v=<?= is_file(__DIR__ . '/../assets/css/vendor/toastify.min.css') ? filemtime(__DIR__ . '/../assets/css/vendor/toastify.min.css') : 0 ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
+<link rel="manifest" href="<?= $prefix ?>manifest.json">
+<meta name="theme-color" content="#0ea5e9">
 </head>
 <body class="<?= $nav ? 'has-sidebar' : '' ?>" data-prefix="<?= $prefix ?>">
 <header class="topbar">
@@ -102,7 +104,7 @@ function render_header(string $title, array $opts = []): void
   </button>
   <?php endif; ?>
   <a class="brand" href="<?= $prefix ?>index.php"><?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
-    <img class="brand__logo" src="<?= e($logoPath) ?>" alt="">
+    <img class="brand__logo" src="<?= e($logoPath) ?>" alt="<?= e(app_name()) ?> logo">
   <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(app_name()) ?></a>
   <div class="topbar__right">
     <?php if ($user): ?>
@@ -199,6 +201,14 @@ function room_card(array $r, int $i = 0): string
         <div class="room-card__timing">
           <span class="room-card__when"><?= fmt_range($r['session_start'], $r['session_end']) ?></span>
           <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
+        </div>
+        <?php
+          $totalMins = minutes_between($r['session_start'], $r['session_end']);
+          $elapsedMins = minutes_between($r['session_start'], date('Y-m-d H:i:s'));
+          $pct = $totalMins > 0 ? min(100, max(0, (int)round(($elapsedMins / $totalMins) * 100))) : 0;
+        ?>
+        <div class="room-card__progress-track" title="Session progress: <?= $pct ?>%">
+          <div class="room-card__progress-bar" style="width: <?= $pct ?>%;"></div>
         </div>
       </div>
       <?php else: ?>

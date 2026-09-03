@@ -2,19 +2,13 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — shared helpers.
+ * Classroom Finder — shared helper utilities.
  *
- * Every page/API includes this file. It boots the session, and provides:
- *   - CSRF protection            csrf_token(), check_csrf(), csrf_field()
- *   - flash messages             flash(), take_flashes()
- *   - settings                   get_setting(), get_setting_int()
- *   - activity logging           log_action()
- *   - automatic session expiry   expire_stale()
- *   - the classroom status engine fetch_classrooms(), get_room_by_token()
- *   - time formatting            fmt_time(), fmt_range(), human_duration()...
+ * Included by every page and API endpoint. Initializes PHP sessions, configures environment settings,
+ * and provides application-wide functions for CSRF protection, flash messages, settings, logging,
+ * room status querying, and formatting.
  *
- * Security model: the frontend is never trusted. Every state-changing action
- * re-validates login, role, account status and CSRF on the server.
+ * @package ClassroomFinder\Config
  */
 
 require_once __DIR__ . '/database.php';
@@ -24,16 +18,28 @@ require_once __DIR__ . '/icons.php';
 // app) so every page can call render_header()/room_card() etc. directly.
 require_once __DIR__ . '/layout.php';
 
-/* Minimal polyfills so the app also runs on PHP builds without ext-mbstring
- * (stock XAMPP ships it, but don't hard-require it). UTF-8-aware enough for
- * the name/log strings this app handles. */
+/* Polyfills for PHP environments lacking ext-mbstring extension */
 if (!function_exists('mb_strlen')) {
+    /**
+     * Polyfill for mb_strlen if mbstring extension is disabled.
+     *
+     * @param string $s Target string.
+     * @return int Character length in UTF-8.
+     */
     function mb_strlen(string $s): int
     {
         return count(preg_split('//u', $s, -1, PREG_SPLIT_NO_EMPTY) ?: []);
     }
 }
 if (!function_exists('mb_substr')) {
+    /**
+     * Polyfill for mb_substr if mbstring extension is disabled.
+     *
+     * @param string $s Target string.
+     * @param int $start Starting character position.
+     * @param int|null $length Substring character length.
+     * @return string Extracted substring.
+     */
     function mb_substr(string $s, int $start, ?int $length = null): string
     {
         $chars = preg_split('//u', $s, -1, PREG_SPLIT_NO_EMPTY) ?: [];
@@ -41,35 +47,59 @@ if (!function_exists('mb_substr')) {
     }
 }
 if (!function_exists('mb_strtoupper')) {
+    /**
+     * Polyfill for mb_strtoupper if mbstring extension is disabled.
+     *
+     * @param string $s Target string.
+     * @return string Uppercase string.
+     */
     function mb_strtoupper(string $s): string
     {
-        return strtoupper($s); // good enough for A-Z initials
+        return strtoupper($s);
     }
 }
 
-date_default_timezone_set('Asia/Manila'); // change to your campus timezone
+date_default_timezone_set('Asia/Manila');
 
+/** Default application name fallback constant. */
 const APP_NAME = 'Classroom Finder';
 
-/* Branding: this system (app_name) and the campus it runs for (school_name)
- * are two independent settings — Admin → Settings edits each one. The
- * helpers fall back to APP_NAME / '' when the settings table is missing. */
+/**
+ * Retrieve configured application branding title.
+ *
+ * @return string System name setting or APP_NAME constant fallback.
+ */
 function app_name(): string
 {
     $v = trim(get_setting('app_name', ''));
     return $v !== '' ? $v : APP_NAME;
 }
 
+/**
+ * Retrieve configured school or institution name.
+ *
+ * @return string Institution name setting or empty string.
+ */
 function school_name(): string
 {
     return trim(get_setting('school_name', ''));
 }
 
+/**
+ * Retrieve configured school or campus physical address.
+ *
+ * @return string Institution address setting or empty string.
+ */
 function school_address(): string
 {
     return trim(get_setting('school_address', ''));
 }
 
+/**
+ * Retrieve configured school contact info (phone/email).
+ *
+ * @return string Contact details setting or empty string.
+ */
 function school_contact(): string
 {
     return trim(get_setting('school_contact', ''));
@@ -78,6 +108,13 @@ function school_contact(): string
 /* ==========================================================================
  * Session / output basics
  * ========================================================================*/
+
+function is_https(): bool
+{
+    return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+        || (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_SSL']) === 'on');
+}
 
 /**
  * Initializes and configures the secure session if not already active.
@@ -88,10 +125,11 @@ function boot_session(): void
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
+    $secure = is_https();
     session_set_cookie_params([
         'httponly' => true,
         'samesite' => 'Lax',
-        'secure'   => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'secure'   => $secure,
     ]);
     session_name('classroomfinder');
     session_start();
@@ -99,6 +137,10 @@ function boot_session(): void
         header('X-Content-Type-Options: nosniff');
         header('X-Frame-Options: SAMEORIGIN');
         header('Referrer-Policy: strict-origin-when-cross-origin');
+        header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';");
+        if ($secure) {
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        }
     }
 }
 boot_session();
@@ -229,6 +271,13 @@ function is_logged_in(): bool
 /** @var array<string,string>|null $settings_cache request-wide settings cache */
 $settings_cache = null;
 
+/**
+ * Retrieve key-value configuration setting from system settings table.
+ *
+ * @param string $key Setting key name.
+ * @param string $default Fallback value if setting key is missing.
+ * @return string Setting value or default value.
+ */
 function get_setting(string $key, string $default = ''): string
 {
     global $settings_cache;
@@ -245,21 +294,38 @@ function get_setting(string $key, string $default = ''): string
     return $settings_cache[$key] ?? $default;
 }
 
+/**
+ * Retrieve integer configuration setting from system settings table.
+ *
+ * @param string $key Setting key name.
+ * @param int $default Fallback integer value.
+ * @return int Integer value of setting or default value.
+ */
 function get_setting_int(string $key, int $default): int
 {
     $v = filter_var(get_setting($key, ''), FILTER_VALIDATE_INT);
     return $v === false ? $default : $v;
 }
 
-/** Invalidate the request-local settings cache. Called automatically by
- *  set_setting() so a write in this request is immediately visible to the
- *  next get_setting() in the same request. */
+/**
+ * Invalidate the request-local settings cache. Called automatically by
+ * set_setting() so a write in this request is immediately visible.
+ *
+ * @return void
+ */
 function bust_settings_cache(): void
 {
     global $settings_cache;
     $settings_cache = null;
 }
 
+/**
+ * Create or update a key-value setting in the system settings table.
+ *
+ * @param string $key Setting key name.
+ * @param string $value New setting string value.
+ * @return void
+ */
 function set_setting(string $key, string $value): void
 {
     db()->prepare(
@@ -273,6 +339,15 @@ function set_setting(string $key, string $value): void
  * Activity logging
  * ========================================================================*/
 
+/**
+ * Log administrative or user action into activity logs table.
+ *
+ * @param string $action Action description keyword (e.g. 'occupy_room', 'update_setting').
+ * @param int|null $userId User ID associated with action or null for system action.
+ * @param int|null $classroomId Optional associated classroom ID.
+ * @param string $details Additional details or metadata context string.
+ * @return void
+ */
 function log_action(string $action, ?int $userId = null, ?int $classroomId = null, string $details = ''): void
 {
     try {
@@ -289,6 +364,12 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
  * Called before any status computation.
  * ========================================================================*/
 
+/**
+ * Mark expired occupancy sessions and completed reservations as completed.
+ * Automatically run prior to classroom status queries.
+ *
+ * @return void
+ */
 function expire_stale(): void
 {
     $now = date('Y-m-d H:i:s');
@@ -308,9 +389,10 @@ function expire_stale(): void
  * ========================================================================*/
 
 /**
- * Fetch classrooms with their live status.
- * Filters: q, building, floor, type, mincap  (DB-side)
- *          status (available|occupied|reserved|unavailable — computed, PHP-side)
+ * Retrieve list of classrooms with live calculated occupancy and reservation statuses.
+ *
+ * @param array<string, mixed> $f Filter parameters (q, building, floor, type, mincap, status).
+ * @return array<int, array<string, mixed>> Matching room records with computed status fields.
  */
 function fetch_classrooms(array $f = []): array
 {
@@ -428,8 +510,13 @@ function fetch_classrooms(array $f = []): array
     return $rooms;
 }
 
-/** Single room by primary key (with live status fields).
- *  Targeted single-row query: no full-table scan, no needless joins. */
+/**
+ * Single room lookup by primary key with computed live status fields.
+ * Targeted single-row query without full table scans.
+ *
+ * @param int $id Classroom primary key ID.
+ * @return array<string, mixed>|null Classroom record array or null if not found.
+ */
 function get_room_with_status(int $id): ?array
 {
     if ($id <= 0) {
@@ -509,14 +596,23 @@ function get_room_with_status(int $id): ?array
     return $r;
 }
 
-/** Backward-compat wrapper: existing callers (e.g. api/classroom_status.php)
- *  get a one-row lookup without the full table scan. */
+/**
+ * Retrieve classroom record with live status (wrapper for `get_room_with_status`).
+ *
+ * @param int $id Classroom primary key ID.
+ * @return array<string, mixed>|null Room record array or null if missing.
+ */
 function get_room(int $id): ?array
 {
     return get_room_with_status($id);
 }
 
-/** Look up a classroom by its secret QR token. */
+/**
+ * Look up classroom by secret QR code token string.
+ *
+ * @param string $token Secret QR token.
+ * @return array<string, mixed>|null Classroom record or null if invalid token.
+ */
 function get_room_by_token(string $token): ?array
 {
     $st = db()->prepare('SELECT * FROM classrooms WHERE qr_token = ? LIMIT 1');
@@ -526,8 +622,10 @@ function get_room_by_token(string $token): ?array
 }
 
 /**
- * QR payloads are just tokens, but be forgiving about what a scanner hands us:
- * accept a raw token, "CF|ROOM-201|<token>", or a full URL containing it.
+ * Parse and extract 32-character hex QR token from scanned raw input payload or URL string.
+ *
+ * @param string|null $raw Scanned text payload or URL string.
+ * @return string|null Extracted 32-char hex token or null if unparseable.
  */
 function extract_qr_token(?string $raw): ?string
 {
@@ -537,7 +635,12 @@ function extract_qr_token(?string $raw): ?string
     return preg_match('/[0-9a-f]{32}/i', trim($raw), $m) ? strtolower($m[0]) : null;
 }
 
-/** The lecturer's currently active occupancy (if any). */
+/**
+ * Retrieve active room session for a specified user ID.
+ *
+ * @param int $userId Target user ID.
+ * @return array<string, mixed>|null Active session record array or null if none active.
+ */
 function get_active_session_for(int $userId): ?array
 {
     $now = date('Y-m-d H:i:s');
@@ -553,7 +656,13 @@ function get_active_session_for(int $userId): ?array
     return $s ?: null;
 }
 
-/** End an active session early (§14). Returns true when a row was released. */
+/**
+ * Early-release active room session before scheduled end time.
+ *
+ * @param int $sessionId Session primary key ID.
+ * @param string $via Role or channel initiating release ('lecturer', 'admin', 'cron').
+ * @return bool True if session released successfully.
+ */
 function release_session(int $sessionId, string $via = 'lecturer'): bool
 {
     $now = date('Y-m-d H:i:s');
@@ -570,6 +679,12 @@ function release_session(int $sessionId, string $via = 'lecturer'): bool
  * Time formatting
  * ========================================================================*/
 
+/**
+ * Format SQL datetime or time string into 12-hour AM/PM time format.
+ *
+ * @param string|null $sqlDateTime Raw datetime or time string.
+ * @return string Formatted time string (e.g. "9:00 AM") or empty string.
+ */
 function fmt_time(?string $sqlDateTime): string
 {
     if (!$sqlDateTime) {
@@ -579,6 +694,12 @@ function fmt_time(?string $sqlDateTime): string
     return $t === false ? '' : date('g:i A', $t);
 }
 
+/**
+ * Format SQL date string into human-readable date format.
+ *
+ * @param string|null $sqlDateTime Raw date or datetime string.
+ * @return string Formatted date string (e.g. "Oct 24, 2026") or empty string.
+ */
 function fmt_date(?string $sqlDateTime): string
 {
     if (!$sqlDateTime) {
@@ -588,13 +709,24 @@ function fmt_date(?string $sqlDateTime): string
     return $t === false ? '' : date('M j, Y', $t);
 }
 
+/**
+ * Format pair of times/datetimes into readable range string.
+ *
+ * @param string|null $start Start time or datetime.
+ * @param string|null $end End time or datetime.
+ * @return string Formatted time range string (e.g. "9:00 AM – 10:30 AM").
+ */
 function fmt_range(?string $start, ?string $end): string
 {
     return fmt_time($start) . ' – ' . fmt_time($end);
 }
 
-/** SQL datetime -> ISO 8601 carrying the server's UTC offset, so client-side
- *  JS (Date.parse, countdowns) computes the same instant everywhere. */
+/**
+ * Convert SQL datetime to ISO-8601 string carrying server UTC offset.
+ *
+ * @param string|null $sqlDateTime Raw SQL datetime string.
+ * @return string ISO-8601 formatted datetime string.
+ */
 function fmt_iso(?string $sqlDateTime): string
 {
     if (!$sqlDateTime) {
@@ -604,7 +736,13 @@ function fmt_iso(?string $sqlDateTime): string
     return $t === false ? '' : date('Y-m-d\TH:i:sP', $t);
 }
 
-/** Minutes between two SQL datetimes. */
+/**
+ * Calculate duration in elapsed minutes between two SQL datetimes.
+ *
+ * @param string $start Start datetime string.
+ * @param string $end End datetime string.
+ * @return int Minutes count between start and end.
+ */
 function minutes_between(string $start, string $end): int
 {
     $s = strtotime($start);
@@ -612,7 +750,12 @@ function minutes_between(string $start, string $end): int
     return ($s === false || $e === false) ? 0 : max(0, (int)(($e - $s) / 60));
 }
 
-/** 90 -> "1h 30m" */
+/**
+ * Format minutes count into shorthand human readable duration.
+ *
+ * @param int $minutes Target minutes count.
+ * @return string Formatted duration string (e.g., "1h 30m").
+ */
 function human_duration(int $minutes): string
 {
     $h = intdiv($minutes, 60);
@@ -626,7 +769,12 @@ function human_duration(int $minutes): string
     return "{$m}m";
 }
 
-/** "in 25 min" until a future SQL datetime. */
+/**
+ * Calculate remaining minutes until a future datetime.
+ *
+ * @param string $futureSqlDateTime Target future SQL datetime.
+ * @return int Remaining minutes count.
+ */
 function minutes_until(string $futureSqlDateTime): int
 {
     $t = strtotime($futureSqlDateTime);
@@ -663,19 +811,24 @@ function report_range(): array
     return [$ok($from) ? $from : '', $ok($to) ? $to : '', 'Custom range'];
 }
 
-/** TRUE when the current request wants a CSV download (?export=csv). */
+/**
+ * Check whether request requests CSV output via `?export=csv`.
+ *
+ * @return bool True if CSV export is requested.
+ */
 function wants_csv(): bool
 {
     return ($_GET['export'] ?? '') === 'csv';
 }
 
 /**
- * Stream rows as a downloadable CSV and stop. A UTF-8 BOM is prepended so
- * Excel detects the encoding, and cells that could be read as a formula by
- * spreadsheet apps (= + - @ tab CR) are prefixed with an apostrophe.
+ * Stream rows as a downloadable CSV file and terminate execution.
+ * Prepends UTF-8 BOM for Microsoft Excel compatibility and escapes formula characters.
  *
- * @param array<int,string> $headers
- * @param iterable<array<int,mixed>> $rows each row: flat list of cell values
+ * @param string $filename Output CSV filename.
+ * @param array<int,string> $headers Column header titles.
+ * @param iterable<array<int,mixed>> $rows Data rows dataset.
+ * @return never
  */
 function stream_csv(string $filename, array $headers, iterable $rows): never
 {
@@ -702,6 +855,13 @@ function stream_csv(string $filename, array $headers, iterable $rows): never
  * JSON responses (api/)
  * ========================================================================*/
 
+/**
+ * Emit JSON response payload with HTTP status code and terminate script execution.
+ *
+ * @param array<string, mixed> $data Response payload array.
+ * @param int $code HTTP response status code (default: 200).
+ * @return never
+ */
 function json_response(array $data, int $code = 200): never
 {
     http_response_code($code);
@@ -710,7 +870,11 @@ function json_response(array $data, int $code = 200): never
     exit;
 }
 
-/** Read a JSON request body merged with $_POST. */
+/**
+ * Read request payload by merging standard `$_POST` and JSON request body parameters.
+ *
+ * @return array<string, mixed> Key-value input parameters dataset.
+ */
 function request_input(): array
 {
     $json = [];

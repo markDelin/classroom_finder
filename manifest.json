@@ -1,0 +1,16 @@
+{
+  "name": "Classroom Finder",
+  "short_name": "ClassFinder",
+  "description": "Live campus classroom availability and QR scanner",
+  "start_url": "index.php",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "assets/uploads/logo-3146dc738a66.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png"
+    }
+  ]
+}

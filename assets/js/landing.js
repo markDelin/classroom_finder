@@ -37,8 +37,13 @@
   }
 
   function humanRel(isoLocal) {
-    var diff = Date.parse(isoLocal) - Date.now();
-    if (isNaN(diff)) { return null; }
+    if (!isoLocal) { return null; }
+    var parsed = Date.parse(isoLocal);
+    if (isNaN(parsed)) {
+      parsed = Date.parse(isoLocal.replace(' ', 'T'));
+    }
+    if (isNaN(parsed)) { return null; }
+    var diff = parsed - Date.now();
     var m = Math.ceil(diff / 60000);
     if (m <= 0) { return null; }
     if (m < 60) { return 'in ' + m + ' min'; }
@@ -48,7 +53,7 @@
   function tickCountdowns() {
     var nodes = grid.querySelectorAll('[data-free-at]');
     Array.prototype.forEach.call(nodes, function (n) {
-      var rel = humanRel(n.dataset.freeAt.replace(' ', 'T'));
+      var rel = humanRel(n.dataset.freeAt);
       if (rel) {
         var wasFree = n.textContent.indexOf('Free') === 0;
         n.textContent = (wasFree ? 'Free ' : 'Starts ') + rel;

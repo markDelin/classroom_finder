@@ -65,7 +65,7 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
                value="<?= e($filters['q']) ?>" autocomplete="off">
       </div>
       <details class="finder__more" <?= ($filters['building'] || $filters['floor'] !== '' || $filters['type'] || $filters['mincap']) ? 'open' : '' ?>>
-        <summary title="Filters"><?= icon('sliders-horizontal') ?></summary>
+        <summary title="Filters" aria-label="Filter options"><?= icon('sliders-horizontal') ?></summary>
         <div class="finder__dropdown">
           <div class="finder__dropdown-grid">
             <label>Building

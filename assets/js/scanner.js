@@ -252,17 +252,22 @@
     }).join('');
 
     var html =
-      '<p class="swal-meta muted">' +
-        String(data.room.building).replace(/</g, '&lt;') + ' · Floor ' + parseInt(data.room.floor, 10) +
-        ' · ' + String(data.room.room_type).replace(/</g, '&lt;') +
-        ' · ' + parseInt(data.room.capacity, 10) + ' seats</p>' +
-      '<p class="availability availability--ok">Classroom is available.</p>' +
+      '<div class="swal-meta">' +
+        '<span>' + String(data.room.building).replace(/</g, '&lt;') + '</span>' +
+        '<span class="dot-sep">·</span><span>Floor ' + parseInt(data.room.floor, 10) + '</span>' +
+        '<span class="dot-sep">·</span><span>' + String(data.room.room_type).replace(/</g, '&lt;') + '</span>' +
+        '<span class="dot-sep">·</span><span>' + parseInt(data.room.capacity, 10) + '&nbsp;seats</span>' +
+      '</div>' +
+      '<div class="availability availability--ok">' +
+        '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" style="vertical-align:-2px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>' +
+        'Classroom is available.' +
+      '</div>' +
       '<p class="question"><strong>How long will you use this classroom?</strong></p>' +
       '<div class="duration-presets" id="presetRow">' + presets + '</div>' +
       '<div class="stepper">' +
-        '<button type="button" class="btn btn--ghost btn--sm" id="minusBtn" aria-label="Less">−</button>' +
-        '<span class="stepper__value"><strong id="minsLabel"></strong><br><small id="rawMins"></small></span>' +
-        '<button type="button" class="btn btn--ghost btn--sm" id="plusBtn" aria-label="More">+</button>' +
+        '<button type="button" class="stepper__btn" id="minusBtn" aria-label="Less">−</button>' +
+        '<span class="stepper__value"><strong id="minsLabel"></strong><small id="rawMins"></small></span>' +
+        '<button type="button" class="stepper__btn" id="plusBtn" aria-label="More">+</button>' +
       '</div>' +
       '<div class="when">' +
         '<div><small>Starting</small><span id="startTime">—</span></div>' +
@@ -345,6 +350,7 @@
   function cameraErrorMessage(err) {
     var name = (err && err.name) || '';
     if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+      window.cfToast && window.cfToast('warn', 'Camera permission blocked. Enable camera permissions in your browser address bar.');
       return 'Camera access is blocked. Allow camera permission for this site '
            + '(tap the padlock in the address bar), then press Start again.';
     }
@@ -358,6 +364,7 @@
       return 'This device’s camera isn’t compatible with the scanner. Type the token instead.';
     }
     if (!window.isSecureContext) {
+      window.cfToast && window.cfToast('warn', 'Camera requires HTTPS or localhost.');
       return 'Cameras need a secure (https) connection. Open the page over https or type the token instead.';
     }
     return 'Could not start the camera. Check permission and try again, or type the token instead.';

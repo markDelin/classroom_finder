@@ -1,81 +1,59 @@
 # Classroom Finder
 
-A PHP + MySQL web app that shows live classroom availability and lets
-approved lecturers occupy rooms by scanning a QR code — students stop walking
-around campus looking for a free room.
+PHP + MySQL web application for live campus classroom availability and QR code-based room occupancy.
 
-## Feature map (from the project brief)
+## Feature Map
 
-| Brief section | Where it lives |
+| Feature | Components |
 |---|---|
-| Public landing page, search & filters | `index.php` + `assets/js/landing.js` |
-| First-time admin setup | `setup.php` (locks itself after first run) |
-| Lecturer registration → admin approval | `register.php`, `admin/users.php` |
-| Login / roles / sessions | `login.php`, `auth/` |
-| QR generation per classroom | `qr/generate.php` (+ bundled `qr/lib` phpqrcode) |
-| QR scanning & duration dialog | `lecturer/scanner.php`, `assets/js/scanner.js`, vendored html5-qrcode |
-| Occupying a room (server-validated) | `lecturer/occupy.php` — transaction + row lock |
-| Conflict detection | same, plus overlapping-reservation + fixed-schedule checks |
-| Fixed weekly class schedules per room | `admin/schedules.php` (table `class_schedules`) — rooms block during their slots everywhere: status engine, scan validation, occupy |
-| Printable timetable sheet per classroom | `admin/schedules.php` → *Print timetables* (same print pipeline as the QR posters) |
-| "Class isn't meeting" instant force-open | scanner dialog → `api/force_open.php` (table `schedule_force_open`); admins audit/revert under Admin → Fixed Schedules |
-| Release early | `lecturer/release.php`, also `api/release_room.php` |
-| Automatic session expiration | `expire_stale()` in `config/helpers.php` (lazy sweep) |
-| Live status feed | `api/classroom_status.php` |
-| Admin: users, classrooms, QR codes, sessions, reservations, history, logs, settings | `admin/*.php` |
+| Public landing & room search | [index.php](index.php), [assets/js/landing.js](assets/js/landing.js) |
+| Live status polling | [api/classroom_status.php](api/classroom_status.php) |
+| First-time admin setup | [setup.php](setup.php) (locks after initialization) |
+| Lecturer registration & approval | [register.php](register.php), [admin/users.php](admin/users.php) |
+| Authentication & sessions | [login.php](login.php), [auth/](auth/) |
+| QR token generation & posters | [admin/qr_codes.php](admin/qr_codes.php), [qr/generate.php](qr/generate.php) |
+| QR camera scan & manual entry | [lecturer/scanner.php](lecturer/scanner.php), [assets/js/scanner.js](assets/js/scanner.js) |
+| Occupancy claim (row-level locked) | [lecturer/occupy.php](lecturer/occupy.php) |
+| Conflict validation | Active sessions, reservations, and fixed schedules checked atomically |
+| Fixed weekly schedules | [admin/schedules.php](admin/schedules.php) (`class_schedules` table) |
+| Force-open override | Scanner prompt -> [api/force_open.php](api/force_open.php) (`schedule_force_open` table) |
+| Early room release | [lecturer/release.php](lecturer/release.php), [api/release_room.php](api/release_room.php) |
+| Stale session expiration | Lazy check via `expire_stale()` in [config/helpers.php](config/helpers.php), or CLI via [cron/expire.php](cron/expire.php) |
+| Admin panel | [admin/](admin/) (dashboard, classrooms, users, schedules, sessions, reservations, history, logs, settings) |
+| UI notifications & modals | Toastify.js, SweetAlert2, Lucide icons, responsive layout |
+| PWA support | [manifest.json](manifest.json), [sw.js](sw.js) |
 
-Statuses are shown as inline [Lucide](https://lucide.dev) icons (see
-`config/icons.php`): circle-check available · clock occupied · calendar-clock
-reserved (upcoming booking inside the reserve window) · ban unavailable
-(maintenance/disabled). Add new icons by dropping their `<svg>` inner markup
-into `LUCIDE_ICONS`.
+## Setup (XAMPP)
 
-## Setup on XAMPP
+1. Place repo in `C:\xampp\htdocs\classroom_finder`.
+2. Start **Apache** and **MySQL** in XAMPP Control Panel.
+3. Import database schema:
+   - phpMyAdmin: Import -> select [database/classroom_finder.sql](database/classroom_finder.sql) -> Go.
+   - CLI: `mysql -u root < database/classroom_finder.sql`
+4. Configure DB credentials in [config/database.php](config/database.php) if MySQL uses a password.
+5. Navigate to `http://localhost/classroom_finder/setup.php` to create root admin account.
+6. Log in via `http://localhost/classroom_finder/login.php`.
 
-1. Copy this folder into `C:\xampp\htdocs\classroom_finder`.
-2. Start **Apache** and **MySQL** in the XAMPP control panel.
-3. Import the schema: open phpMyAdmin → *Import* → choose
-   `database/classroom_finder.sql` → Go.
-   (Or CLI: `mysql -u root < database/classroom_finder.sql`)
-4. If your MySQL root has a password, edit `config/database.php`.
-5. Open <http://localhost/classroom_finder/setup.php> and create the first
-   administrator account. That page then locks itself permanently.
-6. Log in at <http://localhost/classroom_finder/login.php>.
+## Background Expiration Worker
 
-Sample classrooms are seeded so you can test immediately; delete them from
-**Admin → Classrooms** when you add real ones.
+Optional CLI background runner for periodic session expiry:
 
-### Printing room QR codes
+```bash
+php cron/expire.php
+```
 
-Admin → **QR Codes** → *Print all* (or regenerate an individual token if a
-poster leaks). The image is generated server-side by the bundled phpqrcode
-library — PNG when the GD extension is enabled (stock XAMPP), otherwise SVG.
+Can be scheduled via Windows Task Scheduler or crontab (e.g., every 1-5 minutes). Stale sessions also auto-expire on page requests via `expire_stale()`.
 
-### Scanning
+## QR Code & Camera Scanning
 
-Open the lecturer dashboard on a phone (same Wi-Fi as the PC running XAMPP,
-e.g. `http://<pc-ip>/classroom_finder`), log in, and use **Scan QR Code**.
-Camera scanning needs HTTPS or localhost for camera permission in most
-browsers — on plain HTTP over LAN, Chrome may block camera access, in which
-case use the manual-token box printed under each QR poster.
+- **Generate & Print:** Navigate to **Admin -> QR Codes -> Print all**. Rendered server-side using bundled phpqrcode.
+- **Scanning:** Open `http://<server-ip>/classroom_finder` on mobile, sign in as approved lecturer, open **Scanner**.
+- **Browser Security:** WebRTC camera access requires `localhost` or HTTPS. For plain HTTP over LAN, use manual token entry printed on the QR poster.
 
-## Security notes
+## Security
 
-- PHP sessions + `password_hash()` (bcrypt), prepared statements everywhere,
-  CSRF tokens on every form and API call (`X-CSRF-Token` header for fetch),
-  role guards re-checked server-side before every action.
-- Occupy/release re-validate login, approval, QR token, room status,
-  conflicting sessions and reservations **inside a transaction with a row
-  lock**, so two lecturers can never both claim the same room.
-- The frontend never decides permissions — it only displays what the server
-  already verified.
-
-## Timezone
-
-`config/helpers.php` sets PHP to `Asia/Manila`; MySQL's session timezone is
-synced from PHP on connect. Change the constant if your campus is elsewhere.
-
-## Project layout
-
-See `instructions.md` §27 — this codebase follows it exactly:
-`config/ auth/ lecturer/ admin/ api/ assets/ qr/ database/`.
+- Prepared statements via PDO for all SQL queries.
+- Password hashing with `PASSWORD_DEFAULT` (bcrypt).
+- CSRF validation tokens on state-changing requests (`csrf_token` input or `X-CSRF-Token` header).
+- Race-condition safe room claims using InnoDB transactions with row-level locks (`SELECT ... FOR UPDATE`).
+- Server-side role and account approval enforcement on every guarded endpoint.

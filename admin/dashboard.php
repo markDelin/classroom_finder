@@ -16,7 +16,7 @@ foreach ($rooms as $r) {
 }
 
 $pending = db()->query(
-    "SELECT id, full_name, email, staff_id, department, created_at
+    "SELECT id, full_name, username, email, staff_id, department, created_at
      FROM users WHERE role = 'lecturer' AND account_status = 'pending'
      ORDER BY created_at ASC"
 )->fetchAll();
@@ -155,7 +155,7 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <tbody>
       <?php foreach ($pending as $p): ?>
       <tr>
-        <td class="nowrap" data-label="Name"><strong><?= e($p['full_name']) ?></strong> <span class="muted small">@<?= e($p['username']) ?></span></td>
+        <td class="nowrap" data-label="Name"><strong><?= e($p['full_name']) ?></strong><?php if (!empty($p['username'])): ?> <span class="muted small">@<?= e($p['username']) ?></span><?php endif; ?></td>
         <td class="nowrap" data-label="Staff ID"><?= e($p['staff_id']) ?></td>
         <td class="cell-truncate" data-label="Email"><?= e($p['email']) ?></td>
         <td class="cell-truncate" data-label="Department"><?= e($p['department'] ?: '—') ?></td>

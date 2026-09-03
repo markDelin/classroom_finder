@@ -101,8 +101,9 @@ $lecturers = db()->query(
     "SELECT id, full_name FROM users WHERE role IN ('admin','lecturer') AND account_status = 'approved' ORDER BY full_name"
 )->fetchAll();
 
-$whereUp   = ["r.status = 'active'"];
-$upParams  = [];
+$now = date('Y-m-d H:i:s');
+$whereUp   = ["r.status = 'active'", 'r.end_time > ?'];
+$upParams  = [$now];
 if ($q !== '') {
     $whereUp[] = '(c.room_number LIKE ? OR c.building LIKE ? OR u.full_name LIKE ? OR r.purpose LIKE ?)';
     array_push($upParams, "%$q%", "%$q%", "%$q%", "%$q%");

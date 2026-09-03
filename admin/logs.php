@@ -49,7 +49,7 @@ render_header('Activity Logs', ['prefix' => '../', 'nav' => 'admin', 'active' =>
 
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search logs by action, details, user, or room…" value="<?= e($q) ?>">
-  <button class="btn btn--primary" type="button">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <?php if ($q !== ''): ?>
     <a href="logs.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>
