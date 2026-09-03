@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — QR scan validation (§9, §10).
+ * Classroom Finder — QR scan validation (Feature: QR Token Verification & Live Room Check).
  *
  * POST api/scan_qr.php   { "token": "<32-hex from the QR>" }
  *   X-CSRF-Token header required.
@@ -11,7 +11,7 @@ declare(strict_types=1);
  * lecturer's account AND the classroom token server-side, then reports the
  * room's live availability so the confirmation dialog can be shown.
  * NOTE: this endpoint never occupies a room by itself — that is done by
- * lecturer/occupy.php which re-validates everything again (§11).
+ * lecturer/occupy.php which re-validates everything again (Atomic Occupancy Transaction).
  */
 
 define('CF_WANTS_JSON', true);

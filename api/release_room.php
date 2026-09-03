@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — release a classroom early (§14). JSON variant used by
+ * Classroom Finder — release a classroom early (Feature: Early Session Termination). JSON variant used by
  * fetch() callers; lecturer/release.php is the plain-form equivalent.
  *
  * POST api/release_room.php   { "session_id": 123 }

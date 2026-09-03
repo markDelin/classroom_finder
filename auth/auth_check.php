@@ -5,7 +5,7 @@ declare(strict_types=1);
  * Classroom Finder — authentication & role-based access control.
  *
  * The frontend is never trusted: every protected page calls one of these
- * guards first, and every API/action re-checks on the server (§25).
+ * guards first, and every API/action re-checks on the server (Security: Server-Side RBAC Enforcement).
  */
 
 require_once __DIR__ . '/../config/helpers.php';
@@ -37,7 +37,7 @@ function require_admin(): array
 
 /**
  * Approved lecturers only (admins may also pass through to demo the scanner).
- * Pending accounts are rejected until an administrator approves them (§7).
+ * Pending accounts are rejected until an administrator approves them (Feature: Lecturer Approval Workflow).
  */
 function require_approved_lecturer(): array
 {

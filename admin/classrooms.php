@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — classroom management (§19).
+ * Classroom Finder — classroom management (Module: Classrooms).
  * Add / edit rooms, toggle maintenance & availability, delete (only when a
  * room has never been used — otherwise disable it to preserve history).
  */
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  VALUES (?, ?, ?, ?, ?, ?, ?)'
             )->execute([
                 $roomNumber, $building, $floor, $capacity, $type,
-                bin2hex(random_bytes(16)),            // unique QR token (§20)
+                bin2hex(random_bytes(16)),            // unique QR token for physical room check-in
                 $note ?: null,
             ]);
             log_action('CLASSROOM_ADD', (int)$admin['id'], null, "Added room {$building} {$roomNumber}");

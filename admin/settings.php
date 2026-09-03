@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — system settings (§18).
+ * Classroom Finder — system settings (Module: Admin System Configuration).
  */
 
 require_once __DIR__ . '/../auth/auth_check.php';

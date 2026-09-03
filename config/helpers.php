@@ -359,7 +359,7 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
 }
 
 /* ==========================================================================
- * Automatic expiration (§15)
+ * Automatic expiration (Feature: Auto Session & Booking Expiry)
  * Sessions past their end time become 'completed'; past reservations too.
  * Called before any status computation.
  * ========================================================================*/
@@ -384,7 +384,7 @@ function expire_stale(): void
 }
 
 /* ==========================================================================
- * Classroom status engine (§12, §13)
+ * Classroom status engine (Feature: Real-Time Availability & Status Hierarchy)
  * priority: unavailable (maintenance/disabled) > occupied > reserved > available
  * ========================================================================*/
 

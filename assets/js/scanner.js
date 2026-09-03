@@ -234,7 +234,7 @@
         });
         return;
       }
-      // §16: explain why the room can't be taken
+      // Display detailed rejection reason when room cannot be occupied
       window.Swal.fire({
         icon: 'warning',
         title: 'Room ' + num + ' is unavailable',

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — administrator dashboard (§18).
+ * Classroom Finder — administrator dashboard (Module: Admin Overview & Metrics).
  */
 
 require_once __DIR__ . '/../auth/auth_check.php';

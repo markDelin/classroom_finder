@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — printable QR codes (§9, §20).
+ * Classroom Finder — printable QR codes (Module: Room QR Code Generation & Management).
  *
  * One print-ready poster per classroom (image from qr/generate.php, admin-only).
  * "Regenerate" invalidates the old token: previously printed posters stop

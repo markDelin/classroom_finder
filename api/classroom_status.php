@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — live classroom status feed (§12, landing auto-refresh).
+ * Classroom Finder — live classroom status feed (Feature: Real-Time Availability Feed & Auto-Refresh).
  *
  * GET api/classroom_status.php
  *   Optional filters: q, status, building, floor, type, mincap, id

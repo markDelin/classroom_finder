@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Classroom Finder — login POST handler (§8).
+ * Classroom Finder — login POST handler (Feature: User Authentication).
  * Verifies credentials, account status, then routes by role.
  */
 
