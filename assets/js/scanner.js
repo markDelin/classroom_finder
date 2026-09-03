@@ -124,10 +124,8 @@
     if (!isFinite(m)) { m = limits.min; }   // never let NaN into the picker
     minutes = Math.max(limits.min, Math.min(limits.max, m));
     var lbl = document.getElementById('minsLabel');
-    var raw = document.getElementById('rawMins');
     if (!lbl) { return; }
     lbl.textContent = humanMins(minutes);
-    raw.textContent = minutes + ' min';
     document.querySelectorAll('#presetRow [data-mins]').forEach(function (b) {
       b.classList.toggle('is-active', parseInt(b.dataset.mins, 10) === minutes);
     });
@@ -266,7 +264,7 @@
       '<div class="duration-presets" id="presetRow">' + presets + '</div>' +
       '<div class="stepper">' +
         '<button type="button" class="stepper__btn" id="minusBtn" aria-label="Less">−</button>' +
-        '<span class="stepper__value"><strong id="minsLabel"></strong><small id="rawMins"></small></span>' +
+        '<span class="stepper__value" id="minsLabel"></span>' +
         '<button type="button" class="stepper__btn" id="plusBtn" aria-label="More">+</button>' +
       '</div>' +
       '<div class="when">' +

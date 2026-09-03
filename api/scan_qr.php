@@ -54,10 +54,10 @@ foreach ($rooms as $r) {
 log_action('SCAN_QR', (int)$user['id'], (int)$room['id'], 'Scanned room ' . $room['room_number']);
 
 $suggestions = [
-    ['minutes' => 30,  'label' => '30 minutes'],
-    ['minutes' => 60,  'label' => '1 hour'],
-    ['minutes' => 90,  'label' => '1.5 hours'],
-    ['minutes' => 120, 'label' => '2 hours'],
+    ['minutes' => 30,  'label' => '30m'],
+    ['minutes' => 60,  'label' => '1h'],
+    ['minutes' => 90,  'label' => '1.5h'],
+    ['minutes' => 120, 'label' => '2h'],
 ];
 
 json_response([
