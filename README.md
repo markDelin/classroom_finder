@@ -16,13 +16,12 @@ In busy schools and universities, people often walk from room to room just to se
 
 ## How It Works in 3 Simple Steps
 
-```text
-┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
-│       1. Check          │     │        2. Scan          │     │        3. Free          │
-│ Anyone checks the live  │ ──> │ Lecturer scans the door │ ──> │ Lecturer releases room  │
-│ availability online     │     │ QR code to occupy it    │     │ or time runs out        │
-└─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
+```mermaid
+flowchart LR
+    A["1. Check<br/>Live status online"] --> B["2. Scan<br/>Door QR code to occupy"] --> C["3. Free<br/>Class ends or time expires"]
 ```
+
+> **1. Check** &nbsp;➔&nbsp; **2. Scan** &nbsp;➔&nbsp; **3. Free**
 
 1. **Check Live Status**: The homepage lists all rooms by building, floor, type, and capacity. Live colors tell you what is happening right now:
    - 🟢 **Available**: Ready to use.
