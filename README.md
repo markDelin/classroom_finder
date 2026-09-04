@@ -1,115 +1,138 @@
 # Classroom Finder
 
-PHP + MySQL web application for live campus classroom availability and QR code-based room occupancy.
+A real-time web app that helps students, lecturers, and staff find and manage available classrooms on campus using QR codes.
 
-## Feature Map
+---
 
-| Feature | Components |
-|---|---|
-| Public landing & room search | [index.php](index.php), [assets/js/landing.js](assets/js/landing.js) |
-| Live status polling | [api/classroom_status.php](api/classroom_status.php) |
-| First-time admin setup | [setup.php](setup.php) (locks after initialization) |
-| Lecturer account management | [admin/users.php](admin/users.php) |
-| Authentication & sessions | [login.php](login.php), [auth/](auth/) |
-| QR token generation & posters | [admin/qr_codes.php](admin/qr_codes.php), [qr/generate.php](qr/generate.php) |
-| QR camera scan & manual entry | [lecturer/scanner.php](lecturer/scanner.php), [assets/js/scanner.js](assets/js/scanner.js) |
-| Occupancy claim (row-level locked) | [lecturer/occupy.php](lecturer/occupy.php) |
-| Conflict validation | Active sessions, reservations, and fixed schedules checked atomically |
-| Fixed weekly schedules | [admin/schedules.php](admin/schedules.php) (`class_schedules` table) |
-| Force-open override | Scanner prompt -> [api/force_open.php](api/force_open.php) (`schedule_force_open` table) |
-| Early room release | [lecturer/release.php](lecturer/release.php), [api/release_room.php](api/release_room.php) |
-| Stale session expiration | Lazy check via `expire_stale()` in [config/helpers.php](config/helpers.php), or CLI via [cron/expire.php](cron/expire.php) |
-| Admin panel | [admin/](admin/) (dashboard, classrooms, users, schedules, sessions, reservations, history, logs, settings) |
-| UI notifications & modals | Toastify.js, SweetAlert2, Lucide icons, responsive layout |
-| PWA support | [manifest.json](manifest.json), [sw.js](sw.js) |
+## What is Classroom Finder?
+
+In busy schools and universities, people often walk from room to room just to see if a classroom is empty. **Classroom Finder** solves this:
+
+- **Students** can immediately see which rooms are free, occupied, or reserved right from their phones—no login required.
+- **Lecturers** walk up to a room, scan the QR code posted at the door, and claim the room for their class.
+- **Administrators** set up rooms, manage lecturer accounts, schedule weekly classes, and monitor real-time campus room usage.
+
+---
+
+## How It Works in 3 Simple Steps
+
+```text
+┌─────────────────────────┐     ┌─────────────────────────┐     ┌─────────────────────────┐
+│       1. Check          │     │        2. Scan          │     │        3. Free          │
+│ Anyone checks the live  │ ──> │ Lecturer scans the door │ ──> │ Lecturer releases room  │
+│ availability online     │     │ QR code to occupy it    │     │ or time runs out        │
+└─────────────────────────┘     └─────────────────────────┘     └─────────────────────────┘
+```
+
+1. **Check Live Status**: The homepage lists all rooms by building, floor, type, and capacity. Live colors tell you what is happening right now:
+   - 🟢 **Available**: Ready to use.
+   - 🔴 **Occupied**: In use by a lecturer. Shows who is inside and until what time.
+   - 🟡 **Reserved**: Booked for an upcoming class or event.
+   - ⚪ **Unavailable**: Room is undergoing maintenance or closed.
+2. **Scan to Occupy**: Each door has a printed QR poster. A lecturer logs in on their phone, scans the QR code with their camera (or types the short code), picks a duration, and the room status instantly turns red (Occupied) across the campus.
+3. **Automatic / Manual Release**: When class ends, the lecturer taps "End Session". If they forget, the system automatically marks the room available again once the selected duration expires.
+
+---
+
+## Who Uses It?
+
+| User | What They Do | Login Needed? |
+|---|---|:---:|
+| **Students & Public** | Browse rooms, search by building/floor/capacity, see live availability. | ❌ No |
+| **Lecturers** | Scan door QR codes, start/end room sessions, view personal usage history. | ✅ Yes |
+| **Administrators** | Manage rooms, print QR codes, create accounts, set fixed weekly timetables, view analytics. | ✅ Yes |
+
+---
+
+## Key Features
+
+- **Live Campus Overview**: Automatically updates room status without manual page refreshes.
+- **QR Door Posters**: Printable QR sheets generated directly from the admin panel for every door.
+- **No Double-Booking**: Database transactions prevent two lecturers from claiming the same room at the exact same second.
+- **Weekly Class Schedules**: Add recurring classes (e.g., *CS101 Mon/Wed 9:00 AM - 10:30 AM*). The system automatically marks rooms as occupied during scheduled hours.
+- **Schedule Force-Open**: If a scheduled class is cancelled, a lecturer can override and claim the room on the spot.
+- **Mobile Friendly & Offline Support (PWA)**: Works smoothly on mobile browsers with camera scanning and service-worker caching.
+
+---
 
 ## Project Structure
 
 ```text
 classroom_finder/
 ├── admin/                     # Administrator portal
-│   ├── classrooms.php         # Classroom CRUD & capacity management
-│   ├── dashboard.php          # Overview, analytics & lecturer approvals
-│   ├── history.php            # Historical session logs & filters
-│   ├── logs.php               # System activity audit trail
-│   ├── qr_codes.php           # QR code generation & print posters
-│   ├── reservations.php       # Room reservation bookings
-│   ├── schedules.php          # Recurring weekly timetable matrix
-│   ├── sessions.php           # Live room sessions monitoring & early release
-│   ├── settings.php           # Institution info & app configurations
-│   └── users.php              # Lecturer accounts & status control
-├── api/                       # Internal JSON API endpoints
-│   ├── classroom_status.php   # Real-time room availability poller
-│   ├── force_open.php         # Schedule override exception handler
-│   ├── release_room.php       # Active session termination
-│   └── scan_qr.php            # QR token parser & validator
-├── assets/                    # Static frontend resources
-│   ├── css/                   # Stylesheets (style.css & vendor)
-│   ├── fonts/                 # Self-hosted Barlow Condensed & IBM Plex
-│   ├── js/                    # Client logic (scanner, landing, modals, UI)
-│   ├── sound/                 # Scan audio feedback (success & error)
-│   └── uploads/               # Institution logo storage
-├── auth/                      # Authentication handlers
-│   ├── auth_check.php         # Role & login guard middlewares
-│   └── login_process.php      # Credential verification & session bootstrap
-├── config/                    # Core configuration & layout helpers
-│   ├── database.php           # PDO connection instance (db())
-│   ├── helpers.php            # Global helper functions, CSRF, flash messages
-│   ├── icons.php              # SVG Lucide icon library dictionary
-│   └── layout.php             # HTML chrome renderer (header & footer)
-├── cron/                      # CLI background workers
-│   └── expire.php             # Scheduled session expiration runner
-├── database/                  # Database schema & fixtures
-│   └── classroom_finder.sql   # SQL structure & initial tables
-├── lecturer/                  # Lecturer self-service portal
-│   ├── dashboard.php          # Lecturer overview & current active session
-│   ├── history.php            # Personal session occupancy history
-│   ├── occupy.php             # Claim room flow via token/schedule check
-│   ├── release.php            # End personal active session
-│   └── scanner.php            # WebRTC camera scanner & manual token form
-├── qr/                        # QR rendering library
-│   ├── generate.php           # QR image stream endpoint
-│   └── lib/                   # Bundled phpqrcode engine
-├── change_password.php        # User self-service password update
-├── index.php                  # Public classroom availability finder
-├── login.php                  # Central sign-in page
-├── logout.php                 # Session termination & CSRF logout
-├── manifest.json              # PWA web app manifest
-├── setup.php                  # Initial root admin account provisioning
-└── sw.js                      # Offline service worker cache
+│   ├── classrooms.php         # Add, edit, and delete classrooms
+│   ├── dashboard.php          # Campus overview, usage stats & lecturer approvals
+│   ├── history.php            # Past room usage records & filters
+│   ├── logs.php               # System audit logs
+│   ├── qr_codes.php           # QR code generator & printable door posters
+│   ├── reservations.php       # Advance room reservations
+│   ├── schedules.php          # Recurring weekly timetable manager
+│   ├── sessions.php           # Live room sessions & force-end controls
+│   ├── settings.php           # School name, address, and logo setup
+│   └── users.php              # Lecturer account management
+├── api/                       # Background JSON endpoints
+│   ├── classroom_status.php   # Supplies real-time room data to the homepage
+│   ├── force_open.php         # Handles schedule override requests
+│   ├── release_room.php       # Handles ending active sessions
+│   └── scan_qr.php            # Verifies scanned QR codes
+├── assets/                    # Styling, fonts, icons, scripts & sounds
+├── auth/                      # Login checks & session security
+├── config/                    # Database connection, layout & helper functions
+├── cron/                      # Background task for expiring finished sessions
+├── database/                  # SQL setup script
+├── lecturer/                  # Lecturer pages (dashboard, scanner, history)
+├── qr/                        # Server-side QR generator library
+├── change_password.php        # Password change page
+├── index.php                  # Public homepage & live room finder
+├── login.php                  # Login page for lecturers & admins
+├── logout.php                 # Sign-out handler
+├── manifest.json              # Mobile home-screen app configuration
+├── setup.php                  # One-time first setup to create initial admin
+└── sw.js                      # Offline caching service worker
 ```
 
-## Setup (XAMPP)
+---
 
-1. Place repo in `C:\xampp\htdocs\classroom_finder`.
-2. Start **Apache** and **MySQL** in XAMPP Control Panel.
-3. Import database schema:
-   - phpMyAdmin: Import -> select [database/classroom_finder.sql](database/classroom_finder.sql) -> Go.
-   - CLI: `mysql -u root < database/classroom_finder.sql`
-4. Configure DB credentials in [config/database.php](config/database.php) if MySQL uses a password.
-5. Navigate to `http://localhost/classroom_finder/setup.php` to create root admin account.
-6. Log in via `http://localhost/classroom_finder/login.php`.
+## Getting Started (XAMPP / Local Setup)
 
-## Background Expiration Worker
+### Requirements
+- PHP 8.1+
+- MySQL 5.7+ / MariaDB 10.4+
+- Apache (e.g., standard [XAMPP](https://www.apachefriends.org/))
 
-Optional CLI background runner for periodic session expiry:
+### Installation
 
-```bash
-php cron/expire.php
-```
+1. Clone or copy this project into your web server folder:
+   ```text
+   C:\xampp\htdocs\classroom_finder
+   ```
+2. Start **Apache** and **MySQL** from your XAMPP Control Panel.
+3. Create and import the database:
+   - Open **phpMyAdmin** (`http://localhost/phpmyadmin/`).
+   - Create a database named `classroom_finder`.
+   - Click **Import**, choose `database/classroom_finder.sql`, and click **Import**.
+4. Check your database settings in `config/database.php` (defaults to `root` with no password).
+5. Open your browser and complete first-time setup:
+   ```text
+   http://localhost/classroom_finder/setup.php
+   ```
+   This creates your initial Administrator account. Once finished, `setup.php` locks itself automatically.
+6. Sign in via `http://localhost/classroom_finder/login.php`.
 
-Can be scheduled via Windows Task Scheduler or crontab (e.g., every 1-5 minutes). Stale sessions also auto-expire on page requests via `expire_stale()`.
+---
 
-## QR Code & Camera Scanning
+## Daily Operations Quick Guide
 
-- **Generate & Print:** Navigate to **Admin -> QR Codes -> Print all**. Rendered server-side using bundled phpqrcode.
-- **Scanning:** Open `http://<server-ip>/classroom_finder` on mobile, sign in as approved lecturer, open **Scanner**.
-- **Browser Security:** WebRTC camera access requires `localhost` or HTTPS. For plain HTTP over LAN, use manual token entry printed on the QR poster.
+- **Print Door QR Posters**: Go to **Admin** → **QR Codes** → click **Print all posters** (or print individual rooms). Post them beside room doors.
+- **Create Lecturer Accounts**: Go to **Admin** → **Users** → **Add user**.
+- **Scan via Mobile**: Connect your phone to the same local network or Wi-Fi as the server. Navigate to `http://<YOUR-PC-IP>/classroom_finder/` and log in as a lecturer to scan.
 
-## Security
+---
 
-- Prepared statements via PDO for all SQL queries.
-- Password hashing with `PASSWORD_DEFAULT` (bcrypt).
-- CSRF validation tokens on state-changing requests (`csrf_token` input or `X-CSRF-Token` header).
-- Race-condition safe room claims using InnoDB transactions with row-level locks (`SELECT ... FOR UPDATE`).
-- Server-side role and account approval enforcement on every guarded endpoint.
+## Technical & Security Highlights
+
+- **SQL Injection Safe**: 100% prepared PDO statements across all queries.
+- **CSRF Protected**: Form and API requests require matching security tokens.
+- **Anti-Race Condition**: Row-level locking (`SELECT ... FOR UPDATE`) prevents simultaneous room claims.
+- **Secure Authentication**: Passwords hashed using industry-standard `bcrypt`.
+- **Zero External UI Dependencies**: Fonts, icons, and libraries are self-hosted inside the repo for fast local loading.

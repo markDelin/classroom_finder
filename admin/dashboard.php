@@ -132,57 +132,6 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     </div>
   </div>
 </div>
-
-<div class="card">
-  <div class="card__head">
-    <h3>Pending lecturer approvals</h3>
-    <span class="pill <?= $pendingN ? 'pill--pending' : '' ?>"><?= $pendingN ?> pending</span>
-  </div>
-  <?php if (!$pending): ?>
-    <p class="muted">No registrations waiting — all caught up. <?= icon('party-popper') ?></p>
-  <?php else: ?>
-  <div class="table-wrap">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Staff ID</th>
-        <th>Email</th>
-        <th>Department</th>
-        <th style="text-align:right">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <?php foreach ($pending as $p): ?>
-      <tr>
-        <td class="nowrap" data-label="Name"><strong><?= e($p['full_name']) ?></strong><?php if (!empty($p['username'])): ?> <span class="muted small">@<?= e($p['username']) ?></span><?php endif; ?></td>
-        <td class="nowrap" data-label="Staff ID"><?= e($p['staff_id']) ?></td>
-        <td class="cell-truncate" data-label="Email"><?= e($p['email']) ?></td>
-        <td class="cell-truncate" data-label="Department"><?= e($p['department'] ?: '—') ?></td>
-        <td data-label="Actions">
-          <div class="actions-cell" style="justify-content:flex-end">
-          <form method="post" action="users.php" class="inline-form">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-            <button class="btn btn--ok btn--sm" type="submit">Approve</button>
-          </form>
-          <form method="post" action="users.php" class="inline-form" data-confirm="Reject this registration? They will not be able to log in.">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="reject"><input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-            <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-            <button class="btn btn--danger btn--sm" type="submit">Reject</button>
-          </form>
-          </div>
-        </td>
-      </tr>
-      <?php endforeach; ?>
-    </tbody>
-  </table>
-  </div>
-  <?php endif; ?>
-</div>
-
 <div class="two-col">
   <div class="card">
     <div class="card__head">
