@@ -4,7 +4,7 @@
    enamel ink on painted-concrete gray — so the only saturated pixels are
    room states (green/red/amber/gray). Type: Barlow Condensed carries the
    door-plate numerals, IBM Plex Sans speaks, IBM Plex Mono engraves data.
-   Light & dark aware via prefers-color-scheme; print sheet for QR posters.
+   Print sheet for QR posters.
    ========================================================================== */
 
 /* ---------- vendored type (latin subsets, self-hosted) ---------- */
@@ -85,37 +85,6 @@
   --swal2-warning: var(--warn);
   --swal2-info: var(--primary);
   --swal2-toast-border: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* night campus: asphalt walls, lit plates */
-    --bg:        #141614;
-    --surface:   #1d201d;
-    --surface-2: #242824;
-    --text:      #e9ebe5;
-    --muted:     #adbaa8;
-    --border:    #30352f;
-    --track:     rgb(233 235 229 / .09);
-
-    --primary:       #205a9e;
-    --primary-hover: #194a85;
-    --accent:        var(--primary);
-    --text:      #e9ebe5;
-    --muted:     #adbaa8;
-    --border:    #30352f;
-    --track:     rgb(233 235 229 / .09);
-
-    --ok:          #58c078;
-    --ok-soft:     #1c3222;
-    --danger:      #ef7166;
-    --danger-soft: #3b211d;
-    --warn:        #dfa93e;
-    --warn-soft:   #372c14;
-    --off:         #98a29a;
-    --off-soft:    #262b26;
-    --shadow: 0 1px 0 rgb(0 0 0 / .35), 0 1px 3px rgb(0 0 0 / .3);
-  }
 }
 
 /* ---------- base ---------- */
@@ -420,10 +389,6 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
 .btn:active { transform: translateY(1px); box-shadow: none; }
 .btn--primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
 .btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #ffffff; }
-@media (prefers-color-scheme: dark) {
-  .btn--primary { background: var(--primary); border-color: var(--primary); color: #ffffff; }
-  .btn--primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #ffffff; }
-}
 .btn--ok      { background: var(--ok);     border-color: var(--ok);     color: #fff; }
 .btn--danger  { background: var(--danger); border-color: var(--danger); color: #fff; }
 .btn--ghost   { background: transparent; border-color: var(--border); box-shadow: none; }
@@ -2482,4 +2447,3 @@ html { -webkit-tap-highlight-color: transparent; }
   border-radius: 2px;
   transition: width .3s ease;
 }
-
