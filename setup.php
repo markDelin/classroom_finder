@@ -11,10 +11,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config/helpers.php';
 
-// Any existing account (admin or lecturer) closes the setup window forever.
+// Lock check: once installed or any user exists, close setup forever.
+if (is_file(__DIR__ . '/installed.lock')) {
+    redirect('index.php');
+}
 $st  = db()->query('SELECT COUNT(*) AS n FROM users');
 $any = (int)($st->fetch()['n'] ?? 0);
 if ($any > 0) {
+    @file_put_contents(__DIR__ . '/installed.lock', date('c'));
     redirect('index.php');
 }
 
@@ -61,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)db()->lastInsertId();
             log_action('SETUP_ADMIN', $id, null, 'Initial administrator created: ' . $username);
 
+            @file_put_contents(__DIR__ . '/installed.lock', date('c'));
             session_regenerate_id(true);
             $_SESSION['user_id'] = $id;
             flash('success', 'Welcome! Your administrator account is ready.');

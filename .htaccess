@@ -1,0 +1,22 @@
+# Prevent directory listings
+Options -Indexes
+
+# Custom Error Pages
+ErrorDocument 404 /404.php
+
+# Block sensitive file extensions
+<FilesMatch "\.(sql|log|ini|env|md|json|lock)$">
+    Require all denied
+</FilesMatch>
+
+# Block hidden files and directories (e.g. .git)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
