@@ -130,7 +130,7 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
     <option value="maintenance" <?= $statusF === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
     <option value="disabled" <?= $statusF === 'disabled' ? 'selected' : '' ?>>Disabled</option>
   </select>
-  <button class="btn btn--primary" type="button">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <?php if ($q !== '' || $statusF !== ''): ?>
     <a href="classrooms.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>

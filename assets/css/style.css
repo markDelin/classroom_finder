@@ -396,8 +396,10 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
 .btn--ghost-danger { background: transparent; border-color: var(--border); color: var(--danger); box-shadow: none; }
 .btn--ghost-danger:hover { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
 .btn--sm      { padding: .3rem .65rem; font-size: .8rem; border-radius: 5px; }
+.btn--xs      { padding: .22rem .5rem; font-size: .75rem; border-radius: 4px; line-height: 1.25; }
 .btn--block   { width: 100%; }
 .btn[disabled] { opacity: .55; cursor: not-allowed; }
+.show-mobile { display: none !important; }
 
 /* ---------- chips & pills ---------- */
 .chip {
@@ -768,11 +770,14 @@ input:focus, select:focus, textarea:focus {
 label { font-weight: 500; font-size: .88rem; }
 label small { font-weight: 400; color: var(--muted); }
 label.stacked input { display: block; }
-input, select {
+input:not([type="checkbox"]):not([type="radio"]), select {
   font: inherit; font-size: .92rem;
   padding: .5rem .65rem;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text);
+}
+input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
 }
 input[type="file"] {
   padding: .35rem .5rem;
@@ -1142,15 +1147,209 @@ label .password-toggle-wrapper,
 .modal__actions { display: flex; gap: .6rem; justify-content: flex-end; margin: .8rem 0 0; padding: 0; }
 
 /* ---------- QR posters ---------- */
-.qr-grid { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
-.qr-poster { text-align: center; margin: 0; }
-.qr-poster__head { display: flex; flex-direction: column; }
-.qr-poster strong {
-  font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
-  letter-spacing: .04em;
+.qr-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  margin-bottom: .9rem;
 }
-.qr-img { margin: .7rem auto; display: block; width: 210px; height: 210px; }
-.qr-token code { word-break: break-all; }
+.qr-bar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem;
+  flex: 1 1 auto;
+}
+.qr-bar__filters input[type="search"] {
+  flex: 1 1 12rem;
+  min-width: 120px;
+}
+.qr-bar__filters select {
+  flex: 0 1 auto;
+  max-width: 12rem;
+}
+.qr-bar__selection {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  flex-shrink: 0;
+}
+.qr-selection-stats {
+  font-size: .8rem;
+  margin-right: .2rem;
+}
+@media (max-width: 640px) {
+  .qr-bar {
+    gap: .45rem;
+    margin-bottom: .75rem;
+  }
+  .qr-bar__filters {
+    width: 100%;
+    gap: .35rem;
+  }
+  .qr-bar__filters input[type="search"] {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+  .qr-bar__filters select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none;
+  }
+  .qr-bar__selection {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: .1rem;
+  }
+}
+
+.qr-grid {
+  display: grid;
+  gap: .85rem;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+}
+.qr-poster {
+  text-align: center;
+  margin: 0;
+  padding: .75rem .65rem .65rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: none;
+  transition: border-color .15s ease, opacity .15s ease;
+}
+@media screen {
+  .qr-poster--print-only,
+  .qr-print-spacer {
+    display: none !important;
+  }
+  .qr-poster:not(:has(.qr-select-check:checked)),
+  .qr-poster.is-unselected {
+    opacity: .5;
+    border-color: var(--border);
+  }
+}
+.qr-poster:hover {
+  border-color: rgb(27 30 27 / .45);
+}
+.qr-poster:has(.qr-select-check:checked),
+.qr-poster.is-selected {
+  border-color: rgb(27 30 27 / .5);
+  box-shadow: none;
+}
+.qr-poster__select {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: .25rem;
+}
+.qr-select-label {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .15rem .4rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.2;
+  transition: all .12s ease;
+}
+.qr-select-label:hover {
+  color: var(--text);
+  border-color: var(--text);
+}
+.qr-poster:has(.qr-select-check:checked) .qr-select-label,
+.qr-poster.is-selected .qr-select-label {
+  background: var(--surface);
+  border-color: var(--text);
+  color: var(--text);
+  font-weight: 600;
+}
+.qr-select-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: .95rem;
+  height: .95rem;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background-color: var(--surface);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background-color .12s ease, border-color .12s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+.qr-select-check:hover {
+  border-color: var(--text);
+}
+.qr-select-check:focus-visible {
+  outline: 1.5px solid var(--text);
+  outline-offset: 1px;
+}
+.qr-select-check:checked {
+  background-color: var(--text);
+  border-color: var(--text);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 80% 80%;
+}
+.qr-poster__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.qr-poster strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.2;
+}
+.qr-poster__head .muted {
+  font-size: .73rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qr-img {
+  margin: .4rem auto;
+  display: block;
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+}
+.qr-token {
+  margin-top: .25rem;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+.qr-token code {
+  font-size: .65rem;
+  padding: .1rem .3rem;
+  background: var(--surface-2);
+  border-radius: 3px;
+  word-break: break-all;
+}
+.qr-poster__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  margin-top: .55rem;
+  width: 100%;
+}
 
 /* ---------- details menu (user management & table popovers) ---------- */
 .mini-details { position: relative; display: inline-block; }
@@ -1648,7 +1847,7 @@ label .password-toggle-wrapper,
 @media print {
   /* hide the entire app shell — only the poster sheet remains */
   .topbar, .sidebar, .flashes, .no-print, .page-head, .site-footer,
-  .nav-backdrop, .tt-heading {
+  .nav-backdrop, .tt-heading, .page-loader, .pager {
     display: none !important;
   }
 
@@ -1658,7 +1857,7 @@ label .password-toggle-wrapper,
   }
   body {
     margin: 0 !important;
-    padding: 10mm !important; /* single gutter — never also on html (doubles up) */
+    padding: 0 10mm !important;
     background: #fff !important;
     color: #000 !important;
     font-family: Arial, Helvetica, sans-serif !important;
@@ -1688,19 +1887,35 @@ label .password-toggle-wrapper,
   .qr-grid {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6mm !important;
+    gap: 5mm !important;
+  }
+  .qr-print-spacer {
+    display: block !important;
+    grid-column: 1 / -1 !important;
+    height: 14mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
   }
   .qr-poster {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
-    border: 1.5pt solid #000 !important;
+    border: 1pt solid #000 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
     margin: 0 !important;
-    padding: 5mm 4mm 4mm !important;
+    padding: 3.5mm 3mm 3mm !important;
     text-align: center !important;
     background: #fff !important;
     color: #000 !important;
+    opacity: 1 !important;
+  }
+  .qr-poster.is-print-hidden {
+    display: none !important;
+  }
+  .qr-poster.is-page-end {
+    break-after: page !important;
+    page-break-after: always !important;
   }
 
   /* room plate: name + building/floor line */
@@ -1708,11 +1923,11 @@ label .password-toggle-wrapper,
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    margin-bottom: 2.5mm !important;
+    margin-bottom: 2mm !important;
   }
   .qr-poster__head strong {
     display: block !important;
-    font-size: 16pt !important;
+    font-size: 15pt !important;
     letter-spacing: .05em !important;
     line-height: 1.15 !important;
     color: #000 !important;
@@ -1724,15 +1939,15 @@ label .password-toggle-wrapper,
   /* the code itself: crisp square, centred (works for PNG and SVG output) */
   .qr-img {
     display: block !important;
-    width: 45mm !important;
-    height: 45mm !important;
-    margin: 2.5mm auto !important;
+    width: 42mm !important;
+    height: 42mm !important;
+    margin: 2mm auto !important;
   }
 
   /* manual-token fallback printed under each poster */
   .qr-token {
-    margin-top: 2mm !important;
-    font-size: 10pt !important;
+    margin-top: 1.5mm !important;
+    font-size: 9.5pt !important;
     color: #000 !important;
   }
   .qr-token code {
@@ -1760,7 +1975,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .btn { min-height: 44px; }
   .btn--sm { min-height: 40px; }
   .stepper .btn { min-width: 44px; }
-  input, select { min-height: 44px; }
+  input:not([type="checkbox"]):not([type="radio"]), select { min-height: 44px; }
 }
 @media (max-width: 640px) {
   input, select, textarea { font-size: 16px; }   /* below 16px iOS zooms on focus */
@@ -1949,6 +2164,7 @@ html { -webkit-tap-highlight-color: transparent; }
 
   /* button words like "Print schedule" collapse to "Print" on phones */
   .hide-mobile { display: none !important; }
+  .show-mobile { display: inline !important; }
 
   /* page titles and action buttons stay clean on mobile */
   .page-head {
@@ -2099,13 +2315,53 @@ html { -webkit-tap-highlight-color: transparent; }
   .form-grid input,
   .form-grid select { width: 100%; }
 
-        /* QR poster wall — stack posters single-column on mobile for a scannable sheet */
-  .qr-grid { grid-template-columns: 1fr; gap: .9rem; }
-  .qr-poster { padding: .9rem .6rem; }
-  .qr-img { width: min(75vw, 240px); height: auto; aspect-ratio: 1 / 1; }
-  /* regenerate button becomes a full-width touch target on mobile */
-  .qr-poster .no-print { display: block; }
-  .qr-poster .no-print button { width: 100%; }
+  /* QR poster wall — compact 2-column grid on mobile */
+  .qr-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .45rem;
+  }
+  .qr-poster {
+    padding: .45rem .35rem .4rem;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+  }
+  .qr-poster strong {
+    font-size: .88rem;
+  }
+  .qr-poster__head .muted {
+    font-size: .64rem;
+  }
+  .qr-img {
+    width: 85px;
+    height: 85px;
+    max-width: 85px;
+    margin: .2rem auto;
+  }
+  .qr-token {
+    font-size: .6rem;
+    margin-top: .1rem;
+    line-height: 1.25;
+  }
+  .qr-token code {
+    font-size: .55rem;
+    padding: .05rem .2rem;
+  }
+  .qr-poster__actions {
+    gap: .2rem;
+    margin-top: .35rem;
+  }
+  .qr-poster__actions .btn {
+    padding: .2rem .3rem;
+    font-size: .65rem;
+  }
+  .qr-select-label {
+    font-size: .65rem;
+    padding: .1rem .3rem;
+  }
+  .qr-select-check {
+    width: .85rem;
+    height: .85rem;
+  }
 
   /* login / registration cards sit closer to the top bar */
   .auth-wrap { padding: 1.3rem 0 2rem; }
@@ -2324,3 +2580,39 @@ html { -webkit-tap-highlight-color: transparent; }
   border-radius: 2px;
   transition: width .3s ease;
 }
+
+/* ---------- page loader ---------- */
+.page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .85rem;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.page-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.page-loader__spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: cfSpin .6s linear infinite;
+}
+@keyframes cfSpin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-loader__spinner {
+    animation-duration: 1.5s;
+  }
+}
+
