@@ -89,6 +89,7 @@ function render_header(string $title, array $opts = []): void
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> · <?= e(app_name()) ?></title>
+<link rel="stylesheet" href="<?= $prefix ?>assets/css/tailwind.css?v=<?= filemtime(__DIR__ . '/../assets/css/tailwind.css') ?>">
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/vendor/toastify.min.css?v=<?= is_file(__DIR__ . '/../assets/css/vendor/toastify.min.css') ? filemtime(__DIR__ . '/../assets/css/vendor/toastify.min.css') : 0 ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
