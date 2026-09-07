@@ -253,7 +253,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
       <option value="<?= $k ?>" <?= $statusF === $k ? 'selected' : '' ?>><?= $lbl ?></option>
     <?php endforeach; ?>
   </select>
-  <button class="btn btn--primary" type="button">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <?php if ($q !== '' || $statusF !== ''): ?>
     <a href="users.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>

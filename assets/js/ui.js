@@ -278,6 +278,13 @@
     }
   });
 
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.filter-row button');
+    if (btn && btn.form && btn.type === 'button') {
+      btn.form.submit();
+    }
+  });
+
   /* ---------- password visibility toggle ---------- */
   /* ---------- exclusive popover & click-outside for details menus ---------- */
   document.addEventListener('click', function (ev) {
@@ -359,26 +366,55 @@
 
   /* ---------- server flashes become SweetAlert2 modal alerts ---------- */
   var wrap = document.querySelector('.flashes');
-  if (!wrap) { return; }
-  var map = { success: 'success', error: 'error', warn: 'warning', info: 'info' };
-  var items = [];
-  wrap.querySelectorAll('.flash').forEach(function (el) {
-    var icon = 'info';
-    Object.keys(map).forEach(function (c) {
-      if (el.classList.contains('flash--' + c)) { icon = map[c]; }
-    });
-    var text = el.textContent.trim();
-    if (text) {
-      items.push({ type: icon, text: text });
-    }
-  });
-  if (items.length) {
-    wrap.hidden = true;
-    var chain = Promise.resolve();
-    items.forEach(function (it) {
-      chain = chain.then(function () {
-        return window.cfToast(it.type, it.text);
+  if (wrap) {
+    var map = { success: 'success', error: 'error', warn: 'warning', info: 'info' };
+    var items = [];
+    wrap.querySelectorAll('.flash').forEach(function (el) {
+      var icon = 'info';
+      Object.keys(map).forEach(function (c) {
+        if (el.classList.contains('flash--' + c)) { icon = map[c]; }
       });
+      var text = el.textContent.trim();
+      if (text) {
+        items.push({ type: icon, text: text });
+      }
+    });
+    if (items.length) {
+      wrap.hidden = true;
+      var chain = Promise.resolve();
+      items.forEach(function (it) {
+        chain = chain.then(function () {
+          return window.cfToast(it.type, it.text);
+        });
+      });
+    }
+  }
+
+  /* ---------- page loader ---------- */
+  var loader = document.getElementById('pageLoader');
+  if (loader) {
+    var hideLoader = function () {
+      loader.classList.add('is-hidden');
+    };
+    if (document.readyState === 'complete') {
+      hideLoader();
+    } else {
+      window.addEventListener('load', hideLoader);
+    }
+    setTimeout(hideLoader, 3500); // ponytail: safety fallback if asset hangs
+
+    window.addEventListener('pageshow', function (ev) {
+      if (ev.persisted) { hideLoader(); }
+    });
+
+    document.addEventListener('click', function (ev) {
+      var a = ev.target.closest('a');
+      if (!a || !a.href || a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-no-loader')) { return; }
+      if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.defaultPrevented) { return; }
+      var href = a.getAttribute('href') || '';
+      if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0 || href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) { return; }
+      if (a.origin !== window.location.origin || a.href === window.location.href) { return; }
+      loader.classList.remove('is-hidden');
     });
   }
 

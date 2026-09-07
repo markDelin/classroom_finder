@@ -166,7 +166,7 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
 
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search room, applicant, purpose…" value="<?= e($q) ?>">
-  <button class="btn btn--primary" type="button">Filter</button>
+  <button class="btn btn--primary" type="submit">Filter</button>
   <?php if ($q !== ''): ?>
     <a href="reservations.php" class="btn btn--ghost">Reset</a>
   <?php endif; ?>

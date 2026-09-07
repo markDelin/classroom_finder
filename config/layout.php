@@ -96,6 +96,10 @@ function render_header(string $title, array $opts = []): void
 <meta name="theme-color" content="#0ea5e9">
 </head>
 <body class="<?= $nav ? 'has-sidebar' : '' ?>" data-prefix="<?= $prefix ?>">
+<noscript><style>#pageLoader{display:none!important}</style></noscript>
+<div id="pageLoader" class="page-loader" aria-hidden="true">
+  <div class="page-loader__spinner"></div>
+</div>
 <header class="topbar">
   <?php if ($nav && isset($menus[$nav])): ?>
   <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="cfSidebar" aria-label="Menu">

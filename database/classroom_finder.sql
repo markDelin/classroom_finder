@@ -188,12 +188,27 @@ ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);
 -- Tokens are generated here; regenerate any of them from
 -- Admin → QR Codes if needed.
 -- ------------------------------------------------------------
-INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status) VALUES
-  ('101', 'New Building',   1, 40, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('102', 'New Building',   1, 35, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('201', 'New Building',   2, 45, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('202', 'New Building',   2, 30, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('301', 'New Building',   3, 60, 'Lecture Room',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('103',  'New Building', 1, 30, 'Lecture Room',    MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('104',  'New Building', 1, 30, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available'),
-  ('105', 'New Building',  1, 25, 'Lecture Room',  MD5(CONCAT('seed-', RAND(), UUID())), 'available');
+INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status, note) VALUES
+  ('101', 'New Building',         1, 40, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('102', 'New Building',         1, 35, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('103', 'New Building',         1, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('104', 'New Building',         1, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('105', 'New Building',         1, 25, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('201', 'New Building',         2, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('202', 'New Building',         2, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('203', 'New Building',         2, 40, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('204', 'New Building',         2, 35, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('301', 'New Building',         3, 60, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('302', 'New Building',         3, 50, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('303', 'New Building',         3, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'IT Multimedia Lab'),
+  ('101', 'Main Building',        1, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('102', 'Main Building',        1, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('201', 'Main Building',        2, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'College Computer Lab 1'),
+  ('202', 'Main Building',        2, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'College Computer Lab 2'),
+  ('301', 'Main Building',        3, 50, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
+  ('302', 'Main Building',        3, 80, 'Other',             MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Audio-Visual Hall'),
+  ('HS-101', 'High School Building', 1, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 7 Section A'),
+  ('HS-102', 'High School Building', 1, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 8 Section A'),
+  ('HS-201', 'High School Building', 2, 35, 'Highschool Comlab', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'High School Computer Lab'),
+  ('HS-202', 'High School Building', 2, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 9 Section A'),
+  ('HS-301', 'High School Building', 3, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 10 Section A');
