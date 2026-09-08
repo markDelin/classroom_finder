@@ -149,6 +149,45 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
   ) ?></div>
 </div>
 
+<section class="card faq-section">
+  <h2 class="faq-heading"><?= icon('info') ?> Frequently Asked Questions</h2>
+  <div class="faq-grid">
+    <details class="faq-item">
+      <summary>How do the room status colors work?</summary>
+      <div class="faq-content">
+        <p><strong>Available (Green)</strong>: Room is free to use right now.</p>
+        <p><strong>Occupied (Red)</strong>: In use by an ongoing class or session.</p>
+        <p><strong>Reserved (Yellow)</strong>: Booked for an upcoming class or event.</p>
+        <p><strong>Unavailable (Gray)</strong>: Temporarily closed or under maintenance.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>Do students need an account to check rooms?</summary>
+      <div class="faq-content">
+        <p>No account required. Anyone can view live availability, search by building, and filter rooms freely.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>How do lecturers claim or occupy a room?</summary>
+      <div class="faq-content">
+        <p>Lecturers log in, scan the QR code posted at the classroom door, and select the session duration. The room immediately updates to Occupied across campus.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>Does the page update automatically?</summary>
+      <div class="faq-content">
+        <p>Yes. The dashboard polls in the background every few seconds so availability updates without manual page refreshes.</p>
+      </div>
+    </details>
+    <details class="faq-item">
+      <summary>What happens when a class ends?</summary>
+      <div class="faq-content">
+        <p>The lecturer can tap &ldquo;End Session&rdquo; to free the room, or the system will automatically mark it available when the duration expires.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
 <footer class="site-footer">
   <span><?= e($school !== '' ? $school . ' · ' . app_name() : app_name()) ?></span>
   <span>Lecturer? <a href="login.php">Log in to occupy a room via QR</a></span>

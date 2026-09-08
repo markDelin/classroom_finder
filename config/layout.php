@@ -203,7 +203,7 @@ function room_card(array $r, int $i = 0): string
       <div class="room-card__occupied-info">
         <p class="room-card__who"><?= icon('user') ?> <?= e($r['session_lecturer'] ?? 'Lecturer') ?></p>
         <div class="room-card__timing">
-          <span class="room-card__when"><?= fmt_range($r['session_start'], $r['session_end']) ?></span>
+          <span class="room-card__when" title="<?= e(fmt_range($r['session_start'], $r['session_end'])) ?>">Ends <?= fmt_time($r['session_end']) ?></span>
           <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
         </div>
         <?php
@@ -220,7 +220,7 @@ function room_card(array $r, int $i = 0): string
       <div class="room-card__occupied-info">
         <p class="room-card__who"><?= icon('book-open') ?> <?= e($r['sched_subject']) ?><?= !empty($r['sched_section']) ? ' · ' . e($r['sched_section']) : '' ?></p>
         <div class="room-card__timing">
-          <span class="room-card__when"><?= fmt_range($r['sched_start'], $r['sched_end']) ?></span>
+          <span class="room-card__when" title="<?= e(fmt_range($r['sched_start'], $r['sched_end'])) ?>">Ends <?= fmt_time($r['sched_end']) ?></span>
           <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['available_at'])) ?>">Free soon…</span>
         </div>
       </div>
@@ -229,7 +229,7 @@ function room_card(array $r, int $i = 0): string
       <div class="room-card__reserved-info">
         <p class="room-card__who"><?= icon('calendar-days') ?> <?= !empty($r['reservation_purpose']) ? e($r['reservation_purpose']) : 'Reserved' ?></p>
         <div class="room-card__timing">
-          <span class="room-card__when"><?= fmt_range($r['reservation_start'], $r['reservation_end']) ?></span>
+          <span class="room-card__when" title="<?= e(fmt_range($r['reservation_start'], $r['reservation_end'])) ?>">Starts <?= fmt_time($r['reservation_start']) ?></span>
           <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['reservation_start'])) ?>">Starts soon…</span>
         </div>
       </div>

@@ -52,12 +52,16 @@ if (is_string($cacheDir) && !is_dir($cacheDir)) {
 }
 
 header('Cache-Control: private, max-age=0, no-cache');
+$qrFilename = 'Classroom-QR-' . preg_replace('/[^a-zA-Z0-9_-]/', '-', (string)$room['room_number']);
+$isAttachment = isset($_GET['download']) ? 'attachment' : 'inline';
 
 if (function_exists('imagecreatetruecolor')) {
     header('Content-Type: image/png');
+    header('Content-Disposition: ' . $isAttachment . '; filename="' . $qrFilename . '.png"');
     QRcode::png($payload, false, QR_ECLEVEL_M, $size, $margin);
 } else {
     header('Content-Type: image/svg+xml');
+    header('Content-Disposition: ' . $isAttachment . '; filename="' . $qrFilename . '.svg"');
     QRcode::svg($payload, false, QR_ECLEVEL_M, $size, $margin);
 }
 error_reporting($oldLevel);

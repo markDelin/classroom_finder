@@ -93,7 +93,7 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
   foreach ($allRooms as $idx => $r):
     $isOnCurrentPage = ($idx >= $startIdx && $idx < $endIdx);
   ?>
-  <div class="card qr-poster<?= !$isOnCurrentPage ? ' qr-poster--print-only' : '' ?>" id="qr-<?= (int)$r['id'] ?>" data-room-id="<?= (int)$r['id'] ?>">
+  <div class="card qr-poster<?= !$isOnCurrentPage ? ' qr-poster--print-only' : '' ?>" id="qr-<?= (int)$r['id'] ?>" data-room-id="<?= (int)$r['id'] ?>" data-room-number="<?= e($r['room_number']) ?>">
     <div class="qr-poster__select no-print"<?= !$isOnCurrentPage ? ' style="display:none;"' : '' ?>>
       <label class="qr-select-label" title="Include in batch print">
         <input type="checkbox" class="qr-select-check" value="<?= (int)$r['id'] ?>" checked onchange="cfUpdateSelectedCount()">
@@ -184,6 +184,8 @@ function cfPreparePrint(filterFn) {
   return visibleIndex;
 }
 
+var cfOriginalTitle = document.title;
+
 function cfRestorePrint() {
   document.querySelectorAll('.qr-print-spacer').forEach(function (s) {
     s.remove();
@@ -193,9 +195,14 @@ function cfRestorePrint() {
     p.classList.remove('is-page-end');
     p.style.opacity = '';
   });
+  if (cfOriginalTitle) {
+    document.title = cfOriginalTitle;
+  }
 }
 
 function cfPrintAllQrs() {
+  cfOriginalTitle = document.title;
+  document.title = 'Classroom-QR-Codes';
   cfPreparePrint(function () {
     return true;
   });
@@ -205,13 +212,24 @@ function cfPrintAllQrs() {
 
 function cfPrintSelected() {
   var selectedCards = {};
+  var selectedRoomNumbers = [];
   document.querySelectorAll('.qr-select-check:checked').forEach(function (c) {
     selectedCards[c.value] = true;
+    var card = c.closest('.qr-poster');
+    if (card && card.dataset.roomNumber) {
+      selectedRoomNumbers.push(card.dataset.roomNumber);
+    }
   });
   if (Object.keys(selectedCards).length === 0) {
     if (window.cfToast) { cfToast('warning', 'Please select at least one QR code to print.'); }
     else { alert('Please select at least one QR code to print.'); }
     return;
+  }
+  cfOriginalTitle = document.title;
+  if (selectedRoomNumbers.length === 1) {
+    document.title = 'Classroom-QR-Room-' + selectedRoomNumbers[0];
+  } else {
+    document.title = 'Classroom-QR-Codes';
   }
   cfPreparePrint(function (p) {
     return !!selectedCards[p.dataset.roomId];
@@ -221,6 +239,10 @@ function cfPrintSelected() {
 }
 
 function cfPrintSingleQr(roomId) {
+  cfOriginalTitle = document.title;
+  var card = document.getElementById('qr-' + roomId);
+  var roomNo = (card && card.dataset.roomNumber) ? card.dataset.roomNumber : roomId;
+  document.title = 'Classroom-QR-Room-' + roomNo;
   cfPreparePrint(function (p) {
     return String(p.dataset.roomId) === String(roomId);
   });
@@ -230,6 +252,8 @@ function cfPrintSingleQr(roomId) {
 
 window.addEventListener('beforeprint', function () {
   if (!document.querySelector('.qr-poster.is-print-hidden') && !document.querySelector('.qr-poster.is-page-end')) {
+    cfOriginalTitle = document.title;
+    document.title = 'Classroom-QR-Codes';
     cfPreparePrint(function () { return true; });
   }
 });
