@@ -761,20 +761,20 @@ input:focus, select:focus, textarea:focus {
 
 /* ---------- FAQ section ---------- */
 .faq-section {
-  margin: 1.8rem 0 1.2rem;
-  padding: 1.2rem 1.4rem;
+  margin: 1.25rem 0 1rem;
+  padding: .9rem 1.1rem;
 }
 .faq-heading {
-  font-size: 1.2rem;
-  margin: 0 0 .9rem;
+  font-size: 1.05rem;
+  margin: 0 0 .65rem;
   display: flex;
   align-items: center;
-  gap: .45rem;
+  gap: .4rem;
 }
 .faq-grid {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .35rem;
 }
 .faq-item {
   border: 1px solid var(--border);
@@ -788,9 +788,9 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .65rem .85rem;
+  padding: .45rem .75rem;
   font-weight: 600;
-  font-size: .88rem;
+  font-size: .82rem;
   cursor: pointer;
   user-select: none;
   color: var(--text);
@@ -799,7 +799,7 @@ input:focus, select:focus, textarea:focus {
 .faq-item summary::-webkit-details-marker { display: none; }
 .faq-item summary::after {
   content: "+";
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 400;
   color: var(--muted);
   line-height: 1;
@@ -814,13 +814,13 @@ input:focus, select:focus, textarea:focus {
   background: var(--surface-2);
 }
 .faq-content {
-  padding: .75rem .85rem;
-  font-size: .84rem;
+  padding: .55rem .75rem;
+  font-size: .8rem;
   color: var(--muted);
-  line-height: 1.5;
+  line-height: 1.45;
 }
 .faq-content p {
-  margin: .3rem 0;
+  margin: .25rem 0;
 }
 .faq-content p:first-child { margin-top: 0; }
 .faq-content p:last-child { margin-bottom: 0; }
