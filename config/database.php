@@ -34,7 +34,7 @@ const DB_PASS = '';
 const DB_SOCKET = '/run/mysqld/mysqld.sock';
 
 /**
- * Retreive or initialize the shared PDO database connection handle (singleton pattern).
+ * Retrieve or initialize the shared PDO database connection handle (singleton pattern).
  *
  * Initializes the PDO connection, sets timezone alignment with PHP, and ensures
  * optional tables exist. If connection fails, outputs appropriate JSON or HTML error response.

@@ -31,92 +31,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'delete') {
         $id = (int)($_POST['id'] ?? 0);
-        db()->prepare('DELETE FROM class_schedules WHERE id = ?')->execute([$id]);
-        log_action('SCHEDULE_DELETE', (int)$admin['id'], null, 'Deleted schedule #' . $id);
-        flash('success', 'Schedule removed.');
+        $res = schedule_delete_slot($id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
         redirect('schedules.php');
     }
 
     if ($action === 'toggle') {
         $id = (int)($_POST['id'] ?? 0);
-        db()->prepare('UPDATE class_schedules SET is_active = 1 - is_active WHERE id = ?')->execute([$id]);
-        log_action('SCHEDULE_TOGGLE', (int)$admin['id'], null, 'Toggled schedule #' . $id);
+        $res = schedule_toggle_slot($id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
         redirect('schedules.php');
     }
 
     if ($action === 'revert') {
-        // remove a force-open report -> today's slot blocks the room again
         $id = (int)($_POST['id'] ?? 0);
-        db()->prepare('DELETE FROM schedule_force_open WHERE id = ?')->execute([$id]);
-        log_action('FORCE_OPEN_REVERT', (int)$admin['id'], null, 'Reverted force-open #' . $id);
-        flash('success', 'Force-open reverted — the scheduled class blocks the room again.');
+        $res = schedule_revert_force_open($id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
         redirect('schedules.php');
     }
 
     if ($action === 'create' || $action === 'update') {
-        $classroomId = (int)($_POST['classroom_id'] ?? 0);
-        $day         = (int)($_POST['day_of_week'] ?? 0);
-        $startT      = (string)($_POST['start_time'] ?? '');
-        $endT        = (string)($_POST['end_time'] ?? '');
-        $subject     = trim((string)($_POST['subject'] ?? ''));
-        $section     = trim((string)($_POST['section'] ?? ''));
-        $instructor  = trim((string)($_POST['instructor'] ?? ''));
-
-        if (!$classroomId || !isset(DAY_NAMES[$day])
-            || !preg_match('/^\d{2}:\d{2}$/', $startT) || !preg_match('/^\d{2}:\d{2}$/', $endT)) {
-            $fail('Please fill in the room, weekday and both times.');
+        $id = $action === 'update' ? (int)($_POST['id'] ?? 0) : null;
+        if ($action === 'update' && !$id) {
+            $fail('Missing schedule to update.');
         }
-        foreach ([$startT, $endT] as $t) {
-            [$hh, $mm] = array_map('intval', explode(':', $t));
-            if ($hh > 23 || $mm > 59) {
-                $fail('Please use real clock times (HH:MM).');
-            }
+        $res = schedule_save_slot($_POST, $id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        if ($subject === '') {
-            $fail('Please enter the subject / course.');
-        }
-
-        $start = $startT . ':00';
-        $end   = $endT . ':00';
-        if (strcmp($end, $start) <= 0) {
-            $fail('The end time must be after the start time.');
-        }
-
-        // no overlapping ACTIVE slot on the same room+weekday (update excludes itself)
-        $id  = $action === 'update' ? (int)($_POST['id'] ?? 0) : 0;
-        $st  = db()->prepare(
-            "SELECT subject FROM class_schedules
-             WHERE classroom_id = ? AND day_of_week = ? AND is_active = 1 AND id <> ?
-               AND start_time < ? AND end_time > ?
-             LIMIT 1"
-        );
-        $st->execute([$classroomId, $day, $id, $end, $start]);
-        if ($clash = $st->fetch()) {
-            $fail('Overlaps an existing class (' . $clash['subject'] . ') on '
-                . DAY_NAMES[$day] . '. Adjust the times.');
-        }
-
-        if ($action === 'create') {
-            db()->prepare(
-                'INSERT INTO class_schedules (classroom_id, day_of_week, start_time, end_time, subject, section, instructor)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)'
-            )->execute([$classroomId, $day, $start, $end, $subject, $section ?: null, $instructor ?: null]);
-            log_action('SCHEDULE_CREATE', (int)$admin['id'], $classroomId,
-                DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
-            flash('success', 'Class schedule added. The room is blocked during this slot every ' . DAY_NAMES[$day] . '.');
-        } else {
-            if (!$id) {
-                $fail('Missing schedule to update.');
-            }
-            db()->prepare(
-                'UPDATE class_schedules
-                 SET classroom_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, section = ?, instructor = ?
-                 WHERE id = ?'
-            )->execute([$classroomId, $day, $start, $end, $subject, $section ?: null, $instructor ?: null, $id]);
-            log_action('SCHEDULE_UPDATE', (int)$admin['id'], $classroomId,
-                "Schedule #{$id}: " . DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
-            flash('success', 'Class schedule updated.');
-        }
+        flash('success', $res['message']);
         redirect('schedules.php');
     }
 
@@ -195,11 +147,11 @@ $sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoo
 
 $school = school_name();
 
-render_header('Fixed Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' => 'schedules']);
+render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' => 'schedules']);
 ?>
 
 <div class="page-head">
-  <h1><?= icon('calendar-days') ?> Fixed class schedules</h1>
+  <h1><?= icon('calendar-days') ?> Print schedules</h1>
   <div class="page-head__actions">
     <button class="btn btn--primary btn--sm" type="button"
             data-modal-form="#slotForm"

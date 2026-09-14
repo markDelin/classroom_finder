@@ -68,7 +68,7 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'qr',           'label' => 'QR Codes',         'href' => $adminHref('qr_codes.php'),     'icon' => 'qr-code'],
             ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => $adminHref('sessions.php'),     'icon' => 'clock'],
             ['key' => 'reservations', 'label' => 'Reservations',     'href' => $adminHref('reservations.php'), 'icon' => 'calendar-clock'],
-            ['key' => 'schedules',    'label' => 'Fixed Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],
+            ['key' => 'schedules',    'label' => 'Print Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],
             ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
             ['key' => 'settings',     'label' => 'Settings',         'href' => $adminHref('settings.php'),     'icon' => 'settings'],
@@ -121,11 +121,6 @@ function render_header(string $title, array $opts = []): void
         <span class="user-chip__name"><?= e($user['full_name']) ?>
           <small><?= e(ucfirst($user['role'])) ?></small></span>
       </a>
-      <form method="post" action="<?= $prefix ?>logout.php" class="inline-form">
-        <?= csrf_field() ?>
-        <button class="btn btn--ghost btn--sm" type="submit"
-                title="Log out" aria-label="Log out"><span class="btn__txt">Log out</span> <?= icon('log-out') ?></button>
-      </form>
     <?php else: ?>
       <a class="btn btn--ghost btn--sm" href="<?= $prefix ?>login.php"><?= icon('log-in') ?> <span class="btn__txt">Log in</span></a>
     <?php endif; ?>
@@ -149,6 +144,15 @@ function render_header(string $title, array $opts = []): void
              href="<?= $item['href'] ?>"><?= !empty($item['icon']) ? icon($item['icon']) : '' ?> <span><?= e($item['label']) ?></span></a></li>
     <?php endforeach; ?>
   </ul>
+  <?php if ($user): ?>
+  <div class="sidebar__footer">
+    <form method="post" action="<?= $prefix ?>logout.php" class="sidebar__logout-form">
+      <?= csrf_field() ?>
+      <button class="sidebar__logout-btn" type="submit"
+              title="Log out" aria-label="Log out"><?= icon('log-out') ?> <span>Log out</span></button>
+    </form>
+  </div>
+  <?php endif; ?>
 </nav>
 <main class="main main--with-nav">
 <?php else: ?>

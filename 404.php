@@ -8,7 +8,7 @@ render_header('Page Not Found — 404', ['prefix' => '', 'wide' => true]);
 ?>
 <div class="auth-wrap" style="text-align:center;padding:4rem 1rem;">
   <div class="card" style="max-width:32rem;margin:0 auto;padding:2.5rem 2rem;">
-    <div style="font-size:4rem;font-weight:700;color:var(--color-primary,#2563eb);line-height:1;margin-bottom:1rem;">
+    <div style="font-size:4rem;font-weight:700;color:var(--primary);line-height:1;margin-bottom:1rem;font-family:var(--font-display);">
       404
     </div>
     <h1 style="font-size:1.5rem;margin-bottom:0.75rem;">Page Not Found</h1>
@@ -19,9 +19,9 @@ render_header('Page Not Found — 404', ['prefix' => '', 'wide' => true]);
       <a href="index.php" class="btn btn--primary">
         <?= icon('home') ?> Go to Home
       </a>
-      <a href="javascript:history.back()" class="btn btn--secondary">
-        <?= icon('arrow-left') ?> Go Back
-      </a>
+      <button type="button" onclick="history.length > 1 ? history.back() : (location.href = 'index.php')" class="btn btn--ghost">
+        <?= icon('arrow-left') ?> Go back
+      </button>
     </div>
   </div>
 </div>

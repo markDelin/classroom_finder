@@ -85,7 +85,12 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
 
 <div class="qr-grid">
   <?php if (!$allRooms): ?>
-    <p class="muted" style="grid-column:1 / -1;padding:2rem 0;text-align:center;">No classrooms found matching the criteria.</p>
+    <p class="muted" style="grid-column:1 / -1;padding:2rem 0;text-align:center;">
+      No classrooms found matching the criteria.
+      <?php if ($q !== '' || $building !== ''): ?>
+        <a href="qr_codes.php">Clear filters</a>
+      <?php endif; ?>
+    </p>
   <?php endif; ?>
   <?php
   $startIdx = $pP['offset'];

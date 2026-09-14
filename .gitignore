@@ -7,6 +7,9 @@ Thumbs.db
 # Temp / dev artefacts
 preview_tt.*
 *_dump.txt
+CLAUDE.md
+claude.md
+.superpowers/
 
 # QR library cache (generated at runtime)
 qr/lib/cache/

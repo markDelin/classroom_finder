@@ -36,7 +36,7 @@ render_header('Lecturer Dashboard', ['prefix' => '../', 'nav' => 'lecturer', 'ac
 ?>
 
 <div class="page-head">
-  <h1>Welcome, <?= e($user['full_name']) ?> <?= icon('hand') ?></h1>
+  <h1>Welcome, <?= e($user['full_name']) ?></h1>
   <p class="muted">Scan the QR code outside a classroom to record your session.</p>
 </div>
 
@@ -72,7 +72,7 @@ render_header('Lecturer Dashboard', ['prefix' => '../', 'nav' => 'lecturer', 'ac
 <div class="card">
   <div class="card__head">
     <h3>Recent sessions</h3>
-    <a class="btn btn--ghost btn--sm" href="history.php">View full history <?= icon('arrow-right') ?></a>
+    <a class="btn btn--ghost btn--sm" href="history.php">View full history</a>
   </div>
   <?php if (!$recent): ?>
     <p class="muted">No sessions yet — scan a classroom QR to get started.</p>

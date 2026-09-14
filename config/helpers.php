@@ -18,6 +18,12 @@ require_once __DIR__ . '/icons.php';
 // app) so every page can call render_header()/room_card() etc. directly.
 require_once __DIR__ . '/layout.php';
 
+// Domain services
+require_once __DIR__ . '/../services/room_service.php';
+require_once __DIR__ . '/../services/session_service.php';
+require_once __DIR__ . '/../services/user_service.php';
+require_once __DIR__ . '/../services/schedule_service.php';
+
 /* Polyfills for PHP environments lacking ext-mbstring extension */
 if (!function_exists('mb_strlen')) {
     /**
@@ -372,15 +378,7 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
  */
 function expire_stale(): void
 {
-    $now = date('Y-m-d H:i:s');
-    try {
-        db()->prepare("UPDATE classroom_sessions SET status = 'completed'
-                       WHERE status = 'active' AND end_time <= ?")->execute([$now]);
-        db()->prepare("UPDATE reservations SET status = 'completed'
-                       WHERE status = 'active' AND end_time <= ?")->execute([$now]);
-    } catch (Throwable) {
-        // ignore — page should still render
-    }
+    session_expire_stale();
 }
 
 /* ==========================================================================
@@ -396,118 +394,7 @@ function expire_stale(): void
  */
 function fetch_classrooms(array $f = []): array
 {
-    expire_stale();
-
-    $now  = date('Y-m-d H:i:s');
-    $soon = date('Y-m-d H:i:s', time() + get_setting_int('reserve_window_minutes', 45) * 60);
-
-    // Today's fixed-schedule slot (recurring weekly class timetable). MySQL's
-    // session timezone is synced from PHP on connect, so CURDATE()/CURTIME()
-    // match the date('...') values used everywhere else.
-    $dow     = (int)date('N');           // 1=Mon … 7=Sun
-    $curtime = date('H:i:s');
-    $today   = date('Y-m-d');
-
-    $sql = "SELECT c.*,
-                   MAX(s.id)         AS session_id,
-                   MAX(s.start_time) AS session_start,
-                   MAX(s.end_time)   AS session_end,
-                   MAX(su.full_name) AS session_lecturer,
-                   MAX(r.id)         AS reservation_id,
-                   MIN(r.start_time) AS reservation_start,
-                   MAX(r.end_time)   AS reservation_end,
-                   MAX(r.purpose)    AS reservation_purpose,
-                   MAX(ru.full_name) AS reservation_by,
-                   MAX(cs.id)          AS sched_id,
-                   MAX(cs.subject)     AS sched_subject,
-                   MAX(cs.section)     AS sched_section,
-                   MAX(cs.instructor)  AS sched_instructor,
-                   MAX(cs.start_time)  AS sched_start,
-                   MAX(cs.end_time)    AS sched_end,
-                   MAX(fo.id)          AS force_open_id
-            FROM classrooms c
-            LEFT JOIN classroom_sessions s
-                   ON s.classroom_id = c.id AND s.status = 'active'
-                  AND s.start_time <= :now1 AND s.end_time > :now2
-            LEFT JOIN users su ON su.id = s.user_id
-            LEFT JOIN reservations r
-                   ON r.classroom_id = c.id AND r.status = 'active'
-                  AND r.start_time <= :soon AND r.end_time > :now3
-            LEFT JOIN users ru ON ru.id = r.user_id
-            LEFT JOIN class_schedules cs
-                   ON cs.classroom_id = c.id AND cs.is_active = 1
-                  AND cs.day_of_week = :dow
-                  AND cs.start_time <= :curtime1 AND cs.end_time > :curtime2
-            LEFT JOIN schedule_force_open fo
-                   ON fo.schedule_id = cs.id AND fo.exc_date = :today";
-
-    $where  = [];
-    $params = [
-        ':now1'     => $now,
-        ':now2'     => $now,
-        ':now3'     => $now,
-        ':soon'     => $soon,
-        ':dow'      => $dow,
-        ':curtime1' => $curtime,
-        ':curtime2' => $curtime,
-        ':today'    => $today,
-    ];
-
-    if (!empty($f['q'])) {
-        $where[]              = '(c.room_number LIKE :q OR c.building LIKE :q OR c.room_type LIKE :q OR c.note LIKE :q OR cs.subject LIKE :q OR cs.instructor LIKE :q OR su.full_name LIKE :q OR ru.full_name LIKE :q)';
-        $params[':q']         = '%' . trim((string)$f['q']) . '%';
-    }
-    if (!empty($f['building'])) {
-        $where[]              = 'c.building = :building';
-        $params[':building']  = (string)$f['building'];
-    }
-    if (isset($f['floor']) && $f['floor'] !== '' && $f['floor'] !== null) {
-        $where[]              = 'c.floor = :floor';
-        $params[':floor']     = (int)$f['floor'];
-    }
-    if (!empty($f['type'])) {
-        $where[]              = 'c.room_type = :type';
-        $params[':type']      = (string)$f['type'];
-    }
-    if (!empty($f['mincap'])) {
-        $where[]              = 'c.capacity >= :mincap';
-        $params[':mincap']    = (int)$f['mincap'];
-    }
-
-    if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
-    }
-    $sql .= ' GROUP BY c.id ORDER BY c.building, c.room_number';
-
-    $st = db()->prepare($sql);
-    $st->execute($params);
-
-    $rooms = [];
-    foreach ($st->fetchAll() as $r) {
-        if ($r['status'] !== 'available') {
-            $r['computed']     = 'unavailable';
-            $r['available_at'] = null;
-        } elseif (!empty($r['session_id'])) {
-            $r['computed']     = 'occupied';
-            $r['available_at'] = $r['session_end'];
-        } elseif (!empty($r['sched_id']) && empty($r['force_open_id'])) {
-            // fixed weekly class is in session (unless reported as not meeting)
-            $r['computed']     = 'occupied';
-            $r['available_at'] = $r['sched_end'];
-        } elseif (!empty($r['reservation_id'])) {
-            $r['computed']     = 'reserved';
-            $r['available_at'] = null;
-        } else {
-            $r['computed']     = 'available';
-            $r['available_at'] = null;
-        }
-        $rooms[] = $r;
-    }
-
-    if (!empty($f['status'])) {
-        $rooms = array_values(array_filter($rooms, fn($r) => $r['computed'] === $f['status']));
-    }
-    return $rooms;
+    return room_fetch_all($f);
 }
 
 /**
@@ -519,81 +406,7 @@ function fetch_classrooms(array $f = []): array
  */
 function get_room_with_status(int $id): ?array
 {
-    if ($id <= 0) {
-        return null;
-    }
-    expire_stale();
-
-    $now  = date('Y-m-d H:i:s');
-    $soon = date('Y-m-d H:i:s', time() + get_setting_int('reserve_window_minutes', 45) * 60);
-    $dow  = (int)date('N');
-    $curt = date('H:i:s');
-    $today = date('Y-m-d');
-
-    $st = db()->prepare(
-        "SELECT c.*,
-                s.id            AS session_id,
-                s.start_time    AS session_start,
-                s.end_time      AS session_end,
-                su.full_name    AS session_lecturer,
-                r.id            AS reservation_id,
-                r.start_time    AS reservation_start,
-                r.end_time      AS reservation_end,
-                r.purpose       AS reservation_purpose,
-                ru.full_name    AS reservation_by,
-                cs.id           AS sched_id,
-                cs.subject      AS sched_subject,
-                cs.section      AS sched_section,
-                cs.instructor   AS sched_instructor,
-                cs.start_time   AS sched_start,
-                cs.end_time     AS sched_end,
-                fo.id           AS force_open_id
-         FROM classrooms c
-         LEFT JOIN classroom_sessions s
-                ON s.classroom_id = c.id AND s.status = 'active'
-               AND s.start_time <= :now1 AND s.end_time > :now2
-         LEFT JOIN users su ON su.id = s.user_id
-         LEFT JOIN reservations r
-                ON r.classroom_id = c.id AND r.status = 'active'
-               AND r.start_time <= :soon AND r.end_time > :now3
-         LEFT JOIN users ru ON ru.id = r.user_id
-         LEFT JOIN class_schedules cs
-                ON cs.classroom_id = c.id AND cs.is_active = 1
-               AND cs.day_of_week = :dow
-               AND cs.start_time <= :curt1 AND cs.end_time > :curt2
-         LEFT JOIN schedule_force_open fo
-                ON fo.schedule_id = cs.id AND fo.exc_date = :today
-         WHERE c.id = :id
-         LIMIT 1"
-    );
-    $st->execute([
-        ':now1' => $now, ':now2' => $now, ':now3' => $now, ':soon' => $soon,
-        ':dow'  => $dow, ':curt1' => $curt, ':curt2' => $curt,
-        ':today' => $today, ':id' => $id,
-    ]);
-    $r = $st->fetch();
-    if (!$r) {
-        return null;
-    }
-
-    // Same status-priority logic as fetch_classrooms()
-    if ($r['status'] !== 'available') {
-        $r['computed']     = 'unavailable';
-        $r['available_at'] = null;
-    } elseif (!empty($r['session_id'])) {
-        $r['computed']     = 'occupied';
-        $r['available_at'] = $r['session_end'];
-    } elseif (!empty($r['sched_id']) && empty($r['force_open_id'])) {
-        $r['computed']     = 'occupied';
-        $r['available_at'] = $r['sched_end'];
-    } elseif (!empty($r['reservation_id'])) {
-        $r['computed']     = 'reserved';
-        $r['available_at'] = null;
-    } else {
-        $r['computed']     = 'available';
-        $r['available_at'] = null;
-    }
-    return $r;
+    return room_get_with_status($id);
 }
 
 /**
@@ -604,7 +417,7 @@ function get_room_with_status(int $id): ?array
  */
 function get_room(int $id): ?array
 {
-    return get_room_with_status($id);
+    return room_get($id);
 }
 
 /**
@@ -615,10 +428,7 @@ function get_room(int $id): ?array
  */
 function get_room_by_token(string $token): ?array
 {
-    $st = db()->prepare('SELECT * FROM classrooms WHERE qr_token = ? LIMIT 1');
-    $st->execute([strtolower($token)]);
-    $room = $st->fetch();
-    return $room ?: null;
+    return room_get_by_token($token);
 }
 
 /**
@@ -629,10 +439,7 @@ function get_room_by_token(string $token): ?array
  */
 function extract_qr_token(?string $raw): ?string
 {
-    if ($raw === null) {
-        return null;
-    }
-    return preg_match('/[0-9a-f]{32}/i', trim($raw), $m) ? strtolower($m[0]) : null;
+    return room_extract_qr_token($raw);
 }
 
 /**
@@ -643,17 +450,7 @@ function extract_qr_token(?string $raw): ?string
  */
 function get_active_session_for(int $userId): ?array
 {
-    $now = date('Y-m-d H:i:s');
-    $st  = db()->prepare(
-        "SELECT s.*, c.room_number, c.building, c.floor
-         FROM classroom_sessions s
-         JOIN classrooms c ON c.id = s.classroom_id
-         WHERE s.user_id = ? AND s.status = 'active' AND s.start_time <= ? AND s.end_time > ?
-         ORDER BY s.start_time DESC LIMIT 1"
-    );
-    $st->execute([$userId, $now, $now]);
-    $s = $st->fetch();
-    return $s ?: null;
+    return session_get_active_for_user($userId);
 }
 
 /**
@@ -665,14 +462,11 @@ function get_active_session_for(int $userId): ?array
  */
 function release_session(int $sessionId, string $via = 'lecturer'): bool
 {
-    $now = date('Y-m-d H:i:s');
-    $st  = db()->prepare(
-        "UPDATE classroom_sessions
-         SET status = 'released', released_at = ?, end_time = LEAST(end_time, ?)
-         WHERE id = ? AND status = 'active'"
-    );
-    $st->execute([$now, $now, $sessionId]);
-    return $st->rowCount() > 0;
+    $u = current_user();
+    $userId = $u ? (int)$u['id'] : 0;
+    $role = ($u && $u['role'] === 'admin') ? 'admin' : $via;
+    $res = session_release($sessionId, $userId, $role);
+    return (bool)($res['ok'] ?? false);
 }
 
 /* ==========================================================================

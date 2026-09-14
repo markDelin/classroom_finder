@@ -25,12 +25,12 @@ $filters = [
 
 if (!empty($_GET['id'])) {
     $rooms = [];
-    $one   = get_room((int)$_GET['id']);
+    $one   = room_get_with_status((int)$_GET['id']);
     if ($one) {
         $rooms = [$one];
     }
 } else {
-    $rooms = fetch_classrooms($filters);
+    $rooms = room_fetch_all($filters);
 }
 
 // available-first ordering + ?page slicing (same as the initial page render)
@@ -48,7 +48,7 @@ if (($_GET['format'] ?? '') === 'html') {
 // Whole-campus counters honour the search/attribute filters but not the
 // status chip, so students always see how many rooms exist per status.
 $stats = ['available' => 0, 'occupied' => 0, 'reserved' => 0, 'unavailable' => 0];
-foreach (fetch_classrooms(array_diff_key($filters, ['status' => ''])) as $r) {
+foreach (room_fetch_all(array_diff_key($filters, ['status' => ''])) as $r) {
     $stats[$r['computed']]++;
 }
 

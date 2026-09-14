@@ -34,84 +34,26 @@ if ($token === null) {
     json_response(['ok' => false, 'error' => 'Missing or malformed QR token.', 'code' => 'bad_qr'], 400);
 }
 
-$reason = (string)($input['reason'] ?? '');
-if (!in_array($reason, ['lecturer_absent', 'emergency', 'ended_early', 'other'], true)) {
-    json_response(['ok' => false, 'error' => 'Please pick a reason for opening this room.', 'code' => 'bad_reason'], 400);
-}
-$details = mb_substr(trim((string)($input['details'] ?? '')), 0, 160);
-
 $room = get_room_by_token($token);
 if (!$room) {
     json_response(['ok' => false, 'error' => 'Unknown or regenerated QR code.', 'code' => 'not_found'], 404);
 }
 
-// The slot must be blocking right now: today's weekday, currently within it.
-$st = db()->prepare(
-    'SELECT id, subject, start_time, end_time FROM class_schedules
-     WHERE classroom_id = ? AND is_active = 1 AND day_of_week = ?
-       AND start_time <= ? AND end_time > ?
-     LIMIT 1'
-);
-$st->execute([(int)$room['id'], (int)date('N'), date('H:i:s'), date('H:i:s')]);
-$slot = $st->fetch();
+$reason = (string)($input['reason'] ?? '');
+$details = (string)($input['details'] ?? '');
 
-if (!$slot) {
+$res = schedule_force_open((int)$room['id'], (int)$user['id'], $reason, $details);
+if (!$res['ok']) {
     json_response([
         'ok'    => false,
-        'error' => 'There is no scheduled class in room ' . $room['room_number'] . ' right now.',
-        'code'  => 'no_slot',
-    ], 409);
+        'error' => $res['error'],
+        'code'  => ($res['code'] ?? 400) === 409 ? 'no_slot' : 'bad_reason',
+    ], (int)($res['code'] ?? 400));
 }
-
-$today = date('Y-m-d');
-
-// Idempotent: an earlier report for this same slot/day already opened it.
-// Re-read the user_id so we can tell the lecturer whose report it was.
-$st = db()->prepare('SELECT id, user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
-$st->execute([(int)$slot['id'], $today]);
-if ($existing = $st->fetch()) {
-    $isOurs = (int)$existing['user_id'] === (int)$user['id'];
-    log_action('FORCE_OPEN_DUP', (int)$user['id'], (int)$room['id'],
-        'Slot already opened today (#' . (int)$existing['id'] . ', ' . ($isOurs ? 'self' : 'other') . ')');
-    json_response([
-        'ok'      => true,
-        'already' => true,
-        'until'   => date('Y-m-d ') . $slot['end_time'],
-        'message' => $isOurs
-            ? 'Room ' . $room['room_number'] . ' is already open from your earlier report.'
-            : 'Room ' . $room['room_number'] . ' was just opened by another lecturer.',
-    ]);
-}
-
-try {
-    db()->prepare(
-        'INSERT INTO schedule_force_open (classroom_id, schedule_id, exc_date, reason, details, user_id)
-         VALUES (?, ?, ?, ?, ?, ?)'
-    )->execute([(int)$room['id'], (int)$slot['id'], $today, $reason, $details ?: null, (int)$user['id']]);
-} catch (Throwable $e) {
-    // Lost the race against another reporter's unique (schedule_id, exc_date) row.
-    // Re-read it so we can report whose report actually won.
-    $st = db()->prepare('SELECT user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
-    $st->execute([(int)$slot['id'], $today]);
-    $winner = $st->fetch();
-    $isOurs = $winner && (int)$winner['user_id'] === (int)$user['id'];
-    json_response([
-        'ok'      => true,
-        'already' => true,
-        'until'   => date('Y-m-d ') . $slot['end_time'],
-        'message' => $isOurs
-            ? 'Room ' . $room['room_number'] . ' is already open from your earlier report.'
-            : 'Room ' . $room['room_number'] . ' was just opened by another lecturer.',
-    ]);
-}
-
-log_action('FORCE_OPEN', (int)$user['id'], (int)$room['id'],
-    'Opened room ' . $room['room_number'] . ' despite scheduled class "' . $slot['subject']
-    . '" (' . $reason . ($details ? ': ' . $details : '') . ')');
 
 json_response([
     'ok'      => true,
-    'already' => false,
-    'until'   => date('Y-m-d ') . $slot['end_time'],
-    'message' => 'Room ' . $room['room_number'] . ' is open until ' . fmt_time($slot['end_time']) . '.',
+    'already' => $res['already'],
+    'until'   => $res['until'],
+    'message' => $res['message'],
 ]);

@@ -32,7 +32,7 @@ render_header('Log in', ['prefix' => '']);
 
     <?php if ($needsSetup): ?>
       <div class="flash flash--warn">
-        No administrator exists yet. <a href="setup.php"><strong>Run initial setup →</strong></a>
+        No administrator exists yet. <a href="setup.php"><strong>Run initial setup</strong></a>
       </div>
     <?php endif; ?>
 

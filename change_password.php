@@ -17,9 +17,7 @@ if ($user['role'] === 'admin') {
 }
 
 // Re-fetch user record from database to get fresh password hash & status
-$st = db()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
-$st->execute([(int)$user['id']]);
-$userDb = $st->fetch();
+$userDb = user_get((int)$user['id']);
 
 if (!$userDb || $userDb['account_status'] !== 'approved') {
     flash('error', 'Account is inactive or not found.');
@@ -51,14 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (empty($errors)) {
-            $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-            db()->prepare('UPDATE users SET password = ? WHERE id = ?')
-                ->execute([$newHash, (int)$user['id']]);
-
-            log_action('CHANGE_PASSWORD', (int)$user['id'], null, 'User changed their account password');
-
-            flash('success', 'Your password has been changed successfully.');
-            redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'lecturer/dashboard.php');
+            $res = user_update_password((int)$user['id'], $newPassword, (int)$user['id']);
+            if (!$res['ok']) {
+                $errors[] = $res['error'];
+            } else {
+                flash('success', 'Your password has been changed successfully.');
+                redirect($user['role'] === 'admin' ? 'admin/dashboard.php' : 'lecturer/dashboard.php');
+            }
         }
     }
 }

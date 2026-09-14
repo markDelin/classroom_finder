@@ -66,6 +66,10 @@ const LUCIDE_ICONS = [
         'location' => '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" />',
         'navigation' => '<polygon points="3 11 22 2 13 21 11 13 3 11" />',
         'x' => '<path d="M18 6 6 18" /> <path d="m6 6 12 12" />',
+        'check' => '<path d="M20 6 9 17l-5-5" />',
+        'check-square' => '<polyline points="9 11 12 14 22 4" /> <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />',
+        'home' => '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> <polyline points="9 22 9 12 15 12 15 22" />',
+        'arrow-left' => '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
 ];
 
 /**

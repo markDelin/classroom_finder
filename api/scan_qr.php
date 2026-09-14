@@ -41,15 +41,8 @@ if (!$room) {
     json_response(['ok' => false, 'error' => 'Unknown or regenerated QR code. Ask the administrator for the current one.', 'code' => 'not_found'], 404);
 }
 
-// Live state for THIS room (fresh sweep + focused re-check)
-$rooms = fetch_classrooms();
-$live  = null;
-foreach ($rooms as $r) {
-    if ((int)$r['id'] === (int)$room['id']) {
-        $live = $r;
-        break;
-    }
-}
+// Live state for THIS room (targeted single-row status check)
+$live = room_get_with_status((int)$room['id']);
 
 log_action('SCAN_QR', (int)$user['id'], (int)$room['id'], 'Scanned room ' . $room['room_number']);
 

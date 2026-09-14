@@ -24,73 +24,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
 
     if ($action === 'add' || $action === 'update') {
-        $roomNumber = strtoupper(trim((string)($_POST['room_number'] ?? '')));
-        $building   = trim((string)($_POST['building'] ?? ''));
-        $floor      = max(1, (int)($_POST['floor'] ?? 1));
-        $capacity   = max(1, min(9999, (int)($_POST['capacity'] ?? 0)));
-        $type       = in_array($_POST['room_type'] ?? '', ROOM_TYPES, true) ? $_POST['room_type'] : ROOM_TYPES[0];
-        $note       = trim((string)($_POST['note'] ?? ''));
-
-        if ($roomNumber === '' || $building === '') {
-            $fail('Room number and building are required.');
+        $id = $action === 'update' ? (int)($_POST['id'] ?? 0) : null;
+        $res = room_save($_POST, $id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        if (!preg_match('/^[A-Za-z0-9\- ]{1,20}$/', $roomNumber)) {
-            $fail('Room number: letters, numbers, spaces and dashes only (max 20).');
-        }
-
-        // uniqueness of (building, room_number)
-        $st = db()->prepare('SELECT id FROM classrooms WHERE building = ? AND room_number = ? AND id <> ?');
-        $st->execute([$building, $roomNumber, (int)($_POST['id'] ?? 0)]);
-        if ($st->fetch()) {
-            $fail("{$building} already has a room {$roomNumber}.");
-        }
-
-        if ($action === 'add') {
-            db()->prepare(
-                'INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, note)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)'
-            )->execute([
-                $roomNumber, $building, $floor, $capacity, $type,
-                bin2hex(random_bytes(16)),            // unique QR token for physical room check-in
-                $note ?: null,
-            ]);
-            log_action('CLASSROOM_ADD', (int)$admin['id'], null, "Added room {$building} {$roomNumber}");
-            flash('success', "Classroom {$roomNumber} added. Print its QR code from the QR Codes page.");
-        } else {
-            db()->prepare(
-                'UPDATE classrooms SET room_number = ?, building = ?, floor = ?, capacity = ?, room_type = ?, note = ?
-                 WHERE id = ?'
-            )->execute([$roomNumber, $building, $floor, $capacity, $type, $note ?: null, (int)$_POST['id']]);
-            log_action('CLASSROOM_EDIT', (int)$admin['id'], (int)$_POST['id'], "Updated room {$building} {$roomNumber}");
-            flash('success', "Classroom {$roomNumber} updated.");
-        }
+        flash('success', $res['message']);
         redirect('classrooms.php');
     }
 
     if ($action === 'set_status') {
-        $new = $_POST['status'] ?? '';
-        if (!in_array($new, ['available', 'maintenance', 'disabled'], true)) {
-            $fail('Unknown status.');
+        $id = (int)($_POST['id'] ?? 0);
+        $status = (string)($_POST['status'] ?? '');
+        $res = room_set_status($id, $status, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        db()->prepare('UPDATE classrooms SET status = ? WHERE id = ?')->execute([$new, (int)$_POST['id']]);
-        // $new was validated above; it doubles as the human-readable label
-        $label = $new;
-        log_action('CLASSROOM_STATUS', (int)$admin['id'], (int)$_POST['id'], 'Status set to ' . $label);
-        flash('success', 'Classroom marked as ' . $label . '.');
+        flash('success', $res['message']);
         redirect('classrooms.php');
     }
 
     if ($action === 'delete') {
-        $id = (int)$_POST['id'];
-        $nSessions = db()->prepare('SELECT COUNT(*) AS n FROM classroom_sessions WHERE classroom_id = ?');
-        $nSessions->execute([$id]);
-        if ((int)$nSessions->fetch()['n'] > 0) {
-            $fail('This room has usage history and cannot be deleted. Set it to “disabled” instead to keep the records.');
+        $id = (int)($_POST['id'] ?? 0);
+        $res = room_delete($id, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        db()->prepare('DELETE FROM reservations WHERE classroom_id = ?')->execute([$id]);
-        db()->prepare('DELETE FROM classrooms WHERE id = ?')->execute([$id]);
-        log_action('CLASSROOM_DELETE', (int)$admin['id'], null, "Deleted classroom #{$id}");
-        flash('success', 'Classroom deleted.');
+        flash('success', $res['message']);
         redirect('classrooms.php');
     }
 
@@ -170,6 +130,16 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
   <table class="table">
     <thead><tr><th>Room &amp; Location</th><th>Type / Seats</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
+      <?php if (!$rooms): ?>
+      <tr>
+        <td colspan="4" class="muted" style="text-align:center;padding:2rem 1rem;">
+          No classrooms match the selected filters.
+          <?php if ($q !== '' || $statusF !== ''): ?>
+            <a href="classrooms.php">Clear filters</a>
+          <?php endif; ?>
+        </td>
+      </tr>
+      <?php else: ?>
       <?php foreach ($rooms as $r): ?>
       <tr>
         <td class="cell-main nowrap" data-label="Room">
@@ -216,11 +186,12 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
           </details>
           <form method="post" class="inline-form" data-confirm="Delete this classroom permanently? Only possible while it has no usage history."><?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-            <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete classroom"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
+            <button class="btn btn--danger btn--sm" type="submit" title="Delete classroom"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           </div>
         </td>
       </tr>
       <?php endforeach; ?>
+      <?php endif; ?>
     </tbody>
   </table>
   </div>

@@ -148,7 +148,9 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
 <div class="card">
 
   <?php if (!$rows): ?>
-    <p class="muted">No usage recorded for this filter.</p>
+    <p class="muted">
+      <?= ($q !== '' || $roomId || $userId || $rangesOn) ? 'No usage recorded for this filter. <a href="history.php">Reset filter</a>' : 'No classroom usage recorded yet.' ?>
+    </p>
   <?php else: ?>
   <div class="table-wrap">
   <table class="table">

@@ -16,19 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'force
         redirect('sessions.php');
     }
     $id = (int)($_POST['session_id'] ?? 0);
-    $st = db()->prepare(
-        'SELECT s.*, c.room_number FROM classroom_sessions s
-         JOIN classrooms c ON c.id = s.classroom_id
-         WHERE s.id = ? AND s.status = \'active\' LIMIT 1'
-    );
-    $st->execute([$id]);
-    if ($s = $st->fetch()) {
-        release_session($id, 'admin');
-        log_action('FORCE_END_SESSION', (int)$admin['id'], (int)$s['classroom_id'],
-            'Admin ended session of room ' . $s['room_number']);
-        flash('success', 'Session for room ' . $s['room_number'] . ' was ended.');
+    $res = session_release($id, (int)$admin['id'], 'admin');
+    if ($res['ok']) {
+        flash('success', 'Session for room ' . ($res['room_number'] ?? '') . ' was ended.');
     } else {
-        flash('error', 'That session is not active.');
+        flash('error', $res['error']);
     }
     redirect('sessions.php');
 }
@@ -141,7 +133,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
 <div class="card">
   <h3 style="margin-bottom: 0.75rem;">Recently finished</h3>
   <?php if (!$past): ?>
-    <p class="muted">Nothing recorded yet.</p>
+    <p class="muted">No recently completed sessions recorded.</p>
   <?php else: ?>
   <div class="table-wrap">
   <table class="table">

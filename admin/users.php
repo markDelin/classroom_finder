@@ -28,120 +28,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ---------- account status changes ----------
     if (in_array($action, ['approve', 'reject', 'suspend', 'reactivate'], true)) {
-        $st = db()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
-        $st->execute([$target]);
-        $u = $st->fetch();
-        if (!$u) {
-            $fail('User not found.');
+        $res = user_set_status($target, $action, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-
-        $newStatus = match ($action) {
-            'approve'    => 'approved',
-            'reject'     => 'rejected',
-            'suspend'    => 'suspended',
-            'reactivate' => 'approved',
-        };
-
-        if ($action === 'suspend') {
-            if ((int)$u['id'] === (int)$admin['id']) {
-                $fail('You cannot suspend your own account.');
-            }
-            if ($u['role'] === 'admin') {
-                $n = db()->query(
-                    "SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND account_status = 'approved'"
-                )->fetch()['n'];
-                if ((int)$n <= 1) {
-                    $fail('Cannot suspend the last active administrator.');
-                }
-            }
-        }
-        if ($action === 'reject' && $u['account_status'] === 'approved') {
-            $fail('Use "Suspend" for accounts that are already approved.');
-        }
-
-        db()->prepare('UPDATE users SET account_status = ? WHERE id = ?')->execute([$newStatus, $target]);
-        log_action('USER_' . strtoupper($action), (int)$admin['id'], null,
-            ucfirst($u['role']) . ' "' . $u['username'] . '" -> ' . $newStatus);
-        flash('success', ucfirst($u['role']) . ' “' . $u['full_name'] . '” is now ' . $newStatus . '.');
+        flash('success', $res['message']);
         redirect($back);
     }
 
     // ---------- create account ----------
     if ($action === 'create') {
-        $fullName = trim((string)($_POST['full_name'] ?? ''));
-        $staffId  = trim((string)($_POST['staff_id'] ?? ''));
-        $email    = trim((string)($_POST['email'] ?? ''));
-        $dept     = trim((string)($_POST['department'] ?? ''));
-        $username = trim((string)($_POST['username'] ?? ''));
-        $role     = ($_POST['role'] ?? 'lecturer') === 'admin' ? 'admin' : 'lecturer';
-        $password = (string)($_POST['password'] ?? '');
-
-        if (mb_strlen($fullName) < 3)                   $fail('Enter the full name.');
-        if ($staffId === '')                            $fail('Enter a staff ID.');
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $fail('Enter a valid email.');
-        if (!preg_match('/^[a-zA-Z0-9_.]{3,40}$/', $username)) $fail('Invalid username (3–40 chars: letters, numbers, dot, underscore).');
-        if (strlen($password) < 8)                      $fail('Password must be at least 8 characters.');
-
-        $st = db()->prepare('SELECT
-               (SELECT COUNT(*) FROM users WHERE username = ?) AS u,
-               (SELECT COUNT(*) FROM users WHERE email = ?)    AS e,
-               (SELECT COUNT(*) FROM users WHERE staff_id = ?) AS s');
-        $st->execute([$username, $email, $staffId]);
-        $dup = $st->fetch();
-        if ((int)$dup['u']) $fail('Username already taken.');
-        if ((int)$dup['e']) $fail('Email already registered.');
-        if ((int)$dup['s']) $fail('Staff ID already registered.');
-
-        db()->prepare(
-            'INSERT INTO users (full_name, staff_id, email, username, password, department, role, account_status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, \'approved\')'
-        )->execute([$fullName, $staffId, $email, $username, password_hash($password, PASSWORD_DEFAULT), $dept ?: null, $role]);
-
-        log_action('USER_CREATE', (int)$admin['id'], null, 'Created ' . $role . ': ' . $username);
-        flash('success', ucfirst($role) . ' account created for ' . $fullName . '.');
+        $res = user_create($_POST, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
         redirect($back);
     }
 
     // ---------- reset password ----------
     if ($action === 'reset_password') {
         $pw = (string)($_POST['password'] ?? '');
-        if (strlen($pw) < 8) {
-            $fail('New password must be at least 8 characters.');
+        $res = user_update_password($target, $pw, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        db()->prepare('UPDATE users SET password = ? WHERE id = ?')
-            ->execute([password_hash($pw, PASSWORD_DEFAULT), $target]);
-        log_action('USER_RESET_PASSWORD', (int)$admin['id'], null, 'Password reset for user #' . $target);
         flash('success', 'Password updated.');
         redirect($back);
     }
 
     // ---------- delete account ----------
-    // Hard delete: sessions cascade away (rooms free up instantly), their
-    // reservations are unlinked (user_id -> NULL) and the activity log keeps
-    // its rows as the audit trail.
     if ($action === 'delete') {
-        $st = db()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
-        $st->execute([$target]);
-        $u = $st->fetch();
-        if (!$u) {
-            $fail('User not found.');
+        $res = user_delete($target, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
         }
-        if ((int)$u['id'] === (int)$admin['id']) {
-            $fail('You cannot delete your own account.');
-        }
-        if ($u['role'] === 'admin') {
-            $n = db()->query(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND account_status = 'approved'"
-            )->fetch()['n'];
-            if ((int)$n <= 1) {
-                $fail('Cannot delete the last active administrator.');
-            }
-        }
-
-        db()->prepare('DELETE FROM users WHERE id = ?')->execute([$target]);
-        log_action('USER_DELETE', (int)$admin['id'], null,
-            'Deleted ' . ucfirst($u['role']) . ' "' . $u['username'] . '"');
-        flash('success', ucfirst($u['role']) . ' “' . $u['full_name'] . '” was deleted.');
+        flash('success', $res['message']);
         redirect($back);
     }
 
@@ -265,6 +187,16 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <table class="table">
     <thead><tr><th>User</th><th>Role &amp; Status</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
+      <?php if (!$users): ?>
+      <tr>
+        <td colspan="4" class="muted" style="text-align:center;padding:2rem 1rem;">
+          No users match the selected filters.
+          <?php if ($q !== '' || $statusF !== ''): ?>
+            <a href="users.php">Reset filter</a>
+          <?php endif; ?>
+        </td>
+      </tr>
+      <?php else: ?>
       <?php foreach ($users as $u): ?>
       <tr>
         <td class="cell-main" data-label="Name">
@@ -336,16 +268,16 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
                   data-confirm="Permanently delete <?= e($u['full_name']) ?>? Their sessions end immediately and their reservations are unlinked. This cannot be undone."><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
+              <button class="btn btn--danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           <?php endif; ?>
           </div>
         </td>
       </tr>
       <?php endforeach; ?>
+      <?php endif; ?>
     </tbody>
   </table>
   </div>
-  <?php if (!$users): ?><p class="muted">No users match.</p><?php endif; ?>
   <?= page_nav($totalUsers, $pp['page']) ?>
 </div>
 

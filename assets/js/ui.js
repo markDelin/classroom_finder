@@ -43,9 +43,9 @@
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') { setNav(false); }
     });
-    // choosing a page closes the drawer
-    document.querySelectorAll('#cfSidebar a').forEach(function (a) {
-      a.addEventListener('click', function () { setNav(false); });
+    // choosing a page or action closes the drawer
+    document.querySelectorAll('#cfSidebar a, #cfSidebar button').forEach(function (el) {
+      el.addEventListener('click', function () { setNav(false); });
     });
     // keep the drawer below the top bar as things shift
     window.addEventListener('resize', function () {
@@ -195,13 +195,19 @@
     ev.preventDefault();
 
     var msg = f.getAttribute('data-confirm');
+    var btn = f.querySelector('button[type="submit"]');
+    var label = btn ? (btn.textContent || '').trim() : '';
+    // Context-specific action label (e.g. "Delete", "Reject", "Force end"), fallback to "Yes, continue"
+    var confirmText = (label && label.length <= 14) ? label : 'Yes, continue';
+
     window.Swal.fire({
       icon: 'warning',
       title: 'Are you sure?',
       text: msg,
       showCancelButton: true,
-      confirmButtonText: 'Yes, continue',
+      confirmButtonText: confirmText,
       cancelButtonText: 'Cancel',
+      customClass: { confirmButton: 'swal2-confirm-danger' },
       reverseButtons: true,
       focusCancel: true            // destructive: safest button gets focus
     }).then(function (res) {
@@ -226,6 +232,7 @@
         showCancelButton: true,
         confirmButtonText: 'Log Out',
         cancelButtonText: 'Cancel',
+        customClass: { confirmButton: 'swal2-confirm-danger' },
         reverseButtons: true,
         focusCancel: true
       }).then(function (res) {
@@ -249,6 +256,7 @@
         showCancelButton: true,
         confirmButtonText: 'Log Out',
         cancelButtonText: 'Cancel',
+        customClass: { confirmButton: 'swal2-confirm-danger' },
         reverseButtons: true,
         focusCancel: true
       }).then(function (res) {

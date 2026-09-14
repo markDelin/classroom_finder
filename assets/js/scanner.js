@@ -91,6 +91,35 @@
   var lastToken   = null;
   var lastAt      = 0;
   var busy        = false;
+  var unlockTimer = null;
+
+  function pauseScanner() {
+    if (!scanner) { return; }
+    try {
+      if (typeof scanner.pause === 'function' && scanner.getState() === 2) {
+        scanner.pause();
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function resumeScanner() {
+    if (!scanner) { return; }
+    try {
+      if (typeof scanner.resume === 'function' && scanner.getState() === 3) {
+        scanner.resume();
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function unlockScanner(delay) {
+    if (unlockTimer) { clearTimeout(unlockTimer); }
+    unlockTimer = setTimeout(function () {
+      unlockTimer = null;
+      busy = false;
+      lastAt = Date.now();
+      resumeScanner();
+    }, delay !== undefined ? delay : 1200);
+  }
 
   /**
    * Updates scanner status text and error state.
@@ -181,7 +210,10 @@
         return { reason: reason, details: document.getElementById('foDetails').value.trim() };
       }
     }).then(function (res) {
-      if (!res.isConfirmed || !res.value) { return; }
+      if (!res.isConfirmed || !res.value) {
+        unlockScanner(1500);
+        return;
+      }
       submitForceOpen(data, res.value.reason, res.value.details);
     });
   }
@@ -205,7 +237,7 @@
       window.cfToast && window.cfToast('error', 'Network error while opening the room.');
       playError();
     } finally {
-      lastToken = null;   // next scan/manual entry sees the room as available
+      unlockScanner(1500);
     }
   }
 
@@ -228,7 +260,7 @@
           allowOutsideClick: false
         }).then(function (r) {
           if (r.isDenied) { requestForceOpen(data); return; }
-          lastToken = null;
+          unlockScanner(1500);
         });
         return;
       }
@@ -238,7 +270,7 @@
         title: 'Room ' + num + ' is unavailable',
         text: data.reason || 'Please pick another room.',
         confirmButtonText: 'OK'
-      }).then(function () { lastToken = null; });
+      }).then(function () { unlockScanner(1500); });
       return;
     }
 
@@ -298,7 +330,8 @@
         return minutes;
       }
     }).then(function (res) {
-      if (!res.isConfirmed) { lastToken = null; return; }
+      if (!res.isConfirmed) { unlockScanner(1500); return; }
+      window.Swal.showLoading();
       fToken.value = data.room.token;
       fMinutes.value = String(res.value);
       occupyForm.submit();            // occupy.php re-validates and redirects
@@ -306,19 +339,23 @@
   }
 
   async function handlePayload(text) {
-    if (busy) { return; }
+    if (busy || (window.Swal && window.Swal.isVisible())) { return; }
+    var match = String(text).match(/[0-9a-f]{32}/i);
+    var now = Date.now();
+    if (!match) {
+      if (now - lastAt < 2000) { return; }
+      lastAt = now;
+      say('That is not a Classroom Finder QR code.', true);
+      return;
+    }
+    var token = match[0].toLowerCase();
+    if (token === lastToken && now - lastAt < 3000) { return; }   // same poster re-read
+    lastToken = token;
+    lastAt = now;
     busy = true;
-    try {
-      var match = String(text).match(/[0-9a-f]{32}/i);
-      if (!match) {
-        say('That is not a Classroom Finder QR code.', true);
-        return;
-      }
-      var token = match[0].toLowerCase();
-      var now = Date.now();
-      if (token === lastToken && now - lastAt < 3000) { return; }   // same poster re-read
-      lastToken = token; lastAt = now;
+    pauseScanner();
 
+    try {
       say('Checking room…');
       var res = await fetch('../api/scan_qr.php', {
         method: 'POST',
@@ -329,6 +366,7 @@
       if (!res.ok || !data.ok) {
         say(data.error || 'Could not validate this QR code.', true);
         window.cfToast && window.cfToast('error', data.error || 'Could not validate this QR code.');
+        unlockScanner(2000);
         return;
       }
       if (data.available) {
@@ -338,8 +376,7 @@
       openDialog(data);
     } catch (e) {
       say('Network error while validating the QR code.', true);
-    } finally {
-      busy = false;
+      unlockScanner(2000);
     }
   }
 
@@ -369,6 +406,8 @@
   }
 
   async function startCamera() {
+    if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
+    busy = false;
     try {
       scanner = new Html5Qrcode('reader', { verbose: false });
       await scanner.start(
@@ -392,6 +431,8 @@
   }
 
   async function stopCamera() {
+    if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
+    busy = false;
     if (!scanner) { return; }
     try { await scanner.stop(); scanner.clear(); } catch (e) { /* already stopped */ }
     scanner = null;
