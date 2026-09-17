@@ -94,7 +94,7 @@ function render_header(string $title, array $opts = []): void
 <link rel="manifest" href="<?= $prefix ?>manifest.json">
 <meta name="theme-color" content="#0ea5e9">
 </head>
-<body class="<?= $nav ? 'has-sidebar' : '' ?>" data-prefix="<?= $prefix ?>">
+<body class="<?= $nav ? 'has-sidebar' : '' ?><?= $active !== '' ? ' page--' . e($active) : '' ?>" data-prefix="<?= $prefix ?>">
 <noscript><style>#pageLoader{display:none!important}</style></noscript>
 <div id="pageLoader" class="page-loader" aria-hidden="true">
   <div class="page-loader__spinner"></div>

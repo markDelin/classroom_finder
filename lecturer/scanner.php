@@ -26,15 +26,15 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
 
 <?php if ($active): ?>
 <div class="card current-room">
-  <div>
+  <div class="current-room__info">
     <p class="eyebrow">YOU ARE OCCUPYING</p>
     <h2><?= e($active['room_number']) ?> <span class="muted">· <?= e($active['building']) ?></span></h2>
-    <p><?= fmt_range($active['start_time'], $active['end_time']) ?></p>
+    <p class="muted small"><?= fmt_range($active['start_time'], $active['end_time']) ?></p>
   </div>
   <form method="post" action="release.php" data-confirm="Release <?= e($active['room_number']) ?> now?">
     <?= csrf_field() ?>
     <input type="hidden" name="session_id" value="<?= (int)$active['id'] ?>">
-    <button class="btn btn--danger" type="submit">Release classroom</button>
+    <button class="btn btn--danger btn--block btn--sm" type="submit">Release classroom</button>
   </form>
 </div>
 <p class="muted small center-note">You already hold an active session — you can’t occupy another room until it ends or is released.</p>
@@ -68,7 +68,7 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
     </div>
 
     <form id="manualForm" class="manual-token-form">
-      <input name="token" placeholder="Paste or type 32-character token..." maxlength="120" autocomplete="off" required>
+      <input name="token" placeholder="Enter token manually..." maxlength="120" autocomplete="off" required>
       <button class="btn btn--primary" type="submit">Look up</button>
     </form>
   </div>
@@ -76,7 +76,7 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
 </div>
 
 <?php if ($active): ?>
-<div class="flashes">
+<div class="flashes" hidden>
   <div class="flash flash--error">You still have an active session in <?= e($active['room_number']) ?>. Release it before occupying another room.</div>
 </div>
 <?php endif; ?>

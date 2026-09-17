@@ -34,6 +34,57 @@
   var successAudio = document.getElementById('scanSuccessSound') || new Audio('../assets/sound/success.mp3');
   var errorAudio   = document.getElementById('scanErrorSound')   || new Audio('../assets/sound/error.mp3');
 
+  /**
+   * Displays alerts as SweetAlert2 modal dialogs on the scanner page.
+   * @param {string} type Alert type ('error' | 'warn' | 'success' | 'info')
+   * @param {string} message Alert message
+   * @param {string} [title] Optional custom modal title
+   */
+  function modalAlert(type, message, title) {
+    if (!message || !window.Swal) { return Promise.resolve(); }
+    var t = type === 'warn' ? 'warning' : (type || 'info');
+    var icon = (t === 'error' || t === 'warning' || t === 'success' || t === 'info') ? t : 'info';
+    var defaultTitle = t === 'error' ? 'Error' : (t === 'warning' ? 'Notice' : (t === 'success' ? 'Success' : 'Notice'));
+    return window.Swal.fire({
+      icon: icon,
+      title: title || defaultTitle,
+      text: message,
+      confirmButtonText: 'OK'
+    });
+  }
+
+  /* Override cfToast on the scanner page so all scanner alerts remain modal */
+  window.cfToast = function (type, message, title) {
+    return modalAlert(type, message, title);
+  };
+
+  /* Modal alerts for scanner error/warning flashes (preserving login welcome message) */
+  var scannerFlashes = document.querySelectorAll('.scanner-container ~ .flashes .flash, .flashes .flash');
+  if (scannerFlashes.length && window.Swal) {
+    scannerFlashes.forEach(function (el) {
+      var clone = el.cloneNode(true);
+      var closeBtn = clone.querySelector('.flash__close');
+      if (closeBtn) { closeBtn.remove(); }
+      var svg = clone.querySelector('svg');
+      if (svg) { svg.remove(); }
+      var msgText = clone.textContent.trim();
+
+      // Keep login welcome message as inline alert
+      if (/welcome back/i.test(msgText) || el.classList.contains('flash--success')) {
+        return;
+      }
+
+      var isWarn = el.classList.contains('flash--warn') || el.classList.contains('flash--warning');
+      var type = isWarn ? 'warn' : 'error';
+      modalAlert(type, msgText);
+      var wrap = el.closest('.flashes');
+      el.remove();
+      if (wrap && !wrap.querySelector('.flash')) {
+        wrap.remove();
+      }
+    });
+  }
+
   function playSound(audio) {
     if (!audio) { return; }
     try {
@@ -227,14 +278,14 @@
       });
       var out = await resp.json();
       if (!resp.ok || !out.ok) {
-        window.cfToast && window.cfToast('error', out.error || 'Could not open the room.');
+        modalAlert('error', out.error || 'Could not open the room.');
         playError();
         return;
       }
-      window.cfToast && window.cfToast('success', out.message || 'Room opened.');
+      modalAlert('success', out.message || 'Room opened.', 'Room Opened');
       playSuccess();
     } catch (e) {
-      window.cfToast && window.cfToast('error', 'Network error while opening the room.');
+      modalAlert('error', 'Network error while opening the room.');
       playError();
     } finally {
       unlockScanner(1500);
@@ -340,12 +391,20 @@
 
   async function handlePayload(text) {
     if (busy || (window.Swal && window.Swal.isVisible())) { return; }
+
+    if (document.querySelector('.current-room')) {
+      playError();
+      modalAlert('warn', 'You already hold an active classroom session. Please release it before occupying another room.', 'Active Session Held');
+      return;
+    }
+
     var match = String(text).match(/[0-9a-f]{32}/i);
     var now = Date.now();
     if (!match) {
       if (now - lastAt < 2000) { return; }
       lastAt = now;
       say('That is not a Classroom Finder QR code.', true);
+      modalAlert('error', 'That is not a valid Classroom Finder QR code or token.', 'Invalid QR Code');
       return;
     }
     var token = match[0].toLowerCase();
@@ -365,7 +424,7 @@
       var data = await res.json();
       if (!res.ok || !data.ok) {
         say(data.error || 'Could not validate this QR code.', true);
-        window.cfToast && window.cfToast('error', data.error || 'Could not validate this QR code.');
+        modalAlert('error', data.error || 'Could not validate this QR code.', 'Scan Failed');
         unlockScanner(2000);
         return;
       }
@@ -376,6 +435,7 @@
       openDialog(data);
     } catch (e) {
       say('Network error while validating the QR code.', true);
+      modalAlert('error', 'Network error while validating the QR code. Please check your connection.', 'Network Error');
       unlockScanner(2000);
     }
   }
@@ -385,23 +445,27 @@
   function cameraErrorMessage(err) {
     var name = (err && err.name) || '';
     if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-      window.cfToast && window.cfToast('warn', 'Camera permission blocked. Enable camera permissions in your browser address bar.');
+      modalAlert('warn', 'Camera access is blocked. Allow camera permission for this site (tap the padlock in the address bar), then press Start again.', 'Camera Permission Blocked');
       return 'Camera access is blocked. Allow camera permission for this site '
            + '(tap the padlock in the address bar), then press Start again.';
     }
     if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+      modalAlert('warn', 'No camera was found on this device. Type the token under the QR poster instead.', 'No Camera Found');
       return 'No camera was found on this device. Type the token under the QR poster instead.';
     }
     if (name === 'NotReadableError' || name === 'TrackStartError') {
+      modalAlert('warn', 'The camera seems busy in another app or tab. Close it, then press Start again.', 'Camera In Use');
       return 'The camera seems busy in another app or tab. Close it, then press Start again.';
     }
     if (name === 'OverconstrainedError') {
+      modalAlert('warn', 'This device’s camera is not compatible with the scanner. Type the token instead.', 'Camera Incompatible');
       return 'This device’s camera isn’t compatible with the scanner. Type the token instead.';
     }
     if (!window.isSecureContext) {
-      window.cfToast && window.cfToast('warn', 'Camera requires HTTPS or localhost.');
+      modalAlert('warn', 'Cameras need a secure (https) connection. Open the page over https or type the token instead.', 'Secure Context Required');
       return 'Cameras need a secure (https) connection. Open the page over https or type the token instead.';
     }
+    modalAlert('error', 'Could not start the camera. Check permission and try again, or type the token instead.', 'Camera Error');
     return 'Could not start the camera. Check permission and try again, or type the token instead.';
   }
 
