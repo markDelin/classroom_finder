@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $page     = max(1, (int)($_GET['page'] ?? 1));
-$perPage  = 10;
+$perPage  = admin_per_page();
 $q        = trim((string)($_GET['q'] ?? ''));
 $building = trim((string)($_GET['building'] ?? ''));
 $filters  = [];
@@ -131,7 +131,7 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
 </div>
 
 <div class="no-print">
-  <?= page_nav($total, $pP['page'], $perPage) ?>
+  <?= page_nav($total, $pP['page'], $perPage, 'page', 'QR codes') ?>
 </div>
 
 <script>

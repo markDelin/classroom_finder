@@ -10,7 +10,7 @@ require_once __DIR__ . '/../auth/auth_check.php';
 $admin = require_admin();
 
 $page    = max(1, (int)($_GET['page'] ?? 1));
-$perPage = ADMIN_PER_PAGE;
+$perPage = admin_per_page();
 
 $q = trim((string)($_GET['q'] ?? ''));
 
@@ -26,7 +26,7 @@ $totalSt = db()->prepare('SELECT COUNT(*) AS n FROM activity_logs l LEFT JOIN us
 $totalSt->execute($params);
 $total = (int)($totalSt ? $totalSt->fetch()['n'] : 0);
 
-$pP = page_params($total, $page);
+$pP = page_params($total, $page, $perPage);
 
 $st = db()->prepare(
     'SELECT l.*, u.full_name, c.room_number
@@ -91,7 +91,7 @@ render_header('Activity Logs', ['prefix' => '../', 'nav' => 'admin', 'active' =>
     </table>
     </div>
 
-    <?= page_nav($total, $page, $perPage) ?>
+    <?= page_nav($total, $pP['page'], $perPage, 'page', 'logs') ?>
     <?php endif; ?>
   </div>
 </div>

@@ -80,7 +80,8 @@ $tot           = $st->fetch();
 $totalSessions = (int)$tot['n'];
 $totalMinutes  = (int)$tot['mins'];
 
-$pp = page_params($totalSessions, (int)($_GET['page'] ?? 1));
+$perPage       = admin_per_page();
+$pp            = page_params($totalSessions, (int)($_GET['page'] ?? 1), $perPage);
 
 $st = db()->prepare(
     'SELECT s.*, c.room_number, c.building, u.full_name
@@ -178,7 +179,7 @@ $rangesOn  = $activeRange !== '' || $from !== '' || $to !== '';
     </tbody>
   </table>
   </div>
-  <?= page_nav($totalSessions, $pp['page']) ?>
+  <?= page_nav($totalSessions, $pp['page'], $perPage, 'page', 'sessions') ?>
   <?php endif; ?>
 </div>
 

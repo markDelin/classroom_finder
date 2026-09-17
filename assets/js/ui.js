@@ -5,7 +5,7 @@
  *   - any form marked data-confirm="…" gets an SWAL confirm before submitting
  *   - server-side flash messages are converted into SWAL modal alerts on load
  *
- * Exposes window.cfToast(type, message) for ad-hoc client-side feedback (uses SweetAlert2 modal alerts).
+ * Exposes window.cfToast(type, message) for ad-hoc client-side feedback (creates inline .flash alerts).
  */
 (function () {
   'use strict';
@@ -55,53 +55,48 @@
     syncTop();
   }
 
-  /* ---------- toast notification factory (Toastify JS) ---------- */
+  /* ---------- inline alert factory (replaces Toastify) ---------- */
   window.cfToast = function (type, message) {
     if (!message) { return Promise.resolve(); }
 
-    if (window.Toastify) {
-      var t = type === 'warn' ? 'warning' : (type || 'info');
-      var cls = 'cf-toast cf-toast--' + t;
-      var iconSvg = '';
-      if (t === 'success') {
-        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-      } else if (t === 'error') {
-        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>';
-      } else if (t === 'warning') {
-        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    var t = type === 'warn' ? 'warning' : (type || 'info');
+
+    var flashesContainer = document.querySelector('.card-flashes, .flashes');
+    if (!flashesContainer) {
+      flashesContainer = document.createElement('div');
+      flashesContainer.className = 'flashes';
+      var topbar = document.querySelector('.topbar');
+      if (topbar && topbar.nextSibling) {
+        topbar.parentNode.insertBefore(flashesContainer, topbar.nextSibling);
       } else {
-        iconSvg = '<svg class="cf-toast__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+        document.body.insertBefore(flashesContainer, document.body.firstChild);
       }
+    }
+    flashesContainer.hidden = false;
 
-      var div = document.createElement('div');
-      div.className = 'cf-toast__content';
-      div.style.display = 'inline-flex';
-      div.style.alignItems = 'center';
-      div.style.gap = '8px';
-      div.innerHTML = iconSvg + '<span class="cf-toast__body">' + String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
-
-      Toastify({
-        node: div,
-        duration: 2000,
-        gravity: 'top',
-        position: 'right',
-        className: cls,
-        stopOnFocus: true
-      }).showToast();
-
-      return Promise.resolve();
+    var flash = document.createElement('div');
+    flash.className = 'flash flash--' + (t === 'warning' ? 'warn' : t);
+    var iconSvg = '';
+    if (t === 'success') {
+      iconSvg = '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    } else if (t === 'error') {
+      iconSvg = '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>';
+    } else if (t === 'warning') {
+      iconSvg = '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    } else {
+      iconSvg = '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
     }
 
-    if (window.Swal) {
-      return window.Swal.fire({
-        icon: type === 'warn' ? 'warning' : (type || 'info'),
-        title: message,
-        showConfirmButton: false,
-        timer: 2000
-      });
-    }
+    flash.innerHTML = iconSvg + '<span>' + String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span><button type="button" class="flash__close" aria-label="Dismiss">&times;</button>';
+    flashesContainer.appendChild(flash);
 
-    alert(message);
+    // Auto-remove dynamic client alerts after 5 seconds
+    setTimeout(function () {
+      if (flash.parentNode) {
+        flash.remove();
+      }
+    }, 5000);
+
     return Promise.resolve();
   };
 
@@ -372,31 +367,16 @@
     }
   });
 
-  /* ---------- server flashes become SweetAlert2 modal alerts ---------- */
-  var wrap = document.querySelector('.flashes');
-  if (wrap) {
-    var map = { success: 'success', error: 'error', warn: 'warning', info: 'info' };
-    var items = [];
-    wrap.querySelectorAll('.flash').forEach(function (el) {
-      var icon = 'info';
-      Object.keys(map).forEach(function (c) {
-        if (el.classList.contains('flash--' + c)) { icon = map[c]; }
-      });
-      var text = el.textContent.trim();
-      if (text) {
-        items.push({ type: icon, text: text });
+  /* ---------- dismissible inline alerts ---------- */
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.flash__close');
+    if (btn) {
+      var flash = btn.closest('.flash');
+      if (flash) {
+        flash.remove();
       }
-    });
-    if (items.length) {
-      wrap.hidden = true;
-      var chain = Promise.resolve();
-      items.forEach(function (it) {
-        chain = chain.then(function () {
-          return window.cfToast(it.type, it.text);
-        });
-      });
     }
-  }
+  });
 
   /* ---------- page loader ---------- */
   var loader = document.getElementById('pageLoader');

@@ -145,7 +145,8 @@ $whereSql = $where ? ' AND ' . implode(' AND ', $where) : '';
 $st = db()->prepare('SELECT COUNT(*) AS n FROM users WHERE 1=1' . $whereSql);
 $st->execute($params);
 $totalUsers = (int)$st->fetch()['n'];
-$pp         = page_params($totalUsers, (int)($_GET['page'] ?? 1));
+$perPage    = admin_per_page();
+$pp         = page_params($totalUsers, (int)($_GET['page'] ?? 1), $perPage);
 
 $st = db()->prepare(
     'SELECT * FROM users WHERE 1=1' . $whereSql .
@@ -278,7 +279,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
     </tbody>
   </table>
   </div>
-  <?= page_nav($totalUsers, $pp['page']) ?>
+  <?= page_nav($totalUsers, $pp['page'], $perPage, 'page', 'users') ?>
 </div>
 
   <!-- shown as a SweetAlert2 modal by admin-modals.js -->

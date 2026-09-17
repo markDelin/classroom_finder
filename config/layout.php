@@ -90,7 +90,6 @@ function render_header(string $title, array $opts = []): void
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> · <?= e(app_name()) ?></title>
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
-<link rel="stylesheet" href="<?= $prefix ?>assets/css/vendor/toastify.min.css?v=<?= is_file(__DIR__ . '/../assets/css/vendor/toastify.min.css') ? filemtime(__DIR__ . '/../assets/css/vendor/toastify.min.css') : 0 ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <link rel="manifest" href="<?= $prefix ?>manifest.json">
 <meta name="theme-color" content="#0ea5e9">
@@ -132,6 +131,7 @@ function render_header(string $title, array $opts = []): void
     <div class="flash flash--<?= e($f['t']) ?>">
       <?= icon($f['t'] === 'success' ? 'circle-check' : ($f['t'] === 'error' ? 'triangle-alert' : 'info')) ?>
       <span><?= e($f['m']) ?></span>
+      <button type="button" class="flash__close" aria-label="Dismiss">&times;</button>
     </div>
   <?php endforeach; ?>
 </div>
@@ -167,7 +167,6 @@ function render_footer(array $scripts = []): void
     $prefix = $GLOBALS['cf_prefix'] ?? '';
     ?></main>
 <script src="<?= $prefix ?>assets/js/vendor/sweetalert2.all.min.js"></script>
-<script src="<?= $prefix ?>assets/js/vendor/toastify.min.js?v=<?= is_file(__DIR__ . '/../assets/js/vendor/toastify.min.js') ? filemtime(__DIR__ . '/../assets/js/vendor/toastify.min.js') : 0 ?>"></script>
 <script src="<?= $prefix ?>assets/js/ui.js?v=<?= filemtime(__DIR__ . '/../assets/js/ui.js') ?>"></script>
 <?php foreach ($scripts as $src): ?>
 <?php $cf_js = __DIR__ . '/../assets/js/' . basename($src); // pages pass "assets/js/x.js" ?>
@@ -347,14 +346,24 @@ function room_pager_html(int $total, int $page, ?callable $hrefFor = null): stri
 const ADMIN_PER_PAGE = 10;
 
 /**
+ * Reads and validates per-page setting from GET parameters.
+ */
+function admin_per_page(int $default = ADMIN_PER_PAGE, string $param = 'per_page'): int
+{
+    $val = (int)($_GET[$param] ?? 0);
+    return in_array($val, [10, 25, 50, 100], true) ? $val : $default;
+}
+
+/**
  * Clamp+slice parameters for an admin listing.
  *
  * @return array{page:int, pages:int, offset:int, limit:int}
  */
 function page_params(int $total, int $page, int $perPage = ADMIN_PER_PAGE): array
 {
-    $pages = max(1, (int)ceil($total / $perPage));
-    $page  = max(1, min($page, $pages));
+    $perPage = max(1, $perPage);
+    $pages   = max(1, (int)ceil($total / $perPage));
+    $page    = max(1, min($page, $pages));
     return [
         'page'   => $page,
         'pages'  => $pages,
@@ -364,46 +373,100 @@ function page_params(int $total, int $page, int $perPage = ADMIN_PER_PAGE): arra
 }
 
 /**
- * Numbered ‹ Prev … Next › pager for admin tables. Preserves every current
- * query-string value except the page itself, so filters survive navigation.
- * Renders nothing while everything fits on one page.
+ * Render complete pagination footer for admin listings.
+ * Includes "Showing X to Y of Z entries", per-page selector, and numbered pager buttons.
+ *
+ * @param int $total Total records count
+ * @param int $page Current 1-based page number
+ * @param int $perPage Records per page
+ * @param string $param Query param name for page number (e.g. 'page', 'up_page', 'past_page')
+ * @param string $itemLabel Plural noun describing items (e.g. 'classrooms', 'users', 'entries')
+ * @return string Rendered HTML markup
  */
-function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $param = 'page'): string
+function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $param = 'page', string $itemLabel = 'entries'): string
 {
-    $pp   = page_params($total, $page, $perPage);
-    if ($pp['pages'] <= 1) {
+    if ($total <= 0) {
         return '';
     }
-    $qs   = $_GET;
+
+    $pp   = page_params($total, $page, $perPage);
+    $from = $pp['offset'] + 1;
+    $to   = min($total, $pp['offset'] + $pp['limit']);
+
+    // Query string helper for page links
+    $qs = $_GET;
     unset($qs[$param]);
-    $url  = static fn(int $p): string => '?' . e(http_build_query(array_merge($qs, [$param => $p])));
-    $link = static fn(int $p, string $label, bool $current = false): string =>
-        '<a class="' . ($current ? 'is-active' : '') . '" href="' . $url($p) . '">' . $label . '</a>';
+    $pageUrl = static function (int $p) use ($qs, $param): string {
+        $params = array_merge($qs, [$param => $p]);
+        return '?' . e(http_build_query($params));
+    };
 
-    $start = max(1, min($pp['page'] - 2, $pp['pages'] - 4));
-    $end   = min($pp['pages'], $start + 4);
+    // Per-page param name (e.g. 'per_page', 'up_per_page', 'past_per_page')
+    $perPageParam = ($param === 'page') ? 'per_page' : ($param === 'up_page' ? 'up_per_page' : ($param === 'past_page' ? 'past_per_page' : ($param . '_per_page')));
+    $qsNoPerPage = $qs;
+    unset($qsNoPerPage[$perPageParam]);
+    $perPageUrl = static function (int $ppVal) use ($qsNoPerPage, $perPageParam, $param): string {
+        $params = array_merge($qsNoPerPage, [$perPageParam => $ppVal, $param => 1]);
+        return '?' . e(http_build_query($params));
+    };
 
-    $html = '<nav class="pager">';
-    $html .= $pp['page'] > 1
-        ? $link($pp['page'] - 1, '< Prev')
-        : '<span class="is-off">< Prev</span>';
-    if ($start > 1) {
-        $html .= $link(1, '1');
-        if ($start > 2) {
-            $html .= '<span class="dots">...</span>';
+    $html = '<div class="pagination-footer">';
+
+    // Left: Range and total information
+    $html .= '<div class="pagination-info">';
+    $html .= 'Showing <strong>' . $from . '</strong> to <strong>' . $to . '</strong> of <strong>' . $total . '</strong> ' . e($itemLabel);
+    $html .= '</div>';
+
+    // Right: Controls wrapper (per-page select + page buttons)
+    $html .= '<div class="pagination-controls">';
+
+    // Per-page selector
+    $html .= '<div class="pagination-per-page">';
+    $html .= '<label for="pp_' . e($param) . '">Show</label>';
+    $html .= '<select id="pp_' . e($param) . '" onchange="window.location.href=this.value">';
+    foreach ([10, 25, 50, 100] as $opt) {
+        $sel = ($opt === $perPage) ? ' selected' : '';
+        $html .= '<option value="' . $perPageUrl($opt) . '"' . $sel . '>' . $opt . '</option>';
+    }
+    $html .= '</select>';
+    $html .= '</div>';
+
+    // Page navigation links (if multiple pages)
+    if ($pp['pages'] > 1) {
+        $link = static fn(int $p, string $label, bool $current = false): string =>
+            '<a class="' . ($current ? 'is-active' : '') . '" href="' . $pageUrl($p) . '"' . ($current ? ' aria-current="page"' : '') . '>' . $label . '</a>';
+
+        $start = max(1, min($pp['page'] - 2, $pp['pages'] - 4));
+        $end   = min($pp['pages'], $start + 4);
+
+        $html .= '<nav class="pager" aria-label="Pagination">';
+        $html .= $pp['page'] > 1
+            ? $link($pp['page'] - 1, '&lsaquo; Prev')
+            : '<span class="is-off" aria-disabled="true">&lsaquo; Prev</span>';
+
+        if ($start > 1) {
+            $html .= $link(1, '1');
+            if ($start > 2) {
+                $html .= '<span class="dots" aria-hidden="true">&hellip;</span>';
+            }
         }
-    }
-    for ($p = $start; $p <= $end; $p++) {
-        $html .= $link($p, (string)$p, $p === $pp['page']);
-    }
-    if ($end < $pp['pages']) {
-        if ($end < $pp['pages'] - 1) {
-            $html .= '<span class="dots">...</span>';
+        for ($p = $start; $p <= $end; $p++) {
+            $html .= $link($p, (string)$p, $p === $pp['page']);
         }
-        $html .= $link($pp['pages'], (string)$pp['pages']);
+        if ($end < $pp['pages']) {
+            if ($end < $pp['pages'] - 1) {
+                $html .= '<span class="dots" aria-hidden="true">&hellip;</span>';
+            }
+            $html .= $link($pp['pages'], (string)$pp['pages']);
+        }
+        $html .= $pp['page'] < $pp['pages']
+            ? $link($pp['page'] + 1, 'Next &rsaquo;')
+            : '<span class="is-off" aria-disabled="true">Next &rsaquo;</span>';
+        $html .= '</nav>';
     }
-    $html .= $pp['page'] < $pp['pages']
-        ? $link($pp['page'] + 1, 'Next >')
-        : '<span class="is-off">Next ></span>';
-    return $html . '</nav>';
+
+    $html .= '</div>'; // .pagination-controls
+    $html .= '</div>'; // .pagination-footer
+
+    return $html;
 }

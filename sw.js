@@ -2,11 +2,9 @@
 const CACHE_NAME = 'cf-shell-v1';
 const ASSETS_TO_CACHE = [
   'assets/css/style.css',
-  'assets/css/vendor/toastify.min.css',
   'assets/js/ui.js',
   'assets/js/landing.js',
   'assets/js/vendor/sweetalert2.all.min.js',
-  'assets/js/vendor/toastify.min.js',
   'assets/js/vendor/html5-qrcode.min.js'
 ];
 

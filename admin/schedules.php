@@ -102,8 +102,9 @@ $filterSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
 $stc = db()->prepare('SELECT COUNT(*) AS n FROM class_schedules cs JOIN classrooms c ON c.id = cs.classroom_id' . $filterSql);
 $stc->execute($filterParams);
-$total = (int)$stc->fetch()['n'];
-$pP = page_params($total, (int)($_GET['page'] ?? 1));
+$total   = (int)$stc->fetch()['n'];
+$perPage = admin_per_page();
+$pP      = page_params($total, (int)($_GET['page'] ?? 1), $perPage);
 
 $st = db()->prepare(
     'SELECT cs.*, c.room_number, c.building, fo.id AS force_open_id
@@ -239,7 +240,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     </tbody>
   </table>
   </div>
-  <?= page_nav($total, $pP['page'], ADMIN_PER_PAGE, 'page') ?>
+  <?= page_nav($total, $pP['page'], $perPage, 'page', 'schedules') ?>
   <?php endif; ?>
 </div>
 

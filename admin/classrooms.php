@@ -65,7 +65,8 @@ if ($q !== '')       $filters['q'] = $q;
 if ($statusF !== '') $filters['status'] = $statusF;
 
 $allRooms = fetch_classrooms($filters);
-$pp       = page_params(count($allRooms), (int)($_GET['page'] ?? 1));
+$perPage  = admin_per_page();
+$pp       = page_params(count($allRooms), (int)($_GET['page'] ?? 1), $perPage);
 $rooms    = array_slice($allRooms, $pp['offset'], $pp['limit']);
 
 render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'classrooms']);
@@ -195,7 +196,7 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
     </tbody>
   </table>
   </div>
-  <?= page_nav(count($allRooms), $pp['page']) ?>
+  <?= page_nav(count($allRooms), $pp['page'], $perPage, 'page', 'classrooms') ?>
 </div>
 
 <?php render_footer(['assets/js/admin-modals.js']); ?>

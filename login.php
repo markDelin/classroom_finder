@@ -22,6 +22,7 @@ if ($u = current_user()) {
     redirect($u['role'] === 'admin' ? 'admin/dashboard.php' : 'lecturer/scanner.php');
 }
 
+$flashes = take_flashes();
 render_header('Log in', ['prefix' => '']);
 ?>
 <div class="auth-wrap">
@@ -30,9 +31,21 @@ render_header('Log in', ['prefix' => '']);
     <p class="muted">Lecturers and administrators sign in here. Students don’t need an account —
       the <a href="index.php"><?= e(app_name()) ?></a> is open to everyone.</p>
 
+    <div class="card-flashes">
+      <?php foreach ($flashes as $f): ?>
+        <div class="flash flash--<?= e($f['t']) ?>">
+          <?= icon($f['t'] === 'success' ? 'circle-check' : ($f['t'] === 'error' ? 'triangle-alert' : 'info')) ?>
+          <span><?= e($f['m']) ?></span>
+          <button type="button" class="flash__close" aria-label="Dismiss">&times;</button>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
     <?php if ($needsSetup): ?>
       <div class="flash flash--warn">
-        No administrator exists yet. <a href="setup.php"><strong>Run initial setup</strong></a>
+        <?= icon('triangle-alert') ?>
+        <span>No administrator exists yet. <a href="setup.php"><strong>Run initial setup</strong></a></span>
+        <button type="button" class="flash__close" aria-label="Dismiss">&times;</button>
       </div>
     <?php endif; ?>
 

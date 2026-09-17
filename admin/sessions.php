@@ -46,7 +46,10 @@ $st = db()->prepare(
      ORDER BY s.end_time ASC"
 );
 $st->execute($activeParams);
-$active = $st->fetchAll();
+$allActive   = $st->fetchAll();
+$actPerPage  = admin_per_page(ADMIN_PER_PAGE, 'act_per_page');
+$actPp       = page_params(count($allActive), (int)($_GET['act_page'] ?? 1), $actPerPage);
+$active      = array_slice($allActive, $actPp['offset'], $actPp['limit']);
 
 $wherePast  = ["s.status <> 'active'"];
 $pastParams = [];
@@ -58,8 +61,9 @@ $wherePastSql = implode(' AND ', $wherePast);
 
 $st = db()->prepare("SELECT COUNT(*) AS n FROM classroom_sessions s JOIN classrooms c ON c.id = s.classroom_id JOIN users u ON u.id = s.user_id WHERE " . $wherePastSql);
 $st->execute($pastParams);
-$pastTotal = (int)$st->fetch()['n'];
-$pp        = page_params($pastTotal, (int)($_GET['page'] ?? 1));
+$pastTotal   = (int)$st->fetch()['n'];
+$pastPerPage = admin_per_page(ADMIN_PER_PAGE, 'past_per_page');
+$pp          = page_params($pastTotal, (int)($_GET['page'] ?? 1), $pastPerPage);
 
 $st = db()->prepare(
     "SELECT s.*, c.room_number, c.building, u.full_name AS lecturer
@@ -127,6 +131,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     </tbody>
   </table>
   </div>
+  <?= page_nav(count($allActive), $actPp['page'], $actPerPage, 'act_page', 'active sessions') ?>
   <?php endif; ?>
 </div>
 
@@ -159,7 +164,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
     </tbody>
   </table>
   </div>
-  <?= page_nav($pastTotal, $pp['page']) ?>
+  <?= page_nav($pastTotal, $pp['page'], $pastPerPage, 'page', 'past sessions') ?>
   <?php endif; ?>
 </div>
 

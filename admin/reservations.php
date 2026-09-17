@@ -113,7 +113,8 @@ $whereUpSql = implode(' AND ', $whereUp);
 $st = db()->prepare("SELECT COUNT(*) AS n FROM reservations r JOIN classrooms c ON c.id = r.classroom_id LEFT JOIN users u ON u.id = r.user_id WHERE " . $whereUpSql);
 $st->execute($upParams);
 $upcomingTotal = (int)$st->fetch()['n'];
-$upP           = page_params($upcomingTotal, (int)($_GET['up_page'] ?? 1));
+$upPerPage     = admin_per_page(ADMIN_PER_PAGE, 'up_per_page');
+$upP           = page_params($upcomingTotal, (int)($_GET['up_page'] ?? 1), $upPerPage);
 
 $st = db()->prepare(
     'SELECT r.*, c.room_number, c.building, u.full_name
@@ -137,8 +138,9 @@ $wherePastSql = implode(' AND ', $wherePast);
 
 $st = db()->prepare("SELECT COUNT(*) AS n FROM reservations r JOIN classrooms c ON c.id = r.classroom_id LEFT JOIN users u ON u.id = r.user_id WHERE " . $wherePastSql);
 $st->execute($pastParams);
-$pastTotal = (int)$st->fetch()['n'];
-$pastP     = page_params($pastTotal, (int)($_GET['past_page'] ?? 1));
+$pastTotal   = (int)$st->fetch()['n'];
+$pastPerPage = admin_per_page(ADMIN_PER_PAGE, 'past_per_page');
+$pastP       = page_params($pastTotal, (int)($_GET['past_page'] ?? 1), $pastPerPage);
 
 $st = db()->prepare(
     'SELECT r.*, c.room_number, c.building, u.full_name
@@ -228,7 +230,7 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
     </tbody>
   </table>
   </div>
-  <?= page_nav($upcomingTotal, $upP['page'], ADMIN_PER_PAGE, 'up_page') ?>
+  <?= page_nav($upcomingTotal, $upP['page'], $upPerPage, 'up_page', 'upcoming reservations') ?>
   <?php endif; ?>
 </div>
 
@@ -250,7 +252,7 @@ render_header('Reservations', ['prefix' => '../', 'nav' => 'admin', 'active' => 
     </tbody>
   </table>
   </div>
-  <?= page_nav($pastTotal, $pastP['page'], ADMIN_PER_PAGE, 'past_page') ?>
+  <?= page_nav($pastTotal, $pastP['page'], $pastPerPage, 'past_page', 'past reservations') ?>
 </div>
 <?php endif; ?>
 
