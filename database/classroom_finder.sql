@@ -180,7 +180,9 @@ INSERT INTO settings (skey, svalue) VALUES
   ('min_duration_minutes',     '15'),   -- shortest occupancy a lecturer may pick
   ('max_duration_minutes',     '480'),  -- longest occupancy
   ('duration_step_minutes',    '30'),   -- +/- step in the scanner's duration picker
-  ('landing_refresh_seconds',  '15')    -- landing page auto-refresh interval
+  ('landing_refresh_seconds',  '15'),   -- landing page auto-refresh interval
+  ('scan_day_start',           '07:00'),-- daily room scan operating start time (HH:MM)
+  ('scan_day_end',             '19:00') -- daily room scan operating end time (HH:MM)
 ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);
 
 -- ------------------------------------------------------------

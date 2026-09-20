@@ -109,6 +109,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('error', 'Minimum occupancy cannot exceed maximum — minimum was reset.');
     }
 
+    $dayStart = trim((string)($_POST['scan_day_start'] ?? ''));
+    $dayEnd   = trim((string)($_POST['scan_day_end'] ?? ''));
+    if ($dayStart !== '' && $dayEnd !== '') {
+        $dayStart5 = substr($dayStart, 0, 5);
+        $dayEnd5   = substr($dayEnd, 0, 5);
+        if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $dayStart5) || !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $dayEnd5)) {
+            flash('error', 'Operating hours must be valid times (HH:MM).');
+        } elseif ($dayStart5 >= $dayEnd5) {
+            flash('error', 'Daily scanning start time must be earlier than end time.');
+        } else {
+            set_setting('scan_day_start', $dayStart5);
+            set_setting('scan_day_end', $dayEnd5);
+        }
+    }
+
     log_action('SETTINGS_UPDATE', (int)$admin['id']);
     flash('success', 'Settings saved.');
     redirect('settings.php');
@@ -192,6 +207,17 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
           <small class="muted" style="display:block;margin-top:.3rem">Allowed range: <?= $min ?> – <?= $max ?></small>
         </label>
       <?php endforeach; ?>
+      <?php [$scanStart, $scanEnd] = get_scan_hours(); ?>
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning start time</span>
+        <input type="time" name="scan_day_start" value="<?= e($scanStart) ?>" style="width:100%" required>
+        <small class="muted" style="display:block;margin-top:.3rem">Start of daily room scanning (default: 07:00 AM)</small>
+      </label>
+      <label>
+        <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning end time</span>
+        <input type="time" name="scan_day_end" value="<?= e($scanEnd) ?>" style="width:100%" required>
+        <small class="muted" style="display:block;margin-top:.3rem">End of daily room scanning (default: 07:00 PM)</small>
+      </label>
     </div>
 
     <div style="margin-top: 1.3rem; display: flex; justify-content: flex-end;">
@@ -207,6 +233,7 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
     <li><strong>Min / max occupancy</strong> — bounds for the duration a lecturer can pick after scanning.</li>
     <li><strong>Picker step</strong> — the +/− increment in the scanner’s duration dialog.</li>
     <li><strong>Refresh</strong> — how often the public landing page reloads availability.</li>
+    <li><strong>Scanning operating hours</strong> — daily window when lecturers can scan and occupy classrooms (e.g. 07:00 to 19:00). Sessions occupied before closing continue until their scheduled end time.</li>
   </ul>
 </div>
 

@@ -81,6 +81,15 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
         ];
     }
 
+    if (function_exists('is_within_scan_hours') && !is_within_scan_hours()) {
+        [$scanStart, $scanEnd] = function_exists('get_scan_hours') ? get_scan_hours() : ['07:00', '19:00'];
+        $rangeStr = function_exists('fmt_range') ? fmt_range($scanStart, $scanEnd) : "{$scanStart} – {$scanEnd}";
+        return [
+            'ok'    => false,
+            'error' => "Room occupancy is closed for the day. Permitted only between {$rangeStr}.",
+        ];
+    }
+
     $minMinutes = function_exists('get_setting_int') ? get_setting_int('min_duration_minutes', 15) : 15;
     $maxMinutes = function_exists('get_setting_int') ? get_setting_int('max_duration_minutes', 480) : 480;
 

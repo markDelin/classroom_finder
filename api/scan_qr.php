@@ -29,6 +29,15 @@ if (!check_csrf()) {
     json_response(['ok' => false, 'error' => 'Invalid CSRF token. Reload the page and try again.', 'code' => 'csrf'], 403);
 }
 
+if (!is_within_scan_hours()) {
+    [$scanStart, $scanEnd] = get_scan_hours();
+    json_response([
+        'ok'    => false,
+        'error' => 'Scanning is closed for the day. Room occupancy is permitted only between ' . fmt_range($scanStart, $scanEnd) . '.',
+        'code'  => 'outside_hours',
+    ], 403);
+}
+
 $input = request_input();
 $token = extract_qr_token((string)($input['token'] ?? ''));
 if ($token === null) {

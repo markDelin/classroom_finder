@@ -28,22 +28,16 @@ $classrooms = [
     ['room_number' => '204', 'building' => 'New Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 60, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '303', 'building' => 'New Building', 'floor' => 3, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => 'IT Multimedia Lab'],
+    ['room_number' => '303', 'building' => 'New Building', 'floor' => 3, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => null],
 
     // Main Building
-    ['room_number' => '101', 'building' => 'Main Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '102', 'building' => 'Main Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '201', 'building' => 'Main Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => 'College Computer Lab 1'],
-    ['room_number' => '202', 'building' => 'Main Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => 'College Computer Lab 2'],
-    ['room_number' => '301', 'building' => 'Main Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '302', 'building' => 'Main Building', 'floor' => 3, 'capacity' => 80, 'room_type' => 'Other', 'status' => 'available', 'note' => 'Audio-Visual Hall'],
+    ['room_number' => '101', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '102', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '201', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => null],
+    ['room_number' => '202', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => 'College Computer Lab 2'],
+    ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 80, 'room_type' => 'Other', 'status' => 'available', 'note' => null],
 
-    // High School Building
-    ['room_number' => 'HS-101', 'building' => 'High School Building', 'floor' => 1, 'capacity' => 40, 'room_type' => 'Highschool Room', 'status' => 'available', 'note' => 'Grade 7 Section A'],
-    ['room_number' => 'HS-102', 'building' => 'High School Building', 'floor' => 1, 'capacity' => 40, 'room_type' => 'Highschool Room', 'status' => 'available', 'note' => 'Grade 8 Section A'],
-    ['room_number' => 'HS-201', 'building' => 'High School Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Highschool Comlab', 'status' => 'available', 'note' => 'High School Computer Lab'],
-    ['room_number' => 'HS-202', 'building' => 'High School Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Highschool Room', 'status' => 'available', 'note' => 'Grade 9 Section A'],
-    ['room_number' => 'HS-301', 'building' => 'High School Building', 'floor' => 3, 'capacity' => 40, 'room_type' => 'Highschool Room', 'status' => 'available', 'note' => 'Grade 10 Section A'],
 ];
 
 $stmtCheck = db()->prepare('SELECT id FROM classrooms WHERE building = ? AND room_number = ?');

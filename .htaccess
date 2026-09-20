@@ -1,8 +1,26 @@
+# Default directory index
+DirectoryIndex index.php dashboard.php
+
 # Prevent directory listings
 Options -Indexes
 
-# Custom Error Pages
-ErrorDocument 404 /404.php
+# Custom Error Pages (auto-detect subdirectory or root domain)
+<If "%{REQUEST_URI} =~ m#^/classroom_finder/#">
+    ErrorDocument 400 /classroom_finder/error.php?code=400
+    ErrorDocument 401 /classroom_finder/error.php?code=401
+    ErrorDocument 403 /classroom_finder/403.php
+    ErrorDocument 404 /classroom_finder/404.php
+    ErrorDocument 500 /classroom_finder/500.php
+    ErrorDocument 503 /classroom_finder/error.php?code=503
+</If>
+<Else>
+    ErrorDocument 400 /error.php?code=400
+    ErrorDocument 401 /error.php?code=401
+    ErrorDocument 403 /403.php
+    ErrorDocument 404 /404.php
+    ErrorDocument 500 /500.php
+    ErrorDocument 503 /error.php?code=503
+</Else>
 
 # Block sensitive file extensions
 <FilesMatch "\.(sql|log|ini|env|md|json|lock)$">

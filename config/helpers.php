@@ -174,6 +174,32 @@ function redirect(string $url): never
     exit;
 }
 
+/**
+ * Terminates execution and renders an HTTP error page.
+ *
+ * @param int $code HTTP status code (e.g. 400, 401, 403, 404, 500, 503)
+ * @param string $message Optional custom error message
+ * @return never
+ */
+function abort(int $code = 404, string $message = ''): never
+{
+    http_response_code($code);
+    $_GET['code'] = $code;
+    if ($message !== '') {
+        $_GET['message'] = $message;
+    }
+    if ($code === 403 && file_exists(__DIR__ . '/../403.php')) {
+        require __DIR__ . '/../403.php';
+    } elseif ($code === 404 && file_exists(__DIR__ . '/../404.php') && $message === '') {
+        require __DIR__ . '/../404.php';
+    } elseif (file_exists(__DIR__ . '/../error.php')) {
+        require __DIR__ . '/../error.php';
+    } else {
+        echo 'Error ' . $code . ': ' . e($message !== '' ? $message : 'An error occurred.');
+    }
+    exit;
+}
+
 /* ==========================================================================
  * CSRF protection
  * ========================================================================*/
@@ -275,7 +301,7 @@ function is_logged_in(): bool
  * ========================================================================*/
 
 /** @var array<string,string>|null $settings_cache request-wide settings cache */
-$settings_cache = null;
+$settings_cache ??= null;
 
 /**
  * Retrieve key-value configuration setting from system settings table.
@@ -573,6 +599,36 @@ function minutes_until(string $futureSqlDateTime): int
 {
     $t = strtotime($futureSqlDateTime);
     return $t === false ? 0 : max(0, (int)ceil(($t - time()) / 60));
+}
+
+/**
+ * Return configured operating hours for room scanning: [start, end].
+ * Format: 'H:i' (e.g. '07:00', '19:00').
+ *
+ * @return array{0: string, 1: string}
+ */
+function get_scan_hours(): array
+{
+    $start = substr(trim(get_setting('scan_day_start', '07:00')), 0, 5);
+    $end   = substr(trim(get_setting('scan_day_end', '19:00')), 0, 5);
+    return [
+        preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $start) ? $start : '07:00',
+        preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $end) ? $end : '19:00',
+    ];
+}
+
+/**
+ * Check whether a timestamp (or current time) falls within daily room scanning operating hours.
+ *
+ * @param int|null $time Unix timestamp (defaults to current time).
+ * @return bool
+ */
+function is_within_scan_hours(?int $time = null): bool
+{
+    $time ??= time();
+    $current = date('H:i', $time);
+    [$start, $end] = get_scan_hours();
+    return $current >= $start && $current < $end;
 }
 
 /* ==========================================================================

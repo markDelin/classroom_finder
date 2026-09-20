@@ -24,6 +24,17 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   <p class="muted">Point your camera at the QR poster outside the room. You can also type the token manually below.</p>
 </div>
 
+<?php if (!is_within_scan_hours()): ?>
+  <?php [$scanStart, $scanEnd] = get_scan_hours(); ?>
+  <div class="scanner-hours-banner" style="background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-left: 4px solid #eab308; padding: .85rem 1.1rem; border-radius: 8px; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .75rem;">
+    <span style="color: #eab308; display: flex; align-items: center;"><?= icon('clock') ?></span>
+    <div>
+      <strong>Room scanning is closed for the day.</strong>
+      <div class="muted small">Daily room occupancy is permitted between <?= e(fmt_range($scanStart, $scanEnd)) ?>. Existing active sessions continue until their scheduled end time.</div>
+    </div>
+  </div>
+<?php endif; ?>
+
 <?php if ($active): ?>
 <div class="card current-room">
   <div class="current-room__info">
