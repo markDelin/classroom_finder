@@ -1,17 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — first-time setupS.
- *
- * Only reachable while NO user exists at all. The very first visitor creates
- * the initial administrator; afterwards this page permanently redirects away,
- * so nobody can self-register as an admin later.
- */
-
 require_once __DIR__ . '/config/helpers.php';
 
-// Lock check: once installed or any user exists, close setup forever.
 if (is_file(__DIR__ . '/installed.lock')) {
     redirect('index.php');
 }
@@ -44,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($password !== $confirm)                         $errors[] = 'Passwords do not match.';
 
         if (!$errors) {
-            // unique checks
             $st = db()->prepare('SELECT
                    (SELECT COUNT(*) FROM users WHERE username = ?) AS u,
                    (SELECT COUNT(*) FROM users WHERE email = ?)    AS e,

@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — login POST handler (Feature: User Authentication).
- * Verifies credentials, account status, then routes by role.
- */
-
 require_once __DIR__ . '/../config/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

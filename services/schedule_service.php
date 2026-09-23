@@ -1,28 +1,12 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — Schedule Service
- *
- * Handles fixed weekly timetable slots, collision checks, force-open overrides,
- * and slot toggles.
- *
- * @package ClassroomFinder\Services
- */
-
 require_once __DIR__ . '/../config/database.php';
 
-/** Day names constant mapping weekday integer to short label */
 const SCHEDULE_DAY_NAMES = [
     1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'
 ];
 
-/**
- * Retrieve a specific class schedule slot by ID.
- *
- * @param int $id Slot primary key ID.
- * @return array<string, mixed>|null
- */
 function schedule_get(int $id): ?array
 {
     if ($id <= 0) {
@@ -34,14 +18,6 @@ function schedule_get(int $id): ?array
     return $row ?: null;
 }
 
-/**
- * Retrieve the active scheduled slot for a classroom at a given day and time.
- *
- * @param int $classroomId Target room ID.
- * @param int $dayOfWeek Weekday integer (1=Mon ... 7=Sun).
- * @param string $time Time string (HH:MM:SS).
- * @return array<string, mixed>|null
- */
 function schedule_get_active_slot(int $classroomId, int $dayOfWeek, string $time): ?array
 {
     if ($classroomId <= 0) {
@@ -59,12 +35,6 @@ function schedule_get_active_slot(int $classroomId, int $dayOfWeek, string $time
     return $slot ?: null;
 }
 
-/**
- * Fetch all schedules for a specific room grouped by day or sorted by time.
- *
- * @param int $classroomId Target room ID.
- * @return array<int, array<string, mixed>>
- */
 function schedule_fetch_by_room(int $classroomId): array
 {
     if ($classroomId <= 0) {
@@ -79,14 +49,6 @@ function schedule_fetch_by_room(int $classroomId): array
     return $st->fetchAll();
 }
 
-/**
- * Save (create or update) a fixed class timetable slot with collision prevention.
- *
- * @param array<string, mixed> $data Slot parameters.
- * @param int|null $id Existing slot ID or null for creation.
- * @param int|null $adminId Acting admin user ID.
- * @return array<string, mixed> Result array ['ok' => bool, 'message' => string, 'id' => int] or ['ok' => false, 'error' => string]
- */
 function schedule_save_slot(array $data, ?int $id = null, ?int $adminId = null): array
 {
     $classroomId = (int)($data['classroom_id'] ?? 0);
@@ -119,7 +81,6 @@ function schedule_save_slot(array $data, ?int $id = null, ?int $adminId = null):
         return ['ok' => false, 'error' => 'The end time must be after the start time.'];
     }
 
-    // No overlapping ACTIVE slot on the same room+weekday (update excludes itself)
     $slotId = $id !== null && $id > 0 ? $id : 0;
     $st = db()->prepare(
         "SELECT subject FROM class_schedules
@@ -166,13 +127,6 @@ function schedule_save_slot(array $data, ?int $id = null, ?int $adminId = null):
     return ['ok' => true, 'message' => 'Class schedule updated.', 'id' => $slotId];
 }
 
-/**
- * Delete a scheduled class slot.
- *
- * @param int $id Slot ID.
- * @param int|null $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function schedule_delete_slot(int $id, ?int $adminId = null): array
 {
     if ($id <= 0) {
@@ -185,13 +139,6 @@ function schedule_delete_slot(int $id, ?int $adminId = null): array
     return ['ok' => true, 'message' => 'Schedule removed.'];
 }
 
-/**
- * Toggle active state of a scheduled class slot.
- *
- * @param int $id Slot ID.
- * @param int|null $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function schedule_toggle_slot(int $id, ?int $adminId = null): array
 {
     if ($id <= 0) {
@@ -204,15 +151,6 @@ function schedule_toggle_slot(int $id, ?int $adminId = null): array
     return ['ok' => true, 'message' => 'Schedule status toggled.'];
 }
 
-/**
- * Force open an ongoing fixed scheduled class for today.
- *
- * @param int $classroomId Target room ID.
- * @param int $userId Lecturer user ID filing the report.
- * @param string $reason Reason code.
- * @param string $details Additional optional notes.
- * @return array<string, mixed>
- */
 function schedule_force_open(int $classroomId, int $userId, string $reason, string $details = ''): array
 {
     if ($classroomId <= 0 || $userId <= 0) {
@@ -295,13 +233,6 @@ function schedule_force_open(int $classroomId, int $userId, string $reason, stri
     ];
 }
 
-/**
- * Revert a force-open override.
- *
- * @param int $forceOpenId ID in schedule_force_open table.
- * @param int|null $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function schedule_revert_force_open(int $forceOpenId, ?int $adminId = null): array
 {
     if ($forceOpenId <= 0) {

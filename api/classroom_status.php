@@ -1,15 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — live classroom status feed (Feature: Real-Time Availability Feed & Auto-Refresh).
- *
- * GET api/classroom_status.php
- *   Optional filters: q, status, building, floor, type, mincap, id
- *   format=html -> ready-to-insert card fragment (used by landing.js)
- *   default     -> JSON: { ok, server_now, count, rooms:[...] }
- */
-
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../config/layout.php';
@@ -33,7 +24,6 @@ if (!empty($_GET['id'])) {
     $rooms = room_fetch_all($filters);
 }
 
-// available-first ordering + ?page slicing (same as the initial page render)
 $pg = room_page($rooms, (int)($_GET['page'] ?? 1));
 
 if (($_GET['format'] ?? '') === 'html') {
@@ -45,9 +35,7 @@ if (($_GET['format'] ?? '') === 'html') {
     exit;
 }
 
-// Whole-campus counters honour the search/attribute filters but not the
-// status chip, so students always see how many rooms exist per status.
-$stats = ['available' => 0, 'occupied' => 0, 'reserved' => 0, 'unavailable' => 0];
+$stats = ['available' => 0, 'occupied' => 0, 'unavailable' => 0];
 foreach (room_fetch_all(array_diff_key($filters, ['status' => ''])) as $r) {
     $stats[$r['computed']]++;
 }
@@ -58,8 +46,6 @@ json_response([
     'count'      => $pg['total'],
     'page'       => $pg['page'],
     'pages'      => $pg['pages'],
-
-    // Pre-rendered card markup so the landing page needs one request per refresh.
     'html'  => ($_GET['with_html'] ?? '') === '1'
         ? '<section id="roomGrid" class="room-grid" data-refresh="' . get_setting_int('landing_refresh_seconds', 15) . '" data-page="' . $pg['page'] . '">'
         . room_cards_html($pg['rooms'])
@@ -76,19 +62,13 @@ json_response([
             'floor'       => (int)$r['floor'],
             'capacity'    => (int)$r['capacity'],
             'room_type'   => $r['room_type'],
-            'status'      => $r['computed'],          // available|occupied|reserved|unavailable
+            'status'      => $r['computed'],
             'note'        => $r['note'],
             'available_at'=> $r['available_at'],
             'session'     => empty($r['session_id']) ? null : [
                 'lecturer' => $r['session_lecturer'],
                 'start'    => $r['session_start'],
                 'end'      => $r['session_end'],
-            ],
-            'reservation' => empty($r['reservation_id']) ? null : [
-                'purpose' => $r['reservation_purpose'],
-                'by'      => $r['reservation_by'],
-                'start'   => $r['reservation_start'],
-                'end'     => $r['reservation_end'],
             ],
         ];
     }, $rooms),

@@ -10,7 +10,7 @@ A real-time web app that helps students, lecturers, and staff find and manage av
 
 In busy schools and universities, people often walk from room to room just to see if a classroom is empty. **Classroom Finder** solves this:
 
-- **Students** can immediately see which rooms are free, occupied, or reserved right from their phones—no login required.
+- **Students** can immediately see which rooms are free or occupied right from their phones—no login required.
 - **Lecturers** walk up to a room, scan the QR code posted at the door, and claim the room for their class.
 - **Administrators** set up rooms, manage lecturer accounts, schedule weekly classes, and monitor real-time campus room usage.
 
@@ -27,10 +27,9 @@ flowchart LR
 
 1. **Check Live Status**: The homepage lists all rooms by building, floor, type, and capacity. Live colors tell you what is happening right now:
    - 🟢 **Available**: Ready to use.
-   - 🔴 **Occupied**: In use by a lecturer. Shows who is inside and until what time.
-   - 🟡 **Reserved**: Booked for an upcoming class or event.
-   - ⚪ **Unavailable**: Room is undergoing maintenance or closed.
-2. **Scan to Occupy**: Each door has a printed QR poster. A lecturer logs in on their phone, scans the QR code with their camera (or types the short code), picks a duration, and the room status instantly turns red (Occupied) across the campus.
+   - 🔴 **Occupied**: In use by a lecturer or active schedule slot. Shows who is inside and until what time.
+   - ⚪ **Unavailable**: Room is undergoing maintenance or temporarily disabled.
+2. **Scan to Occupy**: Each door has a printed QR poster. A lecturer logs in on their phone, scans the QR code with their camera (or enters the 8-character short token), picks a duration within campus scanning hours, and the room status instantly turns red (Occupied) across campus.
 3. **Automatic / Manual Release**: When class ends, the lecturer taps "End Session". If they forget, the system automatically marks the room available again once the selected duration expires.
 
 ---
@@ -40,21 +39,21 @@ flowchart LR
 | User | What They Do | Login Needed? |
 |---|---|:---:|
 | **Students & Public** | Browse rooms, search by building/floor/capacity, see live availability. | ❌ No |
-| **Lecturers** | Scan door QR codes, start/end room sessions, view personal usage history. | ✅ Yes |
-| **Administrators** | Manage rooms, print QR codes, create accounts, set fixed weekly timetables, view analytics. | ✅ Yes |
+| **Lecturers** | Scan door QR codes, enter 8-character codes, start/end room sessions, view personal usage history. | ✅ Yes |
+| **Administrators** | Manage rooms, batch print QR posters, create accounts, set fixed weekly timetables, view analytics. | ✅ Yes |
 
 ---
 
 ## Key Features
 
 - **Live Campus Overview**: Automatically updates room status without manual page refreshes via background polling.
-- **Dual Check-in (QR Scanner & Manual Entry)**: Scan door QR codes via camera or enter short codes manually.
-- **Printable QR Door Posters**: Printable QR sheets with institution branding generated directly from the admin panel.
+- **Dual Check-in (QR Scanner & 8-Character Manual Entry)**: Scan door QR codes via camera or enter short 8-character hex codes manually.
+- **Daily Scanning Hours**: Configurable campus hours enforcement (e.g. 7:00 AM – 7:00 PM) preventing off-hours claims.
+- **Batch & Single Printable QR Posters**: Table management with individual print, multi-room checkbox selection, and responsive print sheet layouts (6 per page).
 - **Concurrency & Anti-Race Protection**: Row-level database locking (`SELECT ... FOR UPDATE` in transactions) prevents simultaneous room claims.
 - **Recurring Class Schedules**: Weekly timetable support that automatically marks rooms occupied during class hours.
 - **Schedule Force-Open**: Instructors can report absentee lecturers or emergencies to override and claim scheduled rooms.
-- **Advance Room Reservations**: Pre-book classrooms with an automated reserved status window.
-- **Automated Session Expiry**: CLI worker (`cron/expire.php`) automatically releases expired sessions.
+- **Automated Session Expiry**: CLI worker (`cron/expire.php`) and lazy request triggers automatically release expired sessions.
 - **Mobile Friendly & Offline Support (PWA)**: Camera scanning, responsive layout, home-screen install (`manifest.json`), and service-worker caching (`sw.js`).
 - **First-Run Lock Protection**: `setup.php` creates initial administrator and permanently locks itself via `installed.lock`.
 
@@ -69,11 +68,10 @@ classroom_finder/
 │   ├── dashboard.php          # Campus overview, real-time metrics & system stats
 │   ├── history.php            # Past room usage records & CSV export
 │   ├── logs.php               # System activity & security audit logs
-│   ├── qr_codes.php           # QR code generator & printable door posters
-│   ├── reservations.php       # Advance room reservations manager
-│   ├── schedules.php          # Recurring weekly timetable manager
+│   ├── qr_codes.php           # QR code generator, table viewer & printable posters
+│   ├── schedules.php          # Recurring weekly timetable manager & printable sheets
 │   ├── sessions.php           # Live room sessions & force-end controls
-│   ├── settings.php           # Institution name, address, branding & durations
+│   ├── settings.php           # Institution name, address, branding, scan hours & durations
 │   └── users.php              # Lecturer and admin account management
 ├── api/                       # Background JSON API endpoints
 │   ├── classroom_status.php   # Real-time room status polling endpoint
@@ -81,9 +79,9 @@ classroom_finder/
 │   ├── release_room.php       # Handles ending active room sessions
 │   └── scan_qr.php            # Verifies scanned QR codes & availability
 ├── assets/                    # Static UI assets
-│   ├── css/                   # Custom stylesheet & Toastify vendor CSS
+│   ├── css/                   # Custom design system stylesheet
 │   ├── fonts/                 # Self-hosted Barlow & IBM Plex font families
-│   ├── js/                    # UI logic, scanner handler, landing poll, modals
+│   ├── js/                    # UI logic, scanner handler, landing poll, SweetAlert2 modals
 │   ├── sound/                 # Audio cues for scan success/error
 │   └── uploads/               # Uploaded school branding logo
 ├── auth/                      # Authentication & session verification
@@ -106,10 +104,15 @@ classroom_finder/
 │   ├── history.php            # Lecturer usage history logs
 │   ├── occupy.php             # Session creation handler with row-level lock
 │   ├── release.php            # Session release handler for active room
-│   └── scanner.php            # QR camera scanner & manual code entry
+│   └── scanner.php            # QR camera scanner & manual 8-char code entry
 ├── qr/                        # QR generation engine
 │   ├── generate.php           # Dynamic QR image generation endpoint
 │   └── lib/                   # Embedded phpqrcode generation library
+├── services/                  # Business logic & domain services
+│   ├── room_service.php       # Room availability, computed status, CRUD & token generator
+│   ├── schedule_service.php   # Recurring class timetables & schedule slots
+│   ├── session_service.php    # Live room occupancy sessions & expiry
+│   └── user_service.php       # Account authentication, CRUD, and status
 ├── .htaccess                  # Apache hardening (indexing, extensions, security headers)
 ├── 404.php                    # Custom error 404 page
 ├── change_password.php        # Authenticated user password update
@@ -176,4 +179,4 @@ classroom_finder/
 - **Setup Lockout**: Automatic lockfile (`installed.lock`) and user count verification permanently seals `setup.php`.
 - **CLI Expiry Guard**: `cron/expire.php` enforces CLI-only execution (`PHP_SAPI === 'cli'`), blocking remote web invocations.
 - **Secure Authentication**: Passwords hashed using industry-standard `bcrypt` (`password_hash`), session verification, and role-based access control.
-- **Zero External UI Dependencies**: Fonts, icons, Toastify, SweetAlert2, and QR generator (`phpqrcode`) are fully self-hosted for fast, air-gapped local reliability.
+- **Zero External UI Dependencies**: Fonts, inline SVG icons, SweetAlert2, and QR generator (`phpqrcode`) are fully self-hosted for fast, air-gapped local reliability.

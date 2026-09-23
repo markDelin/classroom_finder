@@ -1,17 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — fixed weekly class schedules (admin).
- *
- * Recurring class timetable per classroom. While an active slot runs on its
- * weekday, the status engine reports the room as OCCUPIED and occupying is
- * rejected — unless someone reported that occurrence as "not meeting"
- * (schedule_force_open, filed instantly by lecturers from the scanner).
- * The bottom of the page renders one printable timetable sheet per room
- * (same @media print pipeline as the QR posters).
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 const DAY_NAMES = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
@@ -77,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 expire_stale();
 
-// room filter (also scopes the printed sheets)
 $rooms = db()->query(
     "SELECT id, room_number, building, floor, capacity, room_type FROM classrooms ORDER BY building, room_number"
 )->fetchAll();
@@ -98,6 +86,7 @@ if ($q !== '') {
     $where[]         = '(cs.subject LIKE ? OR cs.section LIKE ? OR cs.instructor LIKE ? OR c.room_number LIKE ? OR c.building LIKE ?)';
     array_push($filterParams, "%$q%", "%$q%", "%$q%", "%$q%", "%$q%");
 }
+
 $filterSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
 $stc = db()->prepare('SELECT COUNT(*) AS n FROM class_schedules cs JOIN classrooms c ON c.id = cs.classroom_id' . $filterSql);
@@ -118,7 +107,6 @@ $st = db()->prepare(
 $st->execute($filterParams);
 $slots = $st->fetchAll();
 
-// this week's "not meeting" reports
 $forceOpen = db()->query(
     'SELECT fo.*, cs.subject, cs.section, cs.instructor, cs.start_time, cs.end_time, cs.day_of_week,
             c.room_number, c.building, u.full_name
@@ -131,7 +119,6 @@ $forceOpen = db()->query(
      LIMIT 20'
 )->fetchAll();
 
-// full week per room for the printable sheets (honours the same room filter)
 $st = db()->prepare(
     'SELECT cs.* FROM class_schedules cs
      WHERE cs.is_active = 1' . ($filterRoom && isset($roomMap[$filterRoom]) ? ' AND cs.classroom_id = ' . $filterRoom : '') . '
@@ -142,8 +129,6 @@ $weekByRoom = [];
 foreach ($st->fetchAll() as $row) {
     $weekByRoom[(int)$row['classroom_id']][$row['day_of_week']][] = $row;
 }
-// one printable sheet, only for the room the admin picked — printing never
-// dumps every room's timetable at once
 $sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoom] : null;
 
 $school = school_name();
@@ -231,7 +216,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
           <form method="post" class="inline-form" data-confirm="Delete the <?= DAY_NAMES[(int)$s['day_of_week']] ?> <?= e(fmt_time($s['start_time'])) ?> slot for room <?= e($s['room_number']) ?>?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$s['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit" title="Delete slot"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button>
+            <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete slot"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button>
           </form>
           </div>
         </td>
@@ -278,10 +263,9 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   </div>
 </div>
 <?php endif; ?>
-</div><!-- /.no-print -->
+</div>
 
 <?php if ($sheetRoom): ?>
-<!-- printable schedule sheet for the filtered room — registrar-form layout -->
 <h3 class="tt-heading">Printable schedule sheet · <?= e($sheetRoom['building']) ?> — Room <?= e($sheetRoom['room_number']) ?></h3>
 <div class="tt-sheets">
   <?php
@@ -365,7 +349,6 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 </div>
 <?php endif; ?>
 
-<!-- shared add/edit form, opened inside a SweetAlert2 modal -->
 <form method="post" class="form-grid form-grid--5" id="slotForm" hidden style="text-align:left" data-default-action="create">
   <?= csrf_field() ?>
   <input type="hidden" name="action" value="create">

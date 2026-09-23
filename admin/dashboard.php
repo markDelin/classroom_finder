@@ -1,16 +1,12 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — administrator dashboard (Module: Admin Overview & Metrics).
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
 $rooms = fetch_classrooms();
-$count = ['available' => 0, 'occupied' => 0, 'reserved' => 0, 'unavailable' => 0];
+$count = ['available' => 0, 'occupied' => 0, 'unavailable' => 0];
 foreach ($rooms as $r) {
     $count[$r['computed']]++;
 }
@@ -30,14 +26,13 @@ $recentLogs = db()->query(
      ORDER BY l.timestamp DESC LIMIT 5'
 )->fetchAll();
 
-// System Analytics
 $totalCapacity = array_reduce($rooms, fn($sum, $r) => $sum + (int)($r['capacity'] ?? 0), 0);
 $totalRooms = count($rooms);
-$activeRoomsCount = $count['occupied'] + $count['reserved'];
+$activeRoomsCount = $count['occupied'];
 $utilizationRate = $totalRooms > 0 ? (int)round(($activeRoomsCount / $totalRooms) * 100) : 0;
 
 $userStats = db()->query(
-    "SELECT 
+    "SELECT
         COUNT(*) AS total_users,
         SUM(CASE WHEN role = 'lecturer' AND account_status = 'approved' THEN 1 ELSE 0 END) AS approved_lecturers,
         SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins
@@ -47,10 +42,6 @@ $userStats = db()->query(
 $todayDayOfWeek = (int)date('N');
 $schedulesToday = (int)db()->query(
     "SELECT COUNT(*) FROM class_schedules WHERE day_of_week = {$todayDayOfWeek} AND is_active = 1"
-)->fetchColumn();
-
-$reservationsToday = (int)db()->query(
-    "SELECT COUNT(*) FROM reservations WHERE DATE(start_time) = CURDATE() AND status != 'cancelled'"
 )->fetchColumn();
 
 $sessionsToday = (int)db()->query(
@@ -69,11 +60,10 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <p class="muted">Live overview of classrooms, accounts and system activity.</p>
 </div>
 
-<div class="tiles tiles--5">
+<div class="tiles tiles--4">
   <div class="tile"><span class="tile__num"><?= count($rooms) ?></span><span class="tile__label">Total classrooms</span></div>
   <div class="tile tile--ok"><span class="tile__num"><?= icon('circle-check') ?> <?= $count['available'] ?></span><span class="tile__label">Available</span></div>
   <div class="tile tile--danger"><span class="tile__num"><?= icon('clock') ?> <?= $count['occupied'] ?></span><span class="tile__label">Occupied</span></div>
-  <div class="tile tile--warn"><span class="tile__num"><?= icon('calendar-clock') ?> <?= $count['reserved'] ?></span><span class="tile__label">Reserved</span></div>
   <div class="tile tile--off"><span class="tile__num"><?= icon('ban') ?> <?= $count['unavailable'] ?></span><span class="tile__label">Unavailable</span></div>
 </div>
 
@@ -84,7 +74,6 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
   </div>
 
   <div class="analytics-grid">
-    <!-- Room Utilization -->
     <div class="analytics-card">
       <div class="muted small" style="margin-bottom: .4rem; display: flex; align-items: center; justify-content: space-between;">
         <span>Room Utilization Rate</span>
@@ -98,7 +87,6 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
       </div>
     </div>
 
-    <!-- Seating & Timetable -->
     <div class="analytics-card">
       <div class="muted small" style="margin-bottom: .25rem;"><?= icon('building-2') ?> Campus Seating & Schedules</div>
       <div style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: var(--font-display); line-height: 1.2;">
@@ -109,18 +97,16 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
       </div>
     </div>
 
-    <!-- Operations Today -->
     <div class="analytics-card">
       <div class="muted small" style="margin-bottom: .25rem;"><?= icon('clock') ?> Operations Today</div>
       <div style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: var(--font-display); line-height: 1.2;">
         <?= $sessionsToday ?> <span style="font-size: .8rem; font-weight: normal; color: var(--muted);">sessions started</span>
       </div>
       <div class="muted small" style="margin-top: .25rem;">
-        <?= icon('calendar-days') ?> <?= $reservationsToday ?> reservations &bull; <?= $forceOpensToday ?> force-opens
+        <?= icon('unlock') ?> <?= $forceOpensToday ?> schedule force-opens today
       </div>
     </div>
 
-    <!-- Registered Accounts -->
     <div class="analytics-card">
       <div class="muted small" style="margin-bottom: .25rem;"><?= icon('users') ?> System Accounts</div>
       <div style="font-size: 1.35rem; font-weight: 700; color: var(--text); font-family: var(--font-display); line-height: 1.2;">

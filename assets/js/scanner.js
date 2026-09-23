@@ -1,10 +1,3 @@
-/**
- * Classroom Finder — lecturer QR scanner.
- *
- * Flow: camera decode (html5-qrcode) -> POST token to api/scan_qr.php
- *       -> SweetAlert2 confirmation with duration picker -> native form
- *       submit to occupy.php (which re-validates everything server-side).
- */
 (function () {
   'use strict';
 
@@ -12,8 +5,6 @@
   var readerEl = document.getElementById('reader');
   if (!readerEl || !window.Swal) { return; }
 
-  /* .reader-wrap — gets .is-live while the camera runs so the scan beam
-   * only sweeps over a real feed, not the idle placeholder. */
   var wrapEl = readerEl.closest('.reader-wrap');
 
   var startBtn = document.getElementById('startBtn');
@@ -30,16 +21,9 @@
   var scanner     = null;
   var limits      = { min: 15, max: 480, step: 30 };
 
-  /* Sound effects for scanner feedback */
   var successAudio = document.getElementById('scanSuccessSound') || new Audio('../assets/sound/success.mp3');
   var errorAudio   = document.getElementById('scanErrorSound')   || new Audio('../assets/sound/error.mp3');
 
-  /**
-   * Displays alerts as SweetAlert2 modal dialogs on the scanner page.
-   * @param {string} type Alert type ('error' | 'warn' | 'success' | 'info')
-   * @param {string} message Alert message
-   * @param {string} [title] Optional custom modal title
-   */
   function modalAlert(type, message, title) {
     if (!message || !window.Swal) { return Promise.resolve(); }
     var t = type === 'warn' ? 'warning' : (type || 'info');
@@ -53,12 +37,10 @@
     });
   }
 
-  /* Override cfToast on the scanner page so all scanner alerts remain modal */
   window.cfToast = function (type, message, title) {
     return modalAlert(type, message, title);
   };
 
-  /* Modal alerts for scanner error/warning flashes (preserving login welcome message) */
   var scannerFlashes = document.querySelectorAll('.scanner-container ~ .flashes .flash, .flashes .flash');
   if (scannerFlashes.length && window.Swal) {
     scannerFlashes.forEach(function (el) {
@@ -69,7 +51,6 @@
       if (svg) { svg.remove(); }
       var msgText = clone.textContent.trim();
 
-      // Keep login welcome message as inline alert
       if (/welcome back/i.test(msgText) || el.classList.contains('flash--success')) {
         return;
       }
@@ -91,11 +72,9 @@
       audio.currentTime = 0;
       var p = audio.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(function () { /* autoplay restriction fallback */ });
+        p.catch(function () {});
       }
-    } catch (e) {
-      /* ignore audio errors */
-    }
+    } catch (e) {}
   }
 
   function playSuccess() {
@@ -117,14 +96,6 @@
   document.addEventListener('click', unlockAudio, { once: true });
   document.addEventListener('touchstart', unlockAudio, { once: true });
 
-  /* scan_qr.php reports {min_minutes, max_minutes, step}; accept that shape
-   * (or plain {min,max}) and always fall back to sane numbers — an undefined
-   * limit here used to turn every duration into NaN. */
-  /**
-   * Normalizes duration boundary options with fallback values.
-   * @param {Object} raw Raw limits object from scan endpoint
-   * @returns {{min: number, max: number, step: number}} Sanitized limits object
-   */
   function readLimits(raw) {
     raw = raw || {};
     function num(v, fallback) {
@@ -138,7 +109,7 @@
     };
   }
   var minutes     = 60;
-  var serverNowIso = '';          // server wall clock at scan time (ISO + offset)
+  var serverNowIso = '';
   var lastToken   = null;
   var lastAt      = 0;
   var busy        = false;
@@ -150,7 +121,7 @@
       if (typeof scanner.pause === 'function' && scanner.getState() === 2) {
         scanner.pause();
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
 
   function resumeScanner() {
@@ -159,7 +130,7 @@
       if (typeof scanner.resume === 'function' && scanner.getState() === 3) {
         scanner.resume();
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
 
   function unlockScanner(delay) {
@@ -172,11 +143,6 @@
     }, delay !== undefined ? delay : 1200);
   }
 
-  /**
-   * Updates scanner status text and error state.
-   * @param {string} msg Message to display
-   * @param {boolean} [isErr=false] Whether this status represents an error
-   */
   function say(msg, isErr) {
     statusEl.textContent = msg;
     statusEl.classList.toggle('scan-status--err', !!isErr);
@@ -186,11 +152,6 @@
     }
   }
 
-  /**
-   * Formats raw minutes into a human-readable duration string (e.g. "1h 30m").
-   * @param {number} m Number of minutes
-   * @returns {string} Formatted duration string
-   */
   function humanMins(m) {
     var h = Math.floor(m / 60), r = m % 60;
     if (h && r) { return h + 'h ' + r + 'm'; }
@@ -198,10 +159,8 @@
     return m + ' minutes';
   }
 
-  /* --- duration picker state, rendered inside the SWAL popup --- */
-
   function setMinutes(m) {
-    if (!isFinite(m)) { m = limits.min; }   // never let NaN into the picker
+    if (!isFinite(m)) { m = limits.min; }
     minutes = Math.max(limits.min, Math.min(limits.max, m));
     var lbl = document.getElementById('minsLabel');
     if (!lbl) { return; }
@@ -212,10 +171,6 @@
     previewTimes();
   }
 
-  /* Start/end previews are computed from the SERVER's wall clock
-   * (ui.js reads the digits straight out of server_now's ISO string), so the
-   * times shown here always match what occupy.php will store — even when the
-   * lecturer's device is set to another timezone. */
   function previewTimes() {
     var s = document.getElementById('startTime');
     var e = document.getElementById('endTime');
@@ -223,8 +178,6 @@
     s.textContent = window.cfWallClock(serverNowIso, 0).time;
     e.textContent = window.cfWallClock(serverNowIso, minutes).time;
   }
-
-  /* --- "scheduled class isn't meeting" -> instant force-open --- */
 
   function requestForceOpen(data) {
     var num = data.room.room_number;
@@ -300,22 +253,21 @@
     if (!data.available) {
       playError();
       if (data.fixed_class) {
-        // blocked by a fixed weekly class — offer to report it as not meeting
         window.Swal.fire({
           icon: 'warning',
           title: 'Room ' + num + ' has a class scheduled',
           text: data.reason || 'A fixed schedule slot is active in this room.',
-          showDenyButton: true,
-          confirmButtonText: 'OK',
-          denyButtonText: "Class isn't happening",
+          showCancelButton: true,
+          cancelButtonText: 'OK',
+          confirmButtonText: "Class isn't happening",
+          reverseButtons: true,
           allowOutsideClick: false
         }).then(function (r) {
-          if (r.isDenied) { requestForceOpen(data); return; }
+          if (r.isConfirmed) { requestForceOpen(data); return; }
           unlockScanner(1500);
         });
         return;
       }
-      // Display detailed rejection reason when room cannot be occupied
       window.Swal.fire({
         icon: 'warning',
         title: 'Room ' + num + ' is unavailable',
@@ -370,7 +322,7 @@
         });
         document.getElementById('plusBtn').addEventListener('click', function () { setMinutes(minutes + limits.step); });
         document.getElementById('minusBtn').addEventListener('click', function () { setMinutes(minutes - limits.step); });
-        setMinutes(minutes);          // paints label + time preview
+        setMinutes(minutes);
       },
       preConfirm: function () {
         if (minutes < limits.min || minutes > limits.max) {
@@ -385,20 +337,15 @@
       window.Swal.showLoading();
       fToken.value = data.room.token;
       fMinutes.value = String(res.value);
-      occupyForm.submit();            // occupy.php re-validates and redirects
+      occupyForm.submit();
     });
   }
 
   async function handlePayload(text) {
     if (busy || (window.Swal && window.Swal.isVisible())) { return; }
 
-    if (document.querySelector('.current-room')) {
-      playError();
-      modalAlert('warn', 'You already hold an active classroom session. Please release it before occupying another room.', 'Active Session Held');
-      return;
-    }
-
-    var match = String(text).match(/[0-9a-f]{32}/i);
+    var raw = String(text).trim();
+    var match = raw.match(/TOKEN:\s*([0-9a-f]{4,32})/i) || raw.match(/[0-9a-f]{4,32}/i);
     var now = Date.now();
     if (!match) {
       if (now - lastAt < 2000) { return; }
@@ -407,8 +354,8 @@
       modalAlert('error', 'That is not a valid Classroom Finder QR code or token.', 'Invalid QR Code');
       return;
     }
-    var token = match[0].toLowerCase();
-    if (token === lastToken && now - lastAt < 3000) { return; }   // same poster re-read
+    var token = (match[1] || match[0]).toLowerCase();
+    if (token === lastToken && now - lastAt < 3000) { return; }
     lastToken = token;
     lastAt = now;
     busy = true;
@@ -440,8 +387,6 @@
     }
   }
 
-  /* Translate getUserMedia failures into guidance a lecturer can act on
-   * instead of surfacing raw browser error objects. */
   function cameraErrorMessage(err) {
     var name = (err && err.name) || '';
     if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
@@ -478,17 +423,16 @@
         { facingMode: 'environment' },
         { fps: 10, qrbox: function (w, h) { var s = Math.min(w, h) * 0.7; return { width: s, height: s }; } },
         function (decodedText) { handlePayload(decodedText); },
-        function () { /* per-frame decode misses — ignore */ }
+        function () {}
       );
       startBtn.hidden = true;
       stopBtn.hidden = false;
       wrapEl.classList.add('is-live');
       say('Camera on — point it at the QR poster.');
-      // torch support?
       try {
         var caps = scanner.getRunningTrackCapabilities();
         if (caps && caps.torch) { torchLbl.hidden = false; }
-      } catch (e) { /* not supported */ }
+      } catch (e) {}
     } catch (err) {
       say(cameraErrorMessage(err), true);
     }
@@ -498,7 +442,7 @@
     if (unlockTimer) { clearTimeout(unlockTimer); unlockTimer = null; }
     busy = false;
     if (!scanner) { return; }
-    try { await scanner.stop(); scanner.clear(); } catch (e) { /* already stopped */ }
+    try { await scanner.stop(); scanner.clear(); } catch (e) {}
     scanner = null;
     startBtn.hidden = false;
     stopBtn.hidden = true;

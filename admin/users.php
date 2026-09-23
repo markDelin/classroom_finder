@@ -1,14 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — user management.
- *
- * Approve / reject / suspend / reactivate accounts, create lecturer or admin
- * accounts directly, and reset passwords. Guards: an admin can never suspend
- * or demote themselves, and the last active admin cannot be suspended.
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -26,7 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = (string)($_POST['action'] ?? '');
     $target = isset($_POST['id']) ? (int)$_POST['id'] : 0;
 
-    // ---------- account status changes ----------
     if (in_array($action, ['approve', 'reject', 'suspend', 'reactivate'], true)) {
         $res = user_set_status($target, $action, (int)$admin['id']);
         if (!$res['ok']) {
@@ -36,7 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($back);
     }
 
-    // ---------- create account ----------
     if ($action === 'create') {
         $res = user_create($_POST, (int)$admin['id']);
         if (!$res['ok']) {
@@ -46,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($back);
     }
 
-    // ---------- reset password ----------
     if ($action === 'reset_password') {
         $pw = (string)($_POST['password'] ?? '');
         $res = user_update_password($target, $pw, (int)$admin['id']);
@@ -57,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($back);
     }
 
-    // ---------- delete account ----------
     if ($action === 'delete') {
         $res = user_delete($target, (int)$admin['id']);
         if (!$res['ok']) {
@@ -67,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect($back);
     }
 
-    // ---------- edit account details ----------
     if ($action === 'update') {
         $st = db()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
         $st->execute([$target]);
@@ -88,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $fail('Enter a valid email.');
         if (!preg_match('/^[a-zA-Z0-9_.]{3,40}$/', $username)) $fail('Invalid username (3–40 chars: letters, numbers, dot, underscore).');
 
-        // uniqueness — but only against OTHER accounts
         $st = db()->prepare('SELECT
                (SELECT COUNT(*) FROM users WHERE username = ? AND id <> ?) AS u,
                (SELECT COUNT(*) FROM users WHERE email    = ? AND id <> ?) AS e,
@@ -99,7 +85,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ((int)$dup['e']) $fail('Email already registered.');
         if ((int)$dup['s']) $fail('Staff ID already registered.');
 
-        // role guards mirror suspend/delete: never lock yourself or the campus out
         if ((int)$u['id'] === (int)$admin['id'] && $role !== 'admin') {
             $fail('You cannot change your own role.');
         }
@@ -126,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fail('Unknown action.');
 }
 
-// ---------------- list + filters ----------------
 $q       = trim((string)($_GET['q'] ?? ''));
 $statusF = (string)($_GET['status'] ?? '');
 
@@ -171,7 +155,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search name, username, email, staff ID…" value="<?= e($q) ?>">
   <select name="status" onchange="this.form.submit()">
-    <option value="">All statuses</option>
+    <option value="">All status</option>
     <?php foreach (['pending' => 'Pending', 'approved' => 'Approved', 'suspended' => 'Suspended', 'rejected' => 'Rejected'] as $k => $lbl): ?>
       <option value="<?= $k ?>" <?= $statusF === $k ? 'selected' : '' ?>><?= $lbl ?></option>
     <?php endforeach; ?>
@@ -266,10 +250,10 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
                 <button class="btn btn--ghost btn--sm" type="submit" title="Suspend user"><?= icon('ban') ?> <span class="btn-text">Suspend</span></button></form>
             <?php endif; ?>
             <form method="post" class="inline-form"
-                  data-confirm="Permanently delete <?= e($u['full_name']) ?>? Their sessions end immediately and their reservations are unlinked. This cannot be undone."><?= csrf_field() ?>
+                  data-confirm="Permanently delete <?= e($u['full_name']) ?>? Their sessions end immediately. This cannot be undone."><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
               <input type="hidden" name="back" value="<?= e($_SERVER['REQUEST_URI']) ?>">
-              <button class="btn btn--danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
+              <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete user"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           <?php endif; ?>
           </div>
         </td>
@@ -282,7 +266,6 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
   <?= page_nav($totalUsers, $pp['page'], $perPage, 'page', 'users') ?>
 </div>
 
-  <!-- shown as a SweetAlert2 modal by admin-modals.js -->
   <form method="post" class="form-grid" id="userForm" hidden style="text-align:left">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="create">
@@ -307,7 +290,6 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
     </label>
   </form>
 
-<!-- shown as a SweetAlert2 modal by admin-modals.js (Edit buttons prefill it) -->
 <form method="post" class="form-grid" id="userEditForm" hidden style="text-align:left">
   <?= csrf_field() ?>
   <input type="hidden" name="action" value="update">

@@ -1,9 +1,3 @@
-/**
- * Classroom Finder — public landing page behaviour.
- * - debounced search + instant filters
- * - polls api/classroom_status.php (JSON incl. pre-rendered card HTML)
- * - pauses polling while the tab is hidden
- */
 (function () {
   'use strict';
 
@@ -65,10 +59,8 @@
     if (!stats) { return; }
     var line = form.parentNode.querySelector('.results-line .muted');
     if (line) {
-      // mirrors index.php's stat-dots markup
       line.innerHTML = '<span class="dot dot--ok"></span>' + stats.available + ' available · ' +
         '<span class="dot dot--danger"></span>' + stats.occupied + ' occupied · ' +
-        '<span class="dot dot--warn"></span>' + stats.reserved + ' reserved · ' +
         '<span class="dot dot--off"></span>' + stats.unavailable + ' unavailable';
     }
   }
@@ -88,7 +80,7 @@
     })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        if (reqId !== activeRequestId) { return; } // ignore stale response from older search
+        if (reqId !== activeRequestId) { return; }
         if (!data.ok || !data.html) { return; }
 
         if (window.history && window.history.replaceState) {
@@ -97,24 +89,21 @@
         }
 
         if (results) {
-          results.innerHTML = data.html;           // cards + pager
+          results.innerHTML = data.html;
           grid = document.getElementById('roomGrid') || grid;
         } else {
           grid.innerHTML = data.html;
         }
-        if (data.page) { currentPage = data.page; } // server clamps out-of-range pages
+        if (data.page) { currentPage = data.page; }
         resultCount.textContent = data.count;
         applyStats(data.stats);
-        // server wall clock — not the device's — so the label matches the
-        // session times shown on the cards regardless of timezone
         var wc = window.cfWallClock ? window.cfWallClock(data.server_now, 0) : null;
         if (wc) { updatedAt.textContent = '· updated ' + wc.hm; }
         tickCountdowns();
       })
-      .catch(function () { /* transient network hiccup — next tick retries */ });
+      .catch(function () {});
   }
 
-  // search box: debounce & clear event handling
   var timer = null;
   function triggerSearch() {
     clearTimeout(timer);
@@ -133,7 +122,6 @@
     if (details) { details.removeAttribute('open'); }
   });
 
-  // chips
   Array.prototype.forEach.call(chipButtons, function (btn) {
     btn.addEventListener('click', function () {
       Array.prototype.forEach.call(chipButtons, function (b) { b.classList.remove('is-active'); });
@@ -144,12 +132,10 @@
     });
   });
 
-  // selects + capacity
   Array.prototype.forEach.call(selects, function (el) {
     el.addEventListener('change', function () { currentPage = 1; refresh(); });
   });
 
-  // clear button restores defaults then refreshes
   document.getElementById('clearFilters').addEventListener('click', function () {
     window.setTimeout(function () {
       searchBox.value = '';
@@ -163,7 +149,6 @@
     }, 0);
   });
 
-  // Prev / Next — delegated because polling re-renders the controls
   (results || grid).addEventListener('click', function (ev) {
     var btn = ev.target.closest('[data-page-go]');
     if (!btn || btn.classList.contains('is-off')) { return; }
@@ -176,7 +161,6 @@
     if (g && g.scrollIntoView) { g.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   });
 
-  // auto-refresh, paused while hidden or while user is focused on search box
   setInterval(function () {
     if (!document.hidden && document.activeElement !== searchBox) {
       refresh();

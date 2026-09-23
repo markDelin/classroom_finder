@@ -1,15 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — background session expiry task.
- *
- * Usage:
- *   php cron/expire.php
- *
- * Safe to run as a scheduled task (Windows Task Scheduler / Linux Cron) every minute.
- */
-
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
     echo "CLI execution only.\n";

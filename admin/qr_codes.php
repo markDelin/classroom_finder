@@ -1,14 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — printable QR codes (Module: Room QR Code Generation & Management).
- *
- * One print-ready poster per classroom (image from qr/generate.php, admin-only).
- * "Regenerate" invalidates the old token: previously printed posters stop
- * working immediately.
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -22,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int)($_POST['id'] ?? 0);
         $returnPage = max(1, (int)($_POST['page'] ?? 1));
         db()->prepare('UPDATE classrooms SET qr_token = ? WHERE id = ?')
-            ->execute([bin2hex(random_bytes(16)), $id]);
+            ->execute([generate_qr_token(), $id]);
         log_action('QR_REGENERATE', (int)$admin['id'], $id);
         flash('success', 'QR token regenerated. Old printed posters for this room no longer work.');
         redirect('qr_codes.php' . ($returnPage > 1 ? '?page=' . $returnPage : ''));
@@ -37,6 +29,19 @@ $building = trim((string)($_GET['building'] ?? ''));
 $filters  = [];
 if ($q !== '')        { $filters['q'] = $q; }
 if ($building !== '') { $filters['building'] = $building; }
+
+try {
+    $stLegacy = db()->query('SELECT id FROM classrooms WHERE LENGTH(qr_token) != 8');
+    if ($stLegacy) {
+        $legacy = $stLegacy->fetchAll();
+        if ($legacy) {
+            $updToken = db()->prepare('UPDATE classrooms SET qr_token = ? WHERE id = ?');
+            foreach ($legacy as $lr) {
+                $updToken->execute([generate_qr_token(), (int)$lr['id']]);
+            }
+        }
+    }
+} catch (Throwable) {}
 
 $allRooms  = fetch_classrooms($filters);
 $buildings = db()->query('SELECT DISTINCT building FROM classrooms WHERE building IS NOT NULL AND building != "" ORDER BY building')->fetchAll(PDO::FETCH_COLUMN);
@@ -64,68 +69,106 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
   <form method="get" class="qr-bar__filters">
     <input type="search" name="q" placeholder="Search room number, building…" value="<?= e($q) ?>">
     <?php if ($buildings): ?>
-    <select name="building">
+    <select name="building" onchange="this.form.submit()">
       <option value="">All Buildings</option>
       <?php foreach ($buildings as $b): ?>
         <option value="<?= e($b) ?>" <?= $building === $b ? 'selected' : '' ?>><?= e($b) ?></option>
       <?php endforeach; ?>
     </select>
     <?php endif; ?>
-    <button class="btn btn--primary btn--sm" type="submit">Filter</button>
+    <button class="btn btn--primary" type="submit">Filter</button>
     <?php if ($q !== '' || $building !== ''): ?>
-      <a href="qr_codes.php" class="btn btn--ghost btn--sm">Reset</a>
+      <a href="qr_codes.php" class="btn btn--ghost">Reset</a>
     <?php endif; ?>
   </form>
   <div class="qr-bar__selection">
-    <span class="muted small qr-selection-stats"><span id="selectedLabel"><?= count($rooms) ?></span> of <?= count($rooms) ?> on page</span>
-    <button class="btn btn--ghost btn--sm" type="button" onclick="cfSelectAllQrs(true)">Select all</button>
-    <button class="btn btn--ghost btn--sm" type="button" onclick="cfSelectAllQrs(false)">Deselect all</button>
+    <button class="btn btn--ghost btn--xs" type="button" onclick="cfSelectAllQrs(true)">Select all</button>
+    <button class="btn btn--ghost btn--xs" type="button" onclick="cfSelectAllQrs(false)">Deselect all</button>
   </div>
 </div>
 
-<div class="qr-grid">
-  <?php if (!$allRooms): ?>
-    <p class="muted" style="grid-column:1 / -1;padding:2rem 0;text-align:center;">
-      No classrooms found matching the criteria.
-      <?php if ($q !== '' || $building !== ''): ?>
-        <a href="qr_codes.php">Clear filters</a>
-      <?php endif; ?>
-    </p>
-  <?php endif; ?>
-  <?php
-  $startIdx = $pP['offset'];
-  $endIdx   = $pP['offset'] + count($rooms);
-  foreach ($allRooms as $idx => $r):
-    $isOnCurrentPage = ($idx >= $startIdx && $idx < $endIdx);
-  ?>
-  <div class="card qr-poster<?= !$isOnCurrentPage ? ' qr-poster--print-only' : '' ?>" id="qr-<?= (int)$r['id'] ?>" data-room-id="<?= (int)$r['id'] ?>" data-room-number="<?= e($r['room_number']) ?>">
-    <div class="qr-poster__select no-print"<?= !$isOnCurrentPage ? ' style="display:none;"' : '' ?>>
-      <label class="qr-select-label" title="Include in batch print">
-        <input type="checkbox" class="qr-select-check" value="<?= (int)$r['id'] ?>" checked onchange="cfUpdateSelectedCount()">
-        <span>Print</span>
-      </label>
-    </div>
+<div class="card no-print">
+  <div class="table-wrap">
+    <table class="table qr-table">
+      <thead>
+        <tr>
+          <th style="width:38px;text-align:center;">
+            <label class="qr-select-th-label" title="Select / deselect all on page">
+              <input type="checkbox" id="checkAllQrs" class="qr-select-check" checked onchange="cfToggleAllOnPage(this.checked)">
+            </label>
+          </th>
+          <th style="width:54px;">QR</th>
+          <th>Room &amp; Location</th>
+          <th>Classroom ID &amp; Token</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php if (!$rooms): ?>
+        <tr>
+          <td colspan="5" class="muted" style="text-align:center;padding:2rem 1rem;">
+            No classrooms found matching the criteria.
+            <?php if ($q !== '' || $building !== ''): ?>
+              <a href="qr_codes.php">Clear filters</a>
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php else: ?>
+        <?php foreach ($rooms as $r): ?>
+        <tr id="qr-row-<?= (int)$r['id'] ?>" class="is-selected" data-room-id="<?= (int)$r['id'] ?>" data-room-number="<?= e($r['room_number']) ?>">
+          <td style="text-align:center;">
+            <input type="checkbox" class="qr-select-check qr-row-check" value="<?= (int)$r['id'] ?>" checked onchange="cfUpdateSelectedCount()">
+          </td>
+          <td class="qr-table__thumb-cell">
+            <a href="../qr/generate.php?id=<?= (int)$r['id'] ?>&size=12" target="_blank" class="qr-table__thumb-link" title="View high-resolution QR">
+              <img src="../qr/generate.php?id=<?= (int)$r['id'] ?>&size=3" width="40" height="40" alt="QR <?= e($r['room_number']) ?>" class="qr-table__thumb" loading="lazy">
+            </a>
+          </td>
+          <td class="cell-main nowrap" data-label="Room">
+            <strong>Room <?= e($r['room_number']) ?></strong>
+            <span class="muted small">· <?= e($r['building']) ?> · Floor <?= (int)$r['floor'] ?></span>
+            <?php if (!empty($r['room_type'])): ?>
+              <span class="muted small">· <?= e($r['room_type']) ?></span>
+            <?php endif; ?>
+          </td>
+          <td class="cell-sub nowrap" data-label="Classroom ID">
+            <span class="qr-table__id">CF-<?= e($r['room_number']) ?></span>
+            <span class="muted small"><code><?= e($r['qr_token']) ?></code></span>
+          </td>
+          <td data-label="Actions">
+            <div class="actions-cell" style="justify-content:flex-end">
+              <button class="btn btn--secondary btn--sm" type="button" onclick="cfPrintSingleQr(<?= (int)$r['id'] ?>)" title="Print QR poster for Room <?= e($r['room_number']) ?>">
+                <?= icon('printer') ?> <span class="hide-mobile">Print</span>
+              </button>
+              <form method="post" class="inline-form qr-regen-form" data-confirm="Regenerate the QR token for room <?= e($r['room_number']) ?>? Any previously printed code stops working.">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="regenerate">
+                <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                <input type="hidden" name="page" value="<?= (int)$pP['page'] ?>">
+                <button class="btn btn--ghost btn--sm" type="submit" title="Regenerate token">
+                  <?= icon('refresh-cw') ?> <span class="hide-mobile">Regenerate</span><span class="show-mobile">Regen</span>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+        <?php endif; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="qr-grid qr-print-sheet" aria-hidden="true">
+  <?php foreach ($allRooms as $r): ?>
+  <div class="card qr-poster" id="qr-<?= (int)$r['id'] ?>" data-room-id="<?= (int)$r['id'] ?>" data-room-number="<?= e($r['room_number']) ?>">
     <div class="qr-poster__head">
       <strong>ROOM <?= e($r['room_number']) ?></strong>
       <span class="muted small"><?= e($r['building']) ?> · Floor <?= (int)$r['floor'] ?></span>
     </div>
     <img class="qr-img" src="../qr/generate.php?id=<?= (int)$r['id'] ?>&size=9"
          alt="QR code for room <?= e($r['room_number']) ?>" width="360" height="360" loading="eager">
-    <p class="qr-token muted small" title="Secret token — do not share publicly">Classroom ID: CF-<?= e($r['room_number']) ?><br><code><?= e(substr($r['qr_token'], 0, 8)) ?>…<?= e(substr($r['qr_token'], -4)) ?></code></p>
-    <?php if ($isOnCurrentPage): ?>
-    <div class="qr-poster__actions no-print">
-      <button class="btn btn--secondary btn--xs" type="button" onclick="cfPrintSingleQr(<?= (int)$r['id'] ?>)" title="Print only this QR code">
-        <?= icon('printer') ?> Print
-      </button>
-      <form method="post" data-confirm="Regenerate the QR token for room <?= e($r['room_number']) ?>? Any previously printed code stops working." style="display:inline;">
-        <?= csrf_field() ?>
-        <input type="hidden" name="action" value="regenerate">
-        <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-        <input type="hidden" name="page" value="<?= (int)$pP['page'] ?>">
-        <button class="btn btn--ghost btn--xs" type="submit" title="Regenerate token"><?= icon('refresh-cw') ?> Regenerate</button>
-      </form>
-    </div>
-    <?php endif; ?>
+    <p class="qr-token muted small" title="Token for manual entry">Classroom ID: CF-<?= e($r['room_number']) ?><br>Token: <code><?= e($r['qr_token']) ?></code></p>
   </div>
   <?php endforeach; ?>
 </div>
@@ -136,15 +179,17 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
 
 <script>
 function cfUpdateSelectedCount() {
-  var checks = document.querySelectorAll('.qr-select-check');
+  var checks = document.querySelectorAll('.qr-row-check');
   var count = 0;
+  var allChecked = (checks.length > 0);
   checks.forEach(function (c) {
-    var poster = c.closest('.qr-poster');
+    var row = c.closest('tr');
     if (c.checked) {
       count++;
-      if (poster) { poster.classList.add('is-selected'); poster.classList.remove('is-unselected'); }
+      if (row) { row.classList.add('is-selected'); row.classList.remove('is-unselected'); }
     } else {
-      if (poster) { poster.classList.remove('is-selected'); poster.classList.add('is-unselected'); }
+      allChecked = false;
+      if (row) { row.classList.remove('is-selected'); row.classList.add('is-unselected'); }
     }
   });
   var countEl = document.getElementById('selectedCount');
@@ -153,13 +198,22 @@ function cfUpdateSelectedCount() {
   if (labelEl) labelEl.textContent = count;
   var btn = document.getElementById('btnPrintSelected');
   if (btn) btn.disabled = (count === 0);
+  var master = document.getElementById('checkAllQrs');
+  if (master) {
+    master.checked = allChecked;
+    master.indeterminate = (count > 0 && !allChecked);
+  }
+}
+
+function cfToggleAllOnPage(checked) {
+  document.querySelectorAll('.qr-row-check').forEach(function (c) {
+    c.checked = checked;
+  });
+  cfUpdateSelectedCount();
 }
 
 function cfSelectAllQrs(check) {
-  document.querySelectorAll('.qr-select-check').forEach(function (c) {
-    c.checked = check;
-  });
-  cfUpdateSelectedCount();
+  cfToggleAllOnPage(check);
 }
 
 function cfPreparePrint(filterFn) {
@@ -218,11 +272,11 @@ function cfPrintAllQrs() {
 function cfPrintSelected() {
   var selectedCards = {};
   var selectedRoomNumbers = [];
-  document.querySelectorAll('.qr-select-check:checked').forEach(function (c) {
+  document.querySelectorAll('.qr-row-check:checked').forEach(function (c) {
     selectedCards[c.value] = true;
-    var card = c.closest('.qr-poster');
-    if (card && card.dataset.roomNumber) {
-      selectedRoomNumbers.push(card.dataset.roomNumber);
+    var row = c.closest('tr');
+    if (row && row.dataset.roomNumber) {
+      selectedRoomNumbers.push(row.dataset.roomNumber);
     }
   });
   if (Object.keys(selectedCards).length === 0) {

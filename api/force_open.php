@@ -1,18 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — report "this scheduled class isn't meeting" (force open).
- *
- * POST api/force_open.php  { "token": "<32-hex>", "reason": "...", "details": "" }
- *   X-CSRF-Token header required.
- *
- * When a room is blocked by a fixed weekly class that is not actually taking
- * place (lecturer absent / emergency / ended early), an approved lecturer can
- * open it instantly — no admin approval. The report is recorded so the lift
- * only applies to TODAY's occurrence of that slot and admins can audit/revert.
- */
-
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth_check.php';

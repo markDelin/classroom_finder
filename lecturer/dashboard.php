@@ -1,19 +1,12 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — lecturer dashboard.
- * Shows the lecturer's current occupancy with a release button, quick stats
- * and recent sessions. Scanning happens on scanner.php.
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $user = require_approved_lecturer();
 
 $active = get_active_session_for((int)$user['id']);
 
-// quick stats
 $st = db()->prepare(
     "SELECT COUNT(*) AS sessions,
             COALESCE(SUM(TIMESTAMPDIFF(MINUTE, start_time, IF(status = 'active', ?, end_time))), 0) AS minutes

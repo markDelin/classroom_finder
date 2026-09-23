@@ -1,23 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — Session Service
- *
- * Handles classroom session lifecycle: active lookups, row-locked occupancy creation,
- * unified early releases, force termination, and background expiration.
- *
- * @package ClassroomFinder\Services
- */
-
 require_once __DIR__ . '/../config/database.php';
 
-/**
- * Retrieve an active classroom session by session ID.
- *
- * @param int $sessionId Session primary key ID.
- * @return array<string, mixed>|null
- */
 function session_get_active(int $sessionId): ?array
 {
     if ($sessionId <= 0) {
@@ -36,12 +21,6 @@ function session_get_active(int $sessionId): ?array
     return $row ?: null;
 }
 
-/**
- * Retrieve active room session for a specified user ID.
- *
- * @param int $userId Lecturer user ID.
- * @return array<string, mixed>|null
- */
 function session_get_active_for_user(int $userId): ?array
 {
     if ($userId <= 0) {
@@ -60,14 +39,6 @@ function session_get_active_for_user(int $userId): ?array
     return $session ?: null;
 }
 
-/**
- * Occupy a classroom safely with concurrency protection (SELECT FOR UPDATE).
- *
- * @param int $classroomId Target room ID.
- * @param int $userId Authenticated user ID.
- * @param int $minutes Duration in minutes.
- * @return array<string, mixed> Result array ['ok' => bool, 'message' => string, 'id' => int] or ['ok' => false, 'error' => string]
- */
 function session_occupy(int $classroomId, int $userId, int $minutes): array
 {
     if ($userId <= 0 || $classroomId <= 0) {
@@ -121,7 +92,6 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
             );
         }
 
-        // Active/overlapping session check
         $st = $pdo->prepare(
             "SELECT s.id, s.start_time, s.end_time, u.full_name
              FROM classroom_sessions s JOIN users u ON u.id = s.user_id
@@ -137,22 +107,6 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
             );
         }
 
-        // Active reservation check
-        $st = $pdo->prepare(
-            "SELECT id, start_time, end_time FROM reservations
-             WHERE classroom_id = ? AND status = 'active'
-               AND start_time < ? AND end_time > ?
-             LIMIT 1"
-        );
-        $st->execute([$classroomId, $end, $start]);
-        if ($res = $st->fetch()) {
-            throw new RuntimeException(
-                'Room ' . $room['room_number'] . ' is reserved from '
-                . (function_exists('fmt_range') ? fmt_range($res['start_time'], $res['end_time']) : ($res['start_time'] . ' - ' . $res['end_time'])) . '.'
-            );
-        }
-
-        // Scheduled class check
         $startT = date('H:i:s', $now);
         $endT   = date('H:i:s', $now + $minutes * 60);
         $st = $pdo->prepare(
@@ -209,14 +163,6 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
     }
 }
 
-/**
- * Release an active classroom session early.
- *
- * @param int $sessionId Session primary key ID.
- * @param int $actorUserId User requesting the release.
- * @param string $actorRole 'lecturer' or 'admin'.
- * @return array<string, mixed>
- */
 function session_release(int $sessionId, int $actorUserId, string $actorRole = 'lecturer'): array
 {
     if ($sessionId <= 0) {
@@ -267,11 +213,6 @@ function session_release(int $sessionId, int $actorUserId, string $actorRole = '
     ];
 }
 
-/**
- * Mark any past active sessions as completed.
- *
- * @return int Number of expired sessions updated.
- */
 function session_expire_stale(): int
 {
     $now = date('Y-m-d H:i:s');
@@ -281,17 +222,5 @@ function session_expire_stale(): int
          WHERE status = 'active' AND end_time <= ?"
     );
     $st->execute([$now]);
-    $n = $st->rowCount();
-
-    try {
-        db()->prepare(
-            "UPDATE reservations
-             SET status = 'completed'
-             WHERE status = 'active' AND end_time <= ?"
-        )->execute([$now]);
-    } catch (Throwable) {
-        // reservations table is optional in minimal schema
-    }
-
-    return $n;
+    return (int)$st->rowCount();
 }

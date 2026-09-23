@@ -1,16 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — Lucide icons (https://lucide.dev), ISC licensed.
- *
- * Inlined server-side so icons render without JavaScript and survive the
- * landing page's HTML fragment feed untouched. Path data is copied verbatim
- * from lucide-static; add new icons there and paste them into $ICONS.
- *
- * Usage: <?= icon('clock', 'icon--lg') ?> or <?= icon('users') ?>
- */
-
 const LUCIDE_ICONS = [
         'pause' => '<rect width="4" height="16" x="6" y="4" rx="1" /> <rect width="4" height="16" x="14" y="4" rx="1" />',
         'play' => '<polygon points="6 3 20 12 6 21 6 3" />',
@@ -72,13 +62,6 @@ const LUCIDE_ICONS = [
         'arrow-left' => '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
 ];
 
-/**
- * Renders an inline SVG icon using Lucide icon path data.
- *
- * @param string $name  The key of the icon defined in LUCIDE_ICONS.
- * @param string $class Extra CSS class(es) to append to the <svg> element.
- * @return string Complete SVG markup string or empty string if icon key is not found.
- */
 function icon(string $name, string $class = ''): string
 {
     if (!isset(LUCIDE_ICONS[$name])) {

@@ -1,26 +1,16 @@
--- ============================================================
--- CLASSROOM FINDER — Database schema (MySQL / MariaDB)
---
--- Import via phpMyAdmin or:
---   mysql -u root < database/classroom_finder.sql
--- ============================================================
-
 CREATE DATABASE IF NOT EXISTS classroom_finder
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE classroom_finder;
 
--- ------------------------------------------------------------
--- Users (admins + lecturers; students use the public page only)
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id             INT UNSIGNED     NOT NULL AUTO_INCREMENT,
   full_name      VARCHAR(120)     NOT NULL,
   staff_id       VARCHAR(40)      NOT NULL,
   email          VARCHAR(120)     NOT NULL,
   username       VARCHAR(40)      NOT NULL,
-  password       VARCHAR(255)     NOT NULL,           -- password_hash()
+  password       VARCHAR(255)     NOT NULL,
   department     VARCHAR(80)      DEFAULT NULL,
   role           ENUM('admin','lecturer') NOT NULL DEFAULT 'lecturer',
   account_status ENUM('pending','approved','rejected','suspended')
@@ -32,9 +22,6 @@ CREATE TABLE IF NOT EXISTS users (
   UNIQUE KEY uq_users_email (email)
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- Classrooms (one unique QR token per room)
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS classrooms (
   id          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
   room_number VARCHAR(20)   NOT NULL,
@@ -42,22 +29,16 @@ CREATE TABLE IF NOT EXISTS classrooms (
   floor       TINYINT UNSIGNED NOT NULL DEFAULT 1,
   capacity    SMALLINT UNSIGNED NOT NULL DEFAULT 30,
   room_type   VARCHAR(40)   NOT NULL DEFAULT 'Lecture Room',
-  qr_token    CHAR(32)      NOT NULL,                -- secret stored in the QR code
+  qr_token    VARCHAR(32)   NOT NULL,
   status      ENUM('available','maintenance','disabled')
                             NOT NULL DEFAULT 'available',
-  note        VARCHAR(160)  DEFAULT NULL,            -- e.g. "Repainting until Friday"
+  note        VARCHAR(160)  DEFAULT NULL,
   created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_rooms_location (building, room_number),
   UNIQUE KEY uq_rooms_token (qr_token)
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- Classroom sessions (a lecturer's occupancy of a room)
---   active    -> currently occupying
---   completed -> ran to its scheduled end time
---   released  -> lecturer (or admin) ended it early
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS classroom_sessions (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   classroom_id INT UNSIGNED NOT NULL,
@@ -77,43 +58,15 @@ CREATE TABLE IF NOT EXISTS classroom_sessions (
     REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- Reservations (future bookings -> 🟡 RESERVED on the landing page)
--- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS reservations (
-  id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  classroom_id INT UNSIGNED NOT NULL,
-  user_id      INT UNSIGNED DEFAULT NULL,              -- lecturer the slot is for
-  purpose      VARCHAR(160) DEFAULT NULL,
-  start_time   DATETIME     NOT NULL,
-  end_time     DATETIME     NOT NULL,
-  status       ENUM('active','cancelled','completed') NOT NULL DEFAULT 'active',
-  created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  KEY idx_res_room_active (classroom_id, status),
-  KEY idx_res_start (start_time),
-  KEY idx_res_end (end_time),
-  CONSTRAINT fk_res_room FOREIGN KEY (classroom_id)
-    REFERENCES classrooms (id) ON DELETE CASCADE,
-  CONSTRAINT fk_res_user FOREIGN KEY (user_id)
-    REFERENCES users (id) ON DELETE SET NULL
-) ENGINE = InnoDB;
-
--- ------------------------------------------------------------
--- Fixed class schedules (recurring weekly timetable per room)
---   The status engine treats an active slot's room as OCCUPIED for the
---   whole slot on its weekday, and occupying is rejected when a session
---   would overlap the slot.
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS class_schedules (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   classroom_id INT UNSIGNED NOT NULL,
-  day_of_week  TINYINT UNSIGNED NOT NULL,            -- 1=Mon … 7=Sun (date('N'))
+  day_of_week  TINYINT UNSIGNED NOT NULL,
   start_time   TIME NOT NULL,
   end_time     TIME NOT NULL,
-  subject      VARCHAR(120) NOT NULL,                -- e.g. "IT 301 — Data Structures"
+  subject      VARCHAR(120) NOT NULL,
   section      VARCHAR(80)  DEFAULT NULL,
-  instructor   VARCHAR(120) DEFAULT NULL,            -- free text; may not be an app user
+  instructor   VARCHAR(120) DEFAULT NULL,
   is_active    TINYINT(1)   NOT NULL DEFAULT 1,
   created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -122,22 +75,17 @@ CREATE TABLE IF NOT EXISTS class_schedules (
     REFERENCES classrooms (id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- Force-open reports (a scheduled class that isn't actually meeting:
--- lecturer absent / emergency / ended early). One row per slot per day
--- lifts the schedule block for that occurrence only; admins can revert.
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS schedule_force_open (
   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
   classroom_id INT UNSIGNED NOT NULL,
-  schedule_id  INT UNSIGNED NOT NULL,                -- the affected weekly slot
-  exc_date     DATE NOT NULL,                        -- the affected occurrence
+  schedule_id  INT UNSIGNED NOT NULL,
+  exc_date     DATE NOT NULL,
   reason       ENUM('lecturer_absent','emergency','ended_early','other') NOT NULL,
   details      VARCHAR(160) DEFAULT NULL,
-  user_id      INT UNSIGNED NOT NULL,                -- who reported it
+  user_id      INT UNSIGNED NOT NULL,
   created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_force_slot (schedule_id, exc_date),  -- one report per slot per day
+  UNIQUE KEY uq_force_slot (schedule_id, exc_date),
   CONSTRAINT fk_force_room FOREIGN KEY (classroom_id)
     REFERENCES classrooms (id) ON DELETE CASCADE,
   CONSTRAINT fk_force_sched FOREIGN KEY (schedule_id)
@@ -146,14 +94,11 @@ CREATE TABLE IF NOT EXISTS schedule_force_open (
     REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- Activity logs
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS activity_logs (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id      INT UNSIGNED    DEFAULT NULL,
   classroom_id INT UNSIGNED    DEFAULT NULL,
-  action       VARCHAR(40)     NOT NULL,              -- OCCUPY_ROOM, RELEASE_ROOM, ...
+  action       VARCHAR(40)     NOT NULL,
   details      VARCHAR(255)    DEFAULT NULL,
   timestamp    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -162,9 +107,6 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   KEY idx_logs_user (user_id)
 ) ENGINE = InnoDB;
 
--- ------------------------------------------------------------
--- System settings
--- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS settings (
   skey   VARCHAR(40)  NOT NULL,
   svalue VARCHAR(255) NOT NULL,
@@ -172,45 +114,39 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE = InnoDB;
 
 INSERT INTO settings (skey, svalue) VALUES
-  ('app_name',                 'Classroom Finder'),   -- this system's own name (top bar / browser title)
-  ('school_name',              ''),                   -- the institution (landing hero / printed sheets); set in Admin → Settings
-  ('school_address',           ''),                   -- printed under the school name on sheets, e.g. "Odiong, Roxas, Oriental Mindoro"
-  ('school_contact',           ''),                   -- tel / email line printed under the address
-  ('reserve_window_minutes',   '45'),   -- how soon a booking turns a room RESERVED
-  ('min_duration_minutes',     '15'),   -- shortest occupancy a lecturer may pick
-  ('max_duration_minutes',     '480'),  -- longest occupancy
-  ('duration_step_minutes',    '30'),   -- +/- step in the scanner's duration picker
-  ('landing_refresh_seconds',  '15'),   -- landing page auto-refresh interval
-  ('scan_day_start',           '07:00'),-- daily room scan operating start time (HH:MM)
-  ('scan_day_end',             '19:00') -- daily room scan operating end time (HH:MM)
+  ('app_name',                 'Classroom Finder'),
+  ('school_name',              ''),
+  ('school_address',           ''),
+  ('school_contact',           ''),
+  ('min_duration_minutes',     '15'),
+  ('max_duration_minutes',     '480'),
+  ('duration_step_minutes',    '30'),
+  ('landing_refresh_seconds',  '15'),
+  ('scan_day_start',           '07:00'),
+  ('scan_day_end',             '19:00')
 ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);
 
--- ------------------------------------------------------------
--- Sample classrooms
--- Tokens are generated here; regenerate any of them from
--- Admin → QR Codes if needed.
--- ------------------------------------------------------------
 INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status, note) VALUES
-  ('101', 'New Building',         1, 40, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('102', 'New Building',         1, 35, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('103', 'New Building',         1, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('104', 'New Building',         1, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('105', 'New Building',         1, 25, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('201', 'New Building',         2, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('202', 'New Building',         2, 30, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('203', 'New Building',         2, 40, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('204', 'New Building',         2, 35, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('301', 'New Building',         3, 60, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('302', 'New Building',         3, 50, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('303', 'New Building',         3, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'IT Multimedia Lab'),
-  ('101', 'Main Building',        1, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('102', 'Main Building',        1, 45, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('201', 'Main Building',        2, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'College Computer Lab 1'),
-  ('202', 'Main Building',        2, 40, 'College Comlab',    MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'College Computer Lab 2'),
-  ('301', 'Main Building',        3, 50, 'Lecture Room',      MD5(CONCAT('seed-', RAND(), UUID())), 'available', NULL),
-  ('302', 'Main Building',        3, 80, 'Other',             MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Audio-Visual Hall'),
-  ('HS-101', 'High School Building', 1, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 7 Section A'),
-  ('HS-102', 'High School Building', 1, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 8 Section A'),
-  ('HS-201', 'High School Building', 2, 35, 'Highschool Comlab', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'High School Computer Lab'),
-  ('HS-202', 'High School Building', 2, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 9 Section A'),
-  ('HS-301', 'High School Building', 3, 40, 'Highschool Room', MD5(CONCAT('seed-', RAND(), UUID())), 'available', 'Grade 10 Section A');
+  ('101', 'New Building',         1, 40, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('102', 'New Building',         1, 35, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('103', 'New Building',         1, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('104', 'New Building',         1, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('105', 'New Building',         1, 25, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('201', 'New Building',         2, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('202', 'New Building',         2, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('203', 'New Building',         2, 40, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('204', 'New Building',         2, 35, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('301', 'New Building',         3, 60, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('302', 'New Building',         3, 50, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('303', 'New Building',         3, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'IT Multimedia Lab'),
+  ('101', 'Main Building',        1, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('102', 'Main Building',        1, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('201', 'Main Building',        2, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'College Computer Lab 1'),
+  ('202', 'Main Building',        2, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'College Computer Lab 2'),
+  ('301', 'Main Building',        3, 50, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
+  ('302', 'Main Building',        3, 80, 'Other',             SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Audio-Visual Hall'),
+  ('HS-101', 'High School Building', 1, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 7 Section A'),
+  ('HS-102', 'High School Building', 1, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 8 Section A'),
+  ('HS-201', 'High School Building', 2, 35, 'Highschool Comlab', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'High School Computer Lab'),
+  ('HS-202', 'High School Building', 2, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 9 Section A'),
+  ('HS-301', 'High School Building', 3, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 10 Section A');

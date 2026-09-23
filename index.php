@@ -1,14 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — public landing page.
- *
- * Open to everyone: search + filter classrooms and see live availability.
- * assets/js/landing.js keeps it fresh by polling api/classroom_status.php
- * and swapping the grid HTML (same renderer as this page uses).
- */
-
 require_once __DIR__ . '/config/layout.php';
 
 $filters = [
@@ -20,9 +12,9 @@ $filters = [
     'mincap'   => (string)($_GET['mincap'] ?? ''),
 ];
 
-$allRooms = fetch_classrooms();                       // unfiltered, for select options + counters
+$allRooms = fetch_classrooms();
 $pg       = room_page(fetch_classrooms($filters), (int)($_GET['page'] ?? 1));
-$rooms    = $pg['rooms'];                             // this page's slice, available rooms first
+$rooms    = $pg['rooms'];
 
 $buildings = array_values(array_unique(array_column($allRooms, 'building')));
 sort($buildings);
@@ -31,7 +23,7 @@ sort($floors);
 $types  = array_values(array_unique(array_column($allRooms, 'room_type')));
 sort($types);
 
-$count = ['available' => 0, 'occupied' => 0, 'reserved' => 0, 'unavailable' => 0];
+$count = ['available' => 0, 'occupied' => 0, 'unavailable' => 0];
 foreach ($allRooms as $r) {
     $count[$r['computed']]++;
 }
@@ -120,7 +112,6 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
       $chip('', 'All');
       $chip('available', 'Available', 'circle-check');
       $chip('occupied', 'Occupied', 'clock');
-      $chip('reserved', 'Reserved', 'calendar-clock');
       $chip('unavailable', 'Unavailable', 'ban');
       ?>
     </div>
@@ -131,7 +122,6 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
     <span class="muted stat-dots">
       <span class="dot dot--ok"></span><?= $count['available'] ?> available ·
       <span class="dot dot--danger"></span><?= $count['occupied'] ?> occupied ·
-      <span class="dot dot--warn"></span><?= $count['reserved'] ?> reserved ·
       <span class="dot dot--off"></span><?= $count['unavailable'] ?> unavailable
     </span>
     <span class="muted small" id="updatedAt"></span>

@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — active & recent sessions.
- * Admins can force-end a session (e.g. a lecturer left the room occupied).
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();

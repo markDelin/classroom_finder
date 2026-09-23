@@ -1,42 +1,33 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — database seeder for classrooms.
- * Run via CLI: php database/seed_classrooms.php
- * Or run via browser (logged-in admin only).
- */
-
 require_once __DIR__ . '/../config/database.php';
 
-// If run via web, require admin session
 if (PHP_SAPI !== 'cli') {
     require_once __DIR__ . '/../auth/auth_check.php';
     require_admin();
 }
 
 $classrooms = [
-    // New Building
-    ['room_number' => '101', 'building' => 'New Building', 'floor' => 1, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '101', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '102', 'building' => 'New Building', 'floor' => 1, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '103', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '104', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '105', 'building' => 'New Building', 'floor' => 1, 'capacity' => 25, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '201', 'building' => 'New Building', 'floor' => 2, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '201', 'building' => 'New Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '202', 'building' => 'New Building', 'floor' => 2, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '203', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '203', 'building' => 'New Building', 'floor' => 2, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
     ['room_number' => '204', 'building' => 'New Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 60, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '303', 'building' => 'New Building', 'floor' => 3, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => null],
+    ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '303', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
 
-    // Main Building
-    ['room_number' => '101', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '102', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '201', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => null],
-    ['room_number' => '202', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'College Comlab', 'status' => 'available', 'note' => 'College Computer Lab 2'],
-    ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 80, 'room_type' => 'Other', 'status' => 'available', 'note' => null],
+    ['room_number' => 'C10', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => 'C11', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => 'C9', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => 'C8', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => 'College Computer Lab 2'],
+    ['room_number' => '2hs1', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+    ['room_number' => '2hs2', 'building' => 'New Building', 'floor' => 3, 'capacity' => 80, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
 
 ];
 
@@ -61,7 +52,7 @@ foreach ($classrooms as $c) {
         $stmtUpdate->execute([$c['floor'], $c['capacity'], $c['room_type'], $c['note'], $existing['id']]);
         $updated++;
     } else {
-        $token = bin2hex(random_bytes(16));
+        $token = bin2hex(random_bytes(4));
         $stmtInsert->execute([
             $c['room_number'],
             $c['building'],

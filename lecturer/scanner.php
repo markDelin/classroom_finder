@@ -1,20 +1,9 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — QR scanner page.
- *
- * Uses the vendored html5-qrcode library. After a successful decode, JS posts
- * the token to api/scan_qr.php; if the room is free this dialog collects the
- * usage duration and submits to occupy.php, which validates everything again
- * server-side before creating a session.
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $user = require_approved_lecturer();
-
-$active = get_active_session_for((int)$user['id']);
 
 render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'active' => 'scanner']);
 ?>
@@ -35,22 +24,6 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   </div>
 <?php endif; ?>
 
-<?php if ($active): ?>
-<div class="card current-room">
-  <div class="current-room__info">
-    <p class="eyebrow">YOU ARE OCCUPYING</p>
-    <h2><?= e($active['room_number']) ?> <span class="muted">· <?= e($active['building']) ?></span></h2>
-    <p class="muted small"><?= fmt_range($active['start_time'], $active['end_time']) ?></p>
-  </div>
-  <form method="post" action="release.php" data-confirm="Release <?= e($active['room_number']) ?> now?">
-    <?= csrf_field() ?>
-    <input type="hidden" name="session_id" value="<?= (int)$active['id'] ?>">
-    <button class="btn btn--danger btn--block btn--sm" type="submit">Release classroom</button>
-  </form>
-</div>
-<p class="muted small center-note">You already hold an active session — you can’t occupy another room until it ends or is released.</p>
-<?php endif; ?>
-
 <div class="scanner-layout">
   <div class="card scanner-card">
     <div class="reader-wrap">
@@ -59,7 +32,6 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
         <i></i><i></i><i></i><i></i>
         <span class="reader-reticle__beam"></span>
       </div>
-      <!-- idle state: what users see before the camera runs (hidden via .is-live) -->
       <div class="reader-idle" aria-hidden="true">
         <?= icon('scan-line') ?>
         <span>Camera off</span>
@@ -79,28 +51,19 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
     </div>
 
     <form id="manualForm" class="manual-token-form">
-      <input name="token" placeholder="Enter token manually..." maxlength="120" autocomplete="off" required>
+      <input name="token" placeholder="Enter 8-character token (e.g. 7b2e3f1a)..." maxlength="32" autocomplete="off" required>
       <button class="btn btn--primary" type="submit">Look up</button>
     </form>
   </div>
 </div>
 </div>
 
-<?php if ($active): ?>
-<div class="flashes" hidden>
-  <div class="flash flash--error">You still have an active session in <?= e($active['room_number']) ?>. Release it before occupying another room.</div>
-</div>
-<?php endif; ?>
-
-<!-- confirmation: SweetAlert2 renders the dialog; this hidden form
-     carries the actual POST to occupy.php, which re-validates server-side. -->
 <form method="post" action="occupy.php" id="occupyForm" hidden>
   <?= csrf_field() ?>
   <input type="hidden" name="token" id="fToken" value="">
   <input type="hidden" name="minutes" id="fMinutes" value="">
 </form>
 
-<!-- preloaded sound effects for scanner -->
 <audio id="scanSuccessSound" src="../assets/sound/success.mp3" preload="auto"></audio>
 <audio id="scanErrorSound" src="../assets/sound/error.mp3" preload="auto"></audio>
 

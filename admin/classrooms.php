@@ -1,12 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — classroom management (Module: Classrooms).
- * Add / edit rooms, toggle maintenance & availability, delete (only when a
- * room has never been used — otherwise disable it to preserve history).
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -57,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fail('Unknown action.');
 }
 
-// list (paged) + full set for the datalist
 $q        = trim((string)($_GET['q'] ?? ''));
 $statusF  = (string)($_GET['status'] ?? '');
 $filters  = [];
@@ -84,10 +77,9 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
 <form method="get" class="filter-row">
   <input type="search" name="q" placeholder="Search room number, building, type or note…" value="<?= e($q) ?>">
   <select name="status" onchange="this.form.submit()">
-    <option value="">All statuses</option>
+    <option value="">All status</option>
     <option value="available" <?= $statusF === 'available' ? 'selected' : '' ?>>Available</option>
     <option value="occupied" <?= $statusF === 'occupied' ? 'selected' : '' ?>>Occupied</option>
-    <option value="reserved" <?= $statusF === 'reserved' ? 'selected' : '' ?>>Reserved</option>
     <option value="maintenance" <?= $statusF === 'maintenance' ? 'selected' : '' ?>>Maintenance</option>
     <option value="disabled" <?= $statusF === 'disabled' ? 'selected' : '' ?>>Disabled</option>
   </select>
@@ -103,7 +95,6 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
   <?php endforeach; ?>
 </datalist>
 
-<!-- add/edit lives in this template; SweetAlert2 shows it as a modal -->
 <form method="post" class="form-grid" id="classroomForm" hidden
       data-default-action="add" style="text-align:left">
   <?= csrf_field() ?>
@@ -187,7 +178,7 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
           </details>
           <form method="post" class="inline-form" data-confirm="Delete this classroom permanently? Only possible while it has no usage history."><?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit" title="Delete classroom"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
+            <button class="btn btn--ghost-danger btn--sm" type="submit" title="Delete classroom"><?= icon('trash-2') ?> <span class="btn-text">Delete</span></button></form>
           </div>
         </td>
       </tr>

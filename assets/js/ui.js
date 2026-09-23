@@ -1,18 +1,6 @@
-/**
- * Classroom Finder — shared UI layer (all roles).
- *
- * SweetAlert2 drives every modal, confirmation and alert in the app:
- *   - any form marked data-confirm="…" gets an SWAL confirm before submitting
- *   - server-side flash messages are converted into SWAL modal alerts on load
- *
- * Exposes window.cfToast(type, message) for ad-hoc client-side feedback (creates inline .flash alerts).
- */
 (function () {
   'use strict';
 
-  /* ---------- burger navigation (mobile drawer) ----------
-   * Slides in from the left under the sticky top bar. Runs before the Swal
-   * guard so the menu never depends on the modal library. */
   var navToggle = document.querySelector('.nav-toggle');
   if (navToggle) {
     var topbarEl = document.querySelector('.topbar');
@@ -39,15 +27,12 @@
     navToggle.addEventListener('click', function () {
       setNav(!document.body.classList.contains('nav-open'));
     });
-    // Escape and scrim both close it
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') { setNav(false); }
     });
-    // choosing a page or action closes the drawer
     document.querySelectorAll('#cfSidebar a, #cfSidebar button').forEach(function (el) {
       el.addEventListener('click', function () { setNav(false); });
     });
-    // keep the drawer below the top bar as things shift
     window.addEventListener('resize', function () {
       syncTop();
       if (window.innerWidth >= 900) { setNav(false); }
@@ -55,7 +40,6 @@
     syncTop();
   }
 
-  /* ---------- inline alert factory (replaces Toastify) ---------- */
   window.cfToast = function (type, message) {
     if (!message) { return Promise.resolve(); }
 
@@ -90,7 +74,6 @@
     flash.innerHTML = iconSvg + '<span>' + String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span><button type="button" class="flash__close" aria-label="Dismiss">&times;</button>';
     flashesContainer.appendChild(flash);
 
-    // Auto-remove dynamic client alerts after 5 seconds
     setTimeout(function () {
       if (flash.parentNode) {
         flash.remove();
@@ -100,11 +83,6 @@
     return Promise.resolve();
   };
 
-  /* ---------- server wall-clock formatting (timezone-safe) ----------
-   * Server datetimes are stored in the campus timezone. Parsing them with
-   * the browser's local Date shifts the display for off-campus devices, so
-   * we read the wall-clock digits straight out of the ISO string instead.
-   * cfWallClock('2026-08-24T16:40:56+08:00', 45).time -> '5:25 PM'        */
   window.cfWallClock = function (iso, addMinutes) {
     var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/.exec(String(iso || ''));
     if (!m) { return null; }
@@ -120,9 +98,6 @@
     };
   };
 
-  /* ---------- any existing <form> shown inside a SweetAlert2 modal ----------
-   * The real form keeps posting to its normal action with CSRF intact;
-   * SWAL is only the shell. Used by classroom/user/reservation add+edit.  */
   window.cfFormModal = function (opts) {
     if (!window.Swal) { return; }
     var f = opts.form;
@@ -154,7 +129,7 @@
         if (first) { first.focus(); }
       },
       preConfirm: function () {
-        if (!f.reportValidity()) { return false; }   // native HTML5 validation
+        if (!f.reportValidity()) { return false; }
         return true;
       },
       willClose: function () {
@@ -171,7 +146,7 @@
       }
     }).then(function (res) {
       if (res.isConfirmed) {
-        f.submit();                                   // full POST as before
+        f.submit();
         return;
       }
       f.hidden = true;
@@ -183,7 +158,6 @@
     });
   };
 
-  /* ---------- destructive-action confirmation ---------- */
   document.addEventListener('submit', function (ev) {
     var f = ev.target;
     if (!(f instanceof HTMLFormElement) || !f.dataset.confirm || !window.Swal) { return; }
@@ -192,7 +166,6 @@
     var msg = f.getAttribute('data-confirm');
     var btn = f.querySelector('button[type="submit"]');
     var label = btn ? (btn.textContent || '').trim() : '';
-    // Context-specific action label (e.g. "Delete", "Reject", "Force end"), fallback to "Yes, continue"
     var confirmText = (label && label.length <= 14) ? label : 'Yes, continue';
 
     window.Swal.fire({
@@ -204,16 +177,14 @@
       cancelButtonText: 'Cancel',
       customClass: { confirmButton: 'swal2-confirm-danger' },
       reverseButtons: true,
-      focusCancel: true            // destructive: safest button gets focus
+      focusCancel: true
     }).then(function (res) {
       if (!res.isConfirmed) { return; }
-      // retire the guard, then let the original submit proceed unchanged
       f.removeAttribute('data-confirm');
       if (f.requestSubmit) { f.requestSubmit(); } else { f.submit(); }
     });
   }, true);
 
-  /* ---------- logout confirmation modal ---------- */
   document.addEventListener('submit', function (ev) {
     var f = ev.target;
     if (!(f instanceof HTMLFormElement)) { return; }
@@ -262,7 +233,6 @@
     }
   });
 
-  /* ---------- search & filter row enhancements ---------- */
   var searchTimer = null;
   document.addEventListener('search', function (ev) {
     var inp = ev.target;
@@ -288,8 +258,6 @@
     }
   });
 
-  /* ---------- password visibility toggle ---------- */
-  /* ---------- exclusive popover & click-outside for details menus ---------- */
   document.addEventListener('click', function (ev) {
     var openDetails = document.querySelectorAll('details.mini-details[open]');
     if (!openDetails.length) return;
@@ -367,7 +335,6 @@
     }
   });
 
-  /* ---------- dismissible inline alerts ---------- */
   document.addEventListener('click', function (ev) {
     var btn = ev.target.closest('.flash__close');
     if (btn) {
@@ -378,7 +345,6 @@
     }
   });
 
-  /* ---------- page loader ---------- */
   var loader = document.getElementById('pageLoader');
   if (loader) {
     var hideLoader = function () {
@@ -406,7 +372,6 @@
     });
   }
 
-  /* ---------- PWA Service Worker Registration ---------- */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       var prefix = document.body.dataset.prefix || '';

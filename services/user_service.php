@@ -1,23 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — User Service
- *
- * Encapsulates authentication, credential updates, account status changes,
- * user CRUD, and security validations.
- *
- * @package ClassroomFinder\Services
- */
-
 require_once __DIR__ . '/../config/database.php';
 
-/**
- * Retrieve user record by primary key ID.
- *
- * @param int $id User ID.
- * @return array<string, mixed>|null
- */
 function user_get(int $id): ?array
 {
     if ($id <= 0) {
@@ -29,12 +14,6 @@ function user_get(int $id): ?array
     return $user ?: null;
 }
 
-/**
- * Retrieve user record by unique username.
- *
- * @param string $username Username string.
- * @return array<string, mixed>|null
- */
 function user_get_by_username(string $username): ?array
 {
     $username = trim($username);
@@ -47,13 +26,6 @@ function user_get_by_username(string $username): ?array
     return $user ?: null;
 }
 
-/**
- * Authenticate user credentials with brute-force rate-limiting and timing-attack mitigation.
- *
- * @param string $username Provided username.
- * @param string $password Provided plaintext password.
- * @return array<string, mixed> Result array ['ok' => bool, 'user' => ?array, 'error' => string]
- */
 function user_authenticate(string $username, string $password): array
 {
     $username = trim($username);
@@ -61,7 +33,6 @@ function user_authenticate(string $username, string $password): array
         return ['ok' => false, 'error' => 'Enter your username and password.', 'user' => null];
     }
 
-    // Rate-limiting: 5 failed attempts in 10 minutes locks out
     $recentFailsStmt = db()->prepare(
         "SELECT COUNT(*) AS fail_count FROM activity_logs
          WHERE action = 'LOGIN_FAILED'
@@ -123,14 +94,6 @@ function user_authenticate(string $username, string $password): array
     return ['ok' => true, 'user' => $user, 'error' => ''];
 }
 
-/**
- * Update user password with length validation and hashing.
- *
- * @param int $userId Target user ID.
- * @param string $newPassword New plaintext password.
- * @param int|null $actorUserId User performing the change (for audit log).
- * @return array<string, mixed> Result array ['ok' => bool, 'message' => string, 'error' => string]
- */
 function user_update_password(int $userId, string $newPassword, ?int $actorUserId = null): array
 {
     if ($userId <= 0) {
@@ -152,14 +115,6 @@ function user_update_password(int $userId, string $newPassword, ?int $actorUserI
     return ['ok' => true, 'message' => 'Password updated successfully.'];
 }
 
-/**
- * Update account status (approve, reject, suspend, reactivate).
- *
- * @param int $targetUserId User ID to modify.
- * @param string $action One of 'approve', 'reject', 'suspend', 'reactivate'.
- * @param int $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function user_set_status(int $targetUserId, string $action, int $adminId): array
 {
     $u = user_get($targetUserId);
@@ -215,13 +170,6 @@ function user_set_status(int $targetUserId, string $action, int $adminId): array
     ];
 }
 
-/**
- * Create a new user account with duplicate checks and hashing.
- *
- * @param array<string, mixed> $data Account fields (full_name, staff_id, email, department, username, role, password).
- * @param int $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function user_create(array $data, int $adminId): array
 {
     $fullName = trim((string)($data['full_name'] ?? ''));
@@ -280,13 +228,6 @@ function user_create(array $data, int $adminId): array
     return ['ok' => true, 'message' => ucfirst($role) . " account created for {$fullName}.", 'id' => $newId];
 }
 
-/**
- * Delete a user account with safety checks (prevent self-deletion and last admin deletion).
- *
- * @param int $targetUserId User ID to delete.
- * @param int $adminId Acting admin ID.
- * @return array<string, mixed>
- */
 function user_delete(int $targetUserId, int $adminId): array
 {
     $u = user_get($targetUserId);
@@ -314,12 +255,6 @@ function user_delete(int $targetUserId, int $adminId): array
     return ['ok' => true, 'message' => 'User account deleted.'];
 }
 
-/**
- * Retrieve list of users with optional filtering.
- *
- * @param array<string, mixed> $filters Filtering parameters (q, role, status).
- * @return array<int, array<string, mixed>>
- */
 function user_fetch_all(array $filters = []): array
 {
     $where  = [];

@@ -1,16 +1,11 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — system settings (Module: Admin System Configuration).
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
 $intKeys = [
-    'reserve_window_minutes'  => [5, 720, 'Reserve window (minutes)'],
     'min_duration_minutes'    => [5, 480, 'Minimum occupancy (minutes)'],
     'max_duration_minutes'    => [15, 1440, 'Maximum occupancy (minutes)'],
     'duration_step_minutes'   => [5, 120, 'Duration picker step (minutes)'],
@@ -26,7 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fail('Session expired — please try again.');
     }
 
-    // ---------- logo upload / removal ----------
     if (($_POST['logo_action'] ?? '') === 'upload' && isset($_FILES['school_logo'])) {
         $f = $_FILES['school_logo'];
         if (($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
@@ -37,8 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($f['size'] > 2 * 1024 * 1024) {
             $fail('Logo is too large — 2 MB maximum.');
         }
-        // raster formats only: an SVG logo would be same-origin executable,
-        // so it's excluded on purpose. getimagesize() also rejects fakes.
         $info = @getimagesize($f['tmp_name']);
         $allowed = [IMAGETYPE_PNG => '.png', IMAGETYPE_JPEG => '.jpg', IMAGETYPE_WEBP => '.webp'];
         if ($info === false || !isset($allowed[$info[2]])) {
@@ -48,8 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             && !mkdir(__DIR__ . '/../assets/uploads', 0775, true)) {
             $fail('Could not create the uploads directory.');
         }
-        // unique name per upload -> browsers never show a stale cached logo;
-        // the previous file is removed below once the new one is in place.
         $name    = 'logo-' . bin2hex(random_bytes(6)) . $allowed[$info[2]];
         $dest    = __DIR__ . '/../assets/uploads/' . $name;
         if (!move_uploaded_file($f['tmp_name'], $dest)) {
@@ -75,18 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('settings.php');
     }
 
-    // text settings — the app (this system) and the school are stored separately
     $appName  = trim((string)($_POST['app_name'] ?? ''));
     if ($appName !== '' && mb_strlen($appName) <= 80) {
         set_setting('app_name', $appName);
     }
-    // an empty school name is saved too: it clears the field and printables
-    // fall back to the app name
     $schoolName = trim((string)($_POST['school_name'] ?? ''));
     if (mb_strlen($schoolName) <= 80) {
         set_setting('school_name', $schoolName);
     }
-    // letterhead lines shown under the school name on printed sheets
     $schoolAddress = trim((string)($_POST['school_address'] ?? ''));
     if (mb_strlen($schoolAddress) <= 120) {
         set_setting('school_address', $schoolAddress);
@@ -134,7 +120,7 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 
 <div class="page-head">
   <h1><?= icon('settings') ?> System settings</h1>
-  <p class="muted">Tuning knobs for durations, reservations and the landing page.</p>
+  <p class="muted">Tuning knobs for durations and the landing page.</p>
 </div>
 
 <div class="card">
@@ -165,7 +151,7 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 <div class="card">
   <div class="card__head">
     <h3>System parameters</h3>
-    <p class="muted small">Configure durations, reservation lead times, and live feed intervals.</p>
+    <p class="muted small">Configure durations and live feed intervals.</p>
   </div>
   <form method="post">
     <?= csrf_field() ?>
@@ -198,7 +184,6 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
           <span style="font-weight:600;display:block;margin-bottom:.35rem"><?= e($label) ?></span>
           <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>" style="width:100%"
                  value="<?= get_setting_int($key, match ($key) {
-                     'reserve_window_minutes' => 45,
                      'min_duration_minutes'   => 15,
                      'max_duration_minutes'   => 480,
                      'duration_step_minutes'  => 30,
@@ -229,7 +214,6 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 <div class="card muted small">
   <h3 style="margin-bottom:.5rem">Parameter reference</h3>
   <ul style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:.35rem">
-    <li><strong>Reserve window</strong> — how many minutes before a booking a room flips to RESERVED on the landing page.</li>
     <li><strong>Min / max occupancy</strong> — bounds for the duration a lecturer can pick after scanning.</li>
     <li><strong>Picker step</strong> — the +/− increment in the scanner’s duration dialog.</li>
     <li><strong>Refresh</strong> — how often the public landing page reloads availability.</li>

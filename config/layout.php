@@ -1,43 +1,21 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — shared page chrome.
- *
- * render_header() / render_footer() wrap every page so admin, lecturer and
- * public pages share one design. room_card()/room_cards_html() render the
- * landing-page cards; api/classroom_status.php re-uses them for live refresh.
- */
-
 require_once __DIR__ . '/helpers.php';
 
-/**
- * Returns metadata (display label, icon name, CSS modifier) for a computed room status.
- *
- * @param string $status Computed status ('occupied', 'reserved', 'unavailable', or 'available')
- * @return array{0:string, 1:string, 2:string} Tuple of [label, icon_name, css_class]
- */
 function room_status_meta(string $status): array
 {
     return match ($status) {
-        'occupied'    => ['OCCUPIED',    'clock',          'danger'],
-        'reserved'    => ['RESERVED',    'calendar-clock', 'warn'],
-        'unavailable' => ['UNAVAILABLE', 'ban',            'off'],
-        default       => ['AVAILABLE',   'circle-check',   'ok'],
+        'occupied'    => ['OCCUPIED',    'clock',        'danger'],
+        'unavailable' => ['UNAVAILABLE', 'ban',          'off'],
+        default       => ['AVAILABLE',   'circle-check', 'ok'],
     };
 }
 
-/**
- * Open a full HTML document.
- * $opts: nav      'admin'|'lecturer'|null  (shows sidebar)
- *        active   key of the current nav item
- *        prefix   '../' for pages inside subfolders, '' at the root
- *        wide     true = no sidebar constraint (landing page)
- */
 function render_header(string $title, array $opts = []): void
 {
     $prefix  = $opts['prefix'] ?? '';
-    $GLOBALS['cf_prefix'] = $prefix; // render_footer() reuses it for script paths
+    $GLOBALS['cf_prefix'] = $prefix;
     $nav     = $opts['nav'] ?? null;
     $active  = $opts['active'] ?? '';
     $user    = function_exists('current_user') ? current_user() : null;
@@ -45,7 +23,6 @@ function render_header(string $title, array $opts = []): void
     $logoPath = $prefix . 'assets/uploads/' . $logo;
     $flashes = take_flashes();
 
-    // If nav wasn't explicitly set (e.g. index.php) but the user is logged in, show their role's nav menu & burger
     if ($nav === null && $user && isset($user['role'])) {
         $nav = $user['role'];
         if ($active === '') {
@@ -67,7 +44,6 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => $adminHref('classrooms.php'),   'icon' => 'door-open'],
             ['key' => 'qr',           'label' => 'QR Codes',         'href' => $adminHref('qr_codes.php'),     'icon' => 'qr-code'],
             ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => $adminHref('sessions.php'),     'icon' => 'clock'],
-            ['key' => 'reservations', 'label' => 'Reservations',     'href' => $adminHref('reservations.php'), 'icon' => 'calendar-clock'],
             ['key' => 'schedules',    'label' => 'Print Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],
             ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
@@ -161,7 +137,6 @@ function render_header(string $title, array $opts = []): void
 <?php
 }
 
-/** Close the document; $scripts are extra JS files appended with the same prefix. */
 function render_footer(array $scripts = []): void
 {
     $prefix = $GLOBALS['cf_prefix'] ?? '';
@@ -169,24 +144,13 @@ function render_footer(array $scripts = []): void
 <script src="<?= $prefix ?>assets/js/vendor/sweetalert2.all.min.js"></script>
 <script src="<?= $prefix ?>assets/js/ui.js?v=<?= filemtime(__DIR__ . '/../assets/js/ui.js') ?>"></script>
 <?php foreach ($scripts as $src): ?>
-<?php $cf_js = __DIR__ . '/../assets/js/' . basename($src); // pages pass "assets/js/x.js" ?>
+<?php $cf_js = __DIR__ . '/../assets/js/' . basename($src); ?>
 <script src="<?= $prefix . e($src) ?>?v=<?= is_file($cf_js) ? filemtime($cf_js) : 0 ?>"></script>
 <?php endforeach; ?>
 </body>
 </html><?php
 }
 
-/* ==========================================================================
- * Landing-page room cards
- * ========================================================================*/
-
-/**
- * Renders an individual classroom card element for the landing page grid.
- *
- * @param array $r Classroom record with computed status fields
- * @param int $i Loop index for layout/animation ordering
- * @return string Rendered HTML markup for the room card
- */
 function room_card(array $r, int $i = 0): string
 {
     [$label, $statusIcon, $cls] = room_status_meta($r['computed']);
@@ -219,7 +183,6 @@ function room_card(array $r, int $i = 0): string
         </div>
       </div>
       <?php else: ?>
-      <!-- occupied by a fixed weekly class, not a QR session -->
       <div class="room-card__occupied-info">
         <p class="room-card__who"><?= icon('book-open') ?> <?= e($r['sched_subject']) ?><?= !empty($r['sched_section']) ? ' · ' . e($r['sched_section']) : '' ?></p>
         <div class="room-card__timing">
@@ -228,14 +191,6 @@ function room_card(array $r, int $i = 0): string
         </div>
       </div>
       <?php endif; ?>
-    <?php elseif ($r['computed'] === 'reserved'): ?>
-      <div class="room-card__reserved-info">
-        <p class="room-card__who"><?= icon('calendar-days') ?> <?= !empty($r['reservation_purpose']) ? e($r['reservation_purpose']) : 'Reserved' ?></p>
-        <div class="room-card__timing">
-          <span class="room-card__when" title="<?= e(fmt_range($r['reservation_start'], $r['reservation_end'])) ?>">Starts <?= fmt_time($r['reservation_start']) ?></span>
-          <span class="room-card__free" data-free-at="<?= e(fmt_iso($r['reservation_start'])) ?>">Starts soon…</span>
-        </div>
-      </div>
     <?php elseif ($r['computed'] === 'unavailable'): ?>
       <p class="room-card__off-note"><?= icon('ban') ?> <?= e($r['note'] ?: ($r['status'] === 'maintenance' ? 'Under maintenance' : 'Temporarily disabled')) ?></p>
     <?php endif; ?>
@@ -250,12 +205,6 @@ function room_card(array $r, int $i = 0): string
     return (string)ob_get_clean();
 }
 
-/**
- * Renders HTML markup for an array of classroom cards or an empty state message.
- *
- * @param array<int, array> $rooms List of classroom records
- * @return string Rendered HTML cards container content
- */
 function room_cards_html(array $rooms): string
 {
     if (!$rooms) {
@@ -269,14 +218,9 @@ function room_cards_html(array $rooms): string
     return $html;
 }
 
-/**
- * Landing-list order: vacant rooms first — that's what people scan for —
- * then soon-reserved, busy, and finally maintenance/disabled. Building +
- * room number break ties inside each band.
- */
 function sort_rooms_available_first(array $rooms): array
 {
-    $band = ['available' => 0, 'reserved' => 1, 'occupied' => 2, 'unavailable' => 3];
+    $band = ['available' => 0, 'occupied' => 1, 'unavailable' => 2];
     usort($rooms, static function (array $a, array $b) use ($band): int {
         return [
             $band[$a['computed']] ?? 9,
@@ -293,12 +237,6 @@ function sort_rooms_available_first(array $rooms): array
 
 const ROOMS_PER_PAGE = 10;
 
-/**
- * Slice the sorted landing list into pages of ROOMS_PER_PAGE.
- * Returns the page's rooms plus the metadata the pager and counters need.
- *
- * @return array{rooms:array, page:int, pages:int, total:int}
- */
 function room_page(array $rooms, int $page): array
 {
     $rooms = sort_rooms_available_first($rooms);
@@ -312,11 +250,6 @@ function room_page(array $rooms, int $page): array
     ];
 }
 
-/**
- * ‹ Prev · Page x of y · Next › under the landing grid.
- * $hrefFor maps a page number to a URL; pass null to render JS-only buttons
- * (the live-refresh path, where filters live in the form, not the URL).
- */
 function room_pager_html(int $total, int $page, ?callable $hrefFor = null): string
 {
     $pages = max(1, (int)ceil($total / ROOMS_PER_PAGE));
@@ -339,26 +272,14 @@ function room_pager_html(int $total, int $page, ?callable $hrefFor = null): stri
         . '</nav>';
 }
 
-/* ==========================================================================
- * Admin-list pagination (shared by every admin section)
- * ========================================================================*/
-
 const ADMIN_PER_PAGE = 10;
 
-/**
- * Reads and validates per-page setting from GET parameters.
- */
 function admin_per_page(int $default = ADMIN_PER_PAGE, string $param = 'per_page'): int
 {
     $val = (int)($_GET[$param] ?? 0);
     return in_array($val, [10, 25, 50, 100], true) ? $val : $default;
 }
 
-/**
- * Clamp+slice parameters for an admin listing.
- *
- * @return array{page:int, pages:int, offset:int, limit:int}
- */
 function page_params(int $total, int $page, int $perPage = ADMIN_PER_PAGE): array
 {
     $perPage = max(1, $perPage);
@@ -372,17 +293,6 @@ function page_params(int $total, int $page, int $perPage = ADMIN_PER_PAGE): arra
     ];
 }
 
-/**
- * Render complete pagination footer for admin listings.
- * Includes "Showing X to Y of Z entries", per-page selector, and numbered pager buttons.
- *
- * @param int $total Total records count
- * @param int $page Current 1-based page number
- * @param int $perPage Records per page
- * @param string $param Query param name for page number (e.g. 'page', 'up_page', 'past_page')
- * @param string $itemLabel Plural noun describing items (e.g. 'classrooms', 'users', 'entries')
- * @return string Rendered HTML markup
- */
 function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $param = 'page', string $itemLabel = 'entries'): string
 {
     if ($total <= 0) {
@@ -393,7 +303,6 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
     $from = $pp['offset'] + 1;
     $to   = min($total, $pp['offset'] + $pp['limit']);
 
-    // Query string helper for page links
     $qs = $_GET;
     unset($qs[$param]);
     $pageUrl = static function (int $p) use ($qs, $param): string {
@@ -401,7 +310,6 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
         return '?' . e(http_build_query($params));
     };
 
-    // Per-page param name (e.g. 'per_page', 'up_per_page', 'past_per_page')
     $perPageParam = ($param === 'page') ? 'per_page' : ($param === 'up_page' ? 'up_per_page' : ($param === 'past_page' ? 'past_per_page' : ($param . '_per_page')));
     $qsNoPerPage = $qs;
     unset($qsNoPerPage[$perPageParam]);
@@ -411,16 +319,10 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
     };
 
     $html = '<div class="pagination-footer">';
-
-    // Left: Range and total information
     $html .= '<div class="pagination-info">';
     $html .= 'Showing <strong>' . $from . '</strong> to <strong>' . $to . '</strong> of <strong>' . $total . '</strong> ' . e($itemLabel);
     $html .= '</div>';
-
-    // Right: Controls wrapper (per-page select + page buttons)
     $html .= '<div class="pagination-controls">';
-
-    // Per-page selector
     $html .= '<div class="pagination-per-page">';
     $html .= '<label for="pp_' . e($param) . '">Show</label>';
     $html .= '<select id="pp_' . e($param) . '" onchange="window.location.href=this.value">';
@@ -431,7 +333,6 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
     $html .= '</select>';
     $html .= '</div>';
 
-    // Page navigation links (if multiple pages)
     if ($pp['pages'] > 1) {
         $link = static fn(int $p, string $label, bool $current = false): string =>
             '<a class="' . ($current ? 'is-active' : '') . '" href="' . $pageUrl($p) . '"' . ($current ? ' aria-current="page"' : '') . '>' . $label . '</a>';
@@ -465,8 +366,8 @@ function page_nav(int $total, int $page, int $perPage = ADMIN_PER_PAGE, string $
         $html .= '</nav>';
     }
 
-    $html .= '</div>'; // .pagination-controls
-    $html .= '</div>'; // .pagination-footer
+    $html .= '</div>';
+    $html .= '</div>';
 
     return $html;
 }

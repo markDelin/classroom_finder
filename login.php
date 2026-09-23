@@ -1,22 +1,14 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — login page.
- */
-
 require_once __DIR__ . '/config/helpers.php';
 
-// First-time setup: if no account exists at all, point visitors at setup.
 $needsSetup = false;
 try {
     $needsSetup = (int)db()->query('SELECT COUNT(*) AS n FROM users')->fetch()['n'] === 0;
 } catch (Throwable) {
-    // database not imported yet — the connection helper already explained it
 }
 
-// Already signed in? Straight to the right home — admins to their dashboard,
-// lecturers straight to the scanner (their most frequent action).
 if ($u = current_user()) {
     require_once __DIR__ . '/auth/auth_check.php';
     redirect($u['role'] === 'admin' ? 'admin/dashboard.php' : 'lecturer/scanner.php');

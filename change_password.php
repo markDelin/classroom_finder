@@ -1,13 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — change account password.
- *
- * Allows any authenticated user (admin or lecturer) to update their account password.
- * Requires verifying the current password and confirming the new password.
- */
-
 require_once __DIR__ . '/auth/auth_check.php';
 
 $user = require_login();
@@ -16,7 +9,6 @@ if ($user['role'] === 'admin') {
     redirect('admin/users.php');
 }
 
-// Re-fetch user record from database to get fresh password hash & status
 $userDb = user_get((int)$user['id']);
 
 if (!$userDb || $userDb['account_status'] !== 'approved') {

@@ -1,14 +1,3 @@
-/**
- * Classroom Finder — admin add/edit modals.
- *
- * Any element with data-modal-form="#formId" opens that (server-rendered,
- * hidden) form inside a SweetAlert2 modal:
- *   - data-title="Add a classroom"   modal heading
- *   - data-confirm-text="Save"       confirm button label
- *   - data-prefill='{"name":"201"}'  fills named fields before opening (edit)
- *   - without data-prefill           resets the form and restores its
- *                                    data-default-action (add)
- */
 (function () {
   'use strict';
 

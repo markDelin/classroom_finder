@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — logout.
- */
-
 require_once __DIR__ . '/config/helpers.php';
 
 if (!empty($_SESSION['user_id'])) {

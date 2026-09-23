@@ -1,19 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — QR scan validation (Feature: QR Token Verification & Live Room Check).
- *
- * POST api/scan_qr.php   { "token": "<32-hex from the QR>" }
- *   X-CSRF-Token header required.
- *
- * The scanner UI calls this after a successful decode. It validates the
- * lecturer's account AND the classroom token server-side, then reports the
- * room's live availability so the confirmation dialog can be shown.
- * NOTE: this endpoint never occupies a room by itself — that is done by
- * lecturer/occupy.php which re-validates everything again (Atomic Occupancy Transaction).
- */
-
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth_check.php';
@@ -38,6 +25,14 @@ if (!is_within_scan_hours()) {
     ], 403);
 }
 
+if ($activeSession = get_active_session_for((int)$user['id'])) {
+    json_response([
+        'ok'    => false,
+        'error' => 'You already hold an active session in room ' . $activeSession['room_number'] . '. Release it before occupying another room.',
+        'code'  => 'active_session',
+    ], 400);
+}
+
 $input = request_input();
 $token = extract_qr_token((string)($input['token'] ?? ''));
 if ($token === null) {
@@ -50,7 +45,6 @@ if (!$room) {
     json_response(['ok' => false, 'error' => 'Unknown or regenerated QR code. Ask the administrator for the current one.', 'code' => 'not_found'], 404);
 }
 
-// Live state for THIS room (targeted single-row status check)
 $live = room_get_with_status((int)$room['id']);
 
 log_action('SCAN_QR', (int)$user['id'], (int)$room['id'], 'Scanned room ' . $room['room_number']);
@@ -72,12 +66,9 @@ json_response([
             ? 'This room has a scheduled class (' . $live['sched_subject'] . ') until '
               . fmt_time($live['sched_end']) . '.'
             : 'This room is currently occupied until ' . fmt_time($live['session_end']) . '.',
-        'reserved'    => 'A reservation starts at ' . fmt_time($live['reservation_start']) . '.',
         'unavailable' => 'This room is marked unavailable (' . ($live['status'] === 'maintenance' ? 'maintenance' : 'disabled') . ').',
         default       => null,
     },
-    // A fixed weekly class is blocking the room (as opposed to a lecturer's
-    // QR session). The scanner offers a "class isn't happening" force-open.
     'fixed_class' => ($live['computed'] === 'occupied' && empty($live['session_id']) && !empty($live['sched_id'])) ? [
         'schedule_id' => (int)$live['sched_id'],
         'subject'     => $live['sched_subject'],

@@ -1,11 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder — usage history.
- * Filterable record of every session: who used which room, when, how long.
- */
-
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -40,7 +35,6 @@ if ($userId !== '') {
 }
 $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
-// CSV download — the same filtered dataset, without the 500-row screen cap.
 if (wants_csv()) {
     $st = db()->prepare(
         'SELECT s.*, c.room_number, c.building, u.full_name
@@ -67,7 +61,6 @@ if (wants_csv()) {
     );
 }
 
-// totals for the whole filtered set (not just the visible page)
 $st = db()->prepare(
     'SELECT COUNT(*) AS n, COALESCE(SUM(TIMESTAMPDIFF(MINUTE, s.start_time, s.end_time)), 0) AS mins
      FROM classroom_sessions s
