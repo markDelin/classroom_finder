@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
-const ROOM_SERVICE_TYPES = ['Lecture', 'Laboratory', 'Seminar', 'Auditorium'];
+const ROOM_SERVICE_TYPES = ['Lecture', 'Laboratory', 'Seminar', 'Other'];
 
 function room_get(int $id): ?array
 {

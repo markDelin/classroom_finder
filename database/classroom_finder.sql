@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS classrooms (
   building    VARCHAR(80)   NOT NULL,
   floor       TINYINT UNSIGNED NOT NULL DEFAULT 1,
   capacity    SMALLINT UNSIGNED NOT NULL DEFAULT 30,
-  room_type   VARCHAR(40)   NOT NULL DEFAULT 'Lecture Room',
+  room_type   VARCHAR(40)   NOT NULL DEFAULT 'Other',
   qr_token    VARCHAR(32)   NOT NULL,
   status      ENUM('available','maintenance','disabled')
                             NOT NULL DEFAULT 'available',
@@ -125,28 +125,3 @@ INSERT INTO settings (skey, svalue) VALUES
   ('scan_day_start',           '07:00'),
   ('scan_day_end',             '19:00')
 ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);
-
-INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status, note) VALUES
-  ('101', 'New Building',         1, 40, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('102', 'New Building',         1, 35, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('103', 'New Building',         1, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('104', 'New Building',         1, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('105', 'New Building',         1, 25, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('201', 'New Building',         2, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('202', 'New Building',         2, 30, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('203', 'New Building',         2, 40, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('204', 'New Building',         2, 35, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('301', 'New Building',         3, 60, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('302', 'New Building',         3, 50, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('303', 'New Building',         3, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'IT Multimedia Lab'),
-  ('101', 'Main Building',        1, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('102', 'Main Building',        1, 45, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('201', 'Main Building',        2, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'College Computer Lab 1'),
-  ('202', 'Main Building',        2, 40, 'College Comlab',    SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'College Computer Lab 2'),
-  ('301', 'Main Building',        3, 50, 'Lecture Room',      SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', NULL),
-  ('302', 'Main Building',        3, 80, 'Other',             SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Audio-Visual Hall'),
-  ('HS-101', 'High School Building', 1, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 7 Section A'),
-  ('HS-102', 'High School Building', 1, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 8 Section A'),
-  ('HS-201', 'High School Building', 2, 35, 'Highschool Comlab', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'High School Computer Lab'),
-  ('HS-202', 'High School Building', 2, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 9 Section A'),
-  ('HS-301', 'High School Building', 3, 40, 'Highschool Room', SUBSTRING(MD5(CONCAT('seed-', RAND(), UUID())), 1, 8), 'available', 'Grade 10 Section A');

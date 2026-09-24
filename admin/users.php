@@ -117,8 +117,8 @@ $statusF = (string)($_GET['status'] ?? '');
 $where  = [];
 $params = [];
 if ($q !== '') {
-    $where[] = '(full_name LIKE ? OR username LIKE ? OR email LIKE ? OR staff_id LIKE ?)';
-    array_push($params, "%$q%", "%$q%", "%$q%", "%$q%");
+    $where[] = '(full_name LIKE ? OR username LIKE ? OR email LIKE ? OR staff_id LIKE ? OR department LIKE ?)';
+    array_push($params, "%$q%", "%$q%", "%$q%", "%$q%", "%$q%");
 }
 if (in_array($statusF, ['pending', 'approved', 'rejected', 'suspended'], true)) {
     $where[]  = 'account_status = ?';
@@ -153,7 +153,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 </div>
 
 <form method="get" class="filter-row">
-  <input type="search" name="q" placeholder="Search name, username, email, staff ID…" value="<?= e($q) ?>">
+  <input type="search" name="q" placeholder="Search name, username, email, staff ID, department…" value="<?= e($q) ?>">
   <select name="status" onchange="this.form.submit()">
     <option value="">All status</option>
     <?php foreach (['pending' => 'Pending', 'approved' => 'Approved', 'suspended' => 'Suspended', 'rejected' => 'Rejected'] as $k => $lbl): ?>
@@ -170,11 +170,11 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 
   <div class="table-wrap">
   <table class="table">
-    <thead><tr><th>User</th><th>Role &amp; Status</th><th>Contact</th><th style="text-align:right">Actions</th></tr></thead>
+    <thead><tr><th>User</th><th>Department</th><th>Role &amp; Status</th><th>Email</th><th>Staff ID</th><th style="text-align:right">Actions</th></tr></thead>
     <tbody>
       <?php if (!$users): ?>
       <tr>
-        <td colspan="4" class="muted" style="text-align:center;padding:2rem 1rem;">
+        <td colspan="6" class="muted" style="text-align:center;padding:2rem 1rem;">
           No users match the selected filters.
           <?php if ($q !== '' || $statusF !== ''): ?>
             <a href="users.php">Reset filter</a>
@@ -185,17 +185,19 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
       <?php foreach ($users as $u): ?>
       <tr>
         <td class="cell-main" data-label="Name">
-          <strong><?= e($u['full_name']) ?></strong> <span class="muted small">@<?= e($u['username']) ?></span>
-          <?php if ($u['department']): ?><span class="muted small"> · <?= e($u['department']) ?></span><?php endif; ?>
+          <strong><?= e($u['full_name']) ?></strong><br><span class="muted small">@<?= e($u['username']) ?></span>
         </td>
+        <td class="cell-sub small" data-label="Department" style="max-width:10rem"><?= e($u['department'] ?: '—') ?></td>
         <td class="cell-status nowrap" data-label="Role & Status">
           <span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span>
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
           <span class="pill pill--<?= $badge[$u['account_status']] ?>"><?= e($u['account_status']) ?></span>
         </td>
-        <td class="cell-sub small" data-label="Contact">
+        <td class="cell-sub small" data-label="Email" title="<?= e($u['email']) ?>" style="max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
           <?= e($u['email']) ?>
-          <span class="muted small"> · ID: <?= e($u['staff_id']) ?></span>
+        </td>
+        <td class="cell-sub small nowrap" data-label="Staff ID">
+          <?= e($u['staff_id']) ?>
         </td>
         <td data-label="Actions">
           <div class="actions-cell" style="justify-content:flex-end">

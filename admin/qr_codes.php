@@ -99,7 +99,7 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
           </th>
           <th style="width:54px;">QR</th>
           <th>Room &amp; Location</th>
-          <th>Classroom ID &amp; Token</th>
+          <th class="hide-mobile">Classroom ID &amp; Token</th>
           <th style="text-align:right">Actions</th>
         </tr>
       </thead>
@@ -124,14 +124,17 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
               <img src="../qr/generate.php?id=<?= (int)$r['id'] ?>&size=3" width="40" height="40" alt="QR <?= e($r['room_number']) ?>" class="qr-table__thumb" loading="lazy">
             </a>
           </td>
-          <td class="cell-main nowrap" data-label="Room">
+          <td class="cell-main" data-label="Room">
             <strong>Room <?= e($r['room_number']) ?></strong>
             <span class="muted small">· <?= e($r['building']) ?> · Floor <?= (int)$r['floor'] ?></span>
             <?php if (!empty($r['room_type'])): ?>
-              <span class="muted small">· <?= e($r['room_type']) ?></span>
+              <span class="muted small hide-mobile">· <?= e($r['room_type']) ?></span>
             <?php endif; ?>
+            <span class="show-mobile qr-mobile-meta muted small">
+              <br>CF-<?= e($r['room_number']) ?> · <code><?= e($r['qr_token']) ?></code>
+            </span>
           </td>
-          <td class="cell-sub nowrap" data-label="Classroom ID">
+          <td class="cell-sub nowrap hide-mobile" data-label="Classroom ID">
             <span class="qr-table__id">CF-<?= e($r['room_number']) ?></span>
             <span class="muted small"><code><?= e($r['qr_token']) ?></code></span>
           </td>
