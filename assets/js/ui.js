@@ -345,6 +345,7 @@
     }
   });
 
+  /* ---------- page loader (commented out) ----------
   var loader = document.getElementById('pageLoader');
   if (loader) {
     var hideLoader = function () {
@@ -371,6 +372,7 @@
       loader.classList.remove('is-hidden');
     });
   }
+  */
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {

@@ -170,7 +170,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
 
   <div class="table-wrap">
   <table class="table">
-    <thead><tr><th>User</th><th>Department</th><th>Role &amp; Status</th><th>Email</th><th>Staff ID</th><th style="text-align:right">Actions</th></tr></thead>
+    <thead><tr><th>User</th><th>Department</th><th>Role &amp; Status</th><th>Email</th><th>Staff ID</th><th>Actions</th></tr></thead>
     <tbody>
       <?php if (!$users): ?>
       <tr>
@@ -184,23 +184,21 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
       <?php else: ?>
       <?php foreach ($users as $u): ?>
       <tr>
-        <td class="cell-main" data-label="Name">
+        <td class="cell-main nowrap" data-label="User">
           <strong><?= e($u['full_name']) ?></strong><br><span class="muted small">@<?= e($u['username']) ?></span>
         </td>
-        <td class="cell-sub small" data-label="Department" style="max-width:10rem"><?= e($u['department'] ?: '—') ?></td>
+        <td class="cell-sub small" data-label="Department"><?= e($u['department'] ?: '—') ?></td>
         <td class="cell-status nowrap" data-label="Role & Status">
           <span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span>
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
           <span class="pill pill--<?= $badge[$u['account_status']] ?>"><?= e($u['account_status']) ?></span>
         </td>
-        <td class="cell-sub small" data-label="Email" title="<?= e($u['email']) ?>" style="max-width:11rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          <?= e($u['email']) ?>
-        </td>
+        <td class="cell-sub small nowrap" data-label="Email"><?= e($u['email']) ?></td>
         <td class="cell-sub small nowrap" data-label="Staff ID">
           <?= e($u['staff_id']) ?>
         </td>
         <td data-label="Actions">
-          <div class="actions-cell" style="justify-content:flex-end">
+          <div class="actions-cell">
           <?php if ($u['account_status'] === 'pending'): ?>
             <form method="post" class="inline-form"><?= csrf_field() ?>
               <input type="hidden" name="action" value="approve"><input type="hidden" name="id" value="<?= (int)$u['id'] ?>">

@@ -3197,7 +3197,7 @@ html { -webkit-tap-highlight-color: transparent; }
   transition: width .3s ease;
 }
 
-/* ---------- page loader ---------- */
+/* ---------- page loader (commented out) ----------
 .page-loader {
   position: fixed;
   inset: 0;
@@ -3231,4 +3231,5 @@ html { -webkit-tap-highlight-color: transparent; }
     animation-duration: 1.5s;
   }
 }
+*/
 
