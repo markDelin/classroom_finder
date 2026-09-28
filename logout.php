@@ -3,6 +3,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config/helpers.php';
 
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Allow: POST');
+    abort(405, 'Use the sign-out button to log out.');
+}
+if (!check_csrf()) {
+    abort(403, 'Session expired — please submit the form again.');
+}
+
 if (!empty($_SESSION['user_id'])) {
     log_action('LOGOUT', (int)$_SESSION['user_id']);
 }

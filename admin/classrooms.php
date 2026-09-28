@@ -9,8 +9,6 @@ $fail  = function (string $msg, string $back = 'classrooms.php'): never {
     redirect($back);
 };
 
-const ROOM_TYPES = ['Lecture Room', 'Highschool Comlab', 'College Comlab', 'Highschool Room', 'Other'];
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $fail('Session expired — please try again.');
@@ -108,7 +106,7 @@ render_header('Classrooms', ['prefix' => '../', 'nav' => 'admin', 'active' => 'c
   <label>Capacity <input type="number" name="capacity" min="1" max="9999" value="40"></label>
   <label class="full-width">Room type
     <select name="room_type">
-      <?php foreach (ROOM_TYPES as $t): ?>
+      <?php foreach (ROOM_SERVICE_TYPES as $t): ?>
         <option><?= e($t) ?></option>
       <?php endforeach; ?>
     </select>

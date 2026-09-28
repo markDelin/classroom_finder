@@ -10,6 +10,11 @@ preview_tt.*
 CLAUDE.md
 claude.md
 .superpowers/
+.claude/worktrees/
+tests/
+
+# Installation state (per-deployment)
+/installed.lock
 
 # QR library cache (generated at runtime)
 qr/lib/cache/

@@ -63,12 +63,12 @@ function render_header(string $title, array $opts = []): void
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title><?= e($title) ?> · <?= e(app_name()) ?></title>
 <link rel="stylesheet" href="<?= $prefix ?>assets/css/style.css?v=<?= filemtime(__DIR__ . '/../assets/css/style.css') ?>">
 <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
 <link rel="manifest" href="<?= $prefix ?>manifest.json">
-<meta name="theme-color" content="#0ea5e9">
+<meta name="theme-color" content="#ffffff">
 </head>
 <body class="<?= $nav ? 'has-sidebar' : '' ?><?= $active !== '' ? ' page--' . e($active) : '' ?>" data-prefix="<?= $prefix ?>">
 <!-- Loading spinner commented out

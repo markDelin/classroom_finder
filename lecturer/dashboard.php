@@ -9,7 +9,7 @@ $active = get_active_session_for((int)$user['id']);
 
 $st = db()->prepare(
     "SELECT COUNT(*) AS sessions,
-            COALESCE(SUM(TIMESTAMPDIFF(MINUTE, start_time, IF(status = 'active', ?, end_time))), 0) AS minutes
+            COALESCE(SUM(TIMESTAMPDIFF(MINUTE, start_time, IF(status = 'active', LEAST(?, end_time), end_time))), 0) AS minutes
      FROM classroom_sessions
      WHERE user_id = ? AND MONTH(start_time) = MONTH(?) AND YEAR(start_time) = YEAR(?)"
 );

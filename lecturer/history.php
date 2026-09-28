@@ -26,7 +26,7 @@ $rows = $st->fetchAll();
 $totalMinutes = 0;
 foreach ($rows as $r) {
     if ($r['status'] === 'active') {
-        $totalMinutes += max(0, minutes_between($r['start_time'], date('Y-m-d H:i:s')));
+        $totalMinutes += max(0, minutes_between($r['start_time'], min(date('Y-m-d H:i:s'), $r['end_time'])));
     } else {
         $totalMinutes += minutes_between($r['start_time'], $r['end_time']);
     }
@@ -63,7 +63,7 @@ render_header('My Usage History', ['prefix' => '../', 'nav' => 'lecturer', 'acti
         <td class="nowrap"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
         <td class="nowrap"><?=
             $s['status'] === 'active'
-                ? human_duration(minutes_between($s['start_time'], date('Y-m-d H:i:s'))) . ' so far'
+                ? human_duration(minutes_between($s['start_time'], min(date('Y-m-d H:i:s'), $s['end_time']))) . ' so far'
                 : human_duration(minutes_between($s['start_time'], $s['end_time']))
         ?></td>
         <td><span class="pill pill--<?= e($s['status']) ?>"><?= e($s['status']) ?></span></td>

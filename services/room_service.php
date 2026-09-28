@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/database.php';
 
-const ROOM_SERVICE_TYPES = ['Lecture', 'Laboratory', 'Seminar', 'Other'];
+const ROOM_SERVICE_TYPES = ['Lecture Room', 'Highschool Comlab', 'College Comlab', 'Highschool Room', 'Other', 'Lecture', 'Laboratory', 'Seminar'];
 
 function room_get(int $id): ?array
 {
@@ -245,9 +245,12 @@ function room_save(array $data, ?int $id = null, ?int $actorUserId = null): arra
     $building   = trim((string)($data['building'] ?? ''));
     $floor      = max(1, (int)($data['floor'] ?? 1));
     $capacity   = max(1, min(9999, (int)($data['capacity'] ?? 0)));
-    $type       = in_array($data['room_type'] ?? '', ROOM_SERVICE_TYPES, true) ? (string)$data['room_type'] : ROOM_SERVICE_TYPES[0];
+    $type       = $data['room_type'] ?? '';
     $note       = trim((string)($data['note'] ?? ''));
 
+    if (!in_array($type, ROOM_SERVICE_TYPES, true)) {
+        return ['ok' => false, 'error' => 'Please select a valid room type.'];
+    }
     if ($roomNumber === '' || $building === '') {
         return ['ok' => false, 'error' => 'Room number and building are required.'];
     }

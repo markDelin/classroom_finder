@@ -22,15 +22,18 @@ Options -Indexes
     ErrorDocument 503 /error.php?code=503
 </Else>
 
-# Block sensitive file extensions
+# Block sensitive file extensions; only the root web manifest is public
 <FilesMatch "\.(sql|log|ini|env|md|json|lock)$">
-    Require all denied
+    Require expr "%{REQUEST_URI} =~ m#^/(?:classroom_finder/)?manifest\.json$#"
 </FilesMatch>
 
-# Block hidden files and directories (e.g. .git)
+# Block hidden files and descendants of hidden directories (e.g. .git)
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
+<If "unescape(%{REQUEST_URI}) =~ m#(?:^|/)\.[^/]*(?:/|$)#">
+    Require all denied
+</If>
 
 # Security Headers
 <IfModule mod_headers.c>

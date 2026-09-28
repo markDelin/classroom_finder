@@ -39,17 +39,24 @@ function session_get_active_for_user(int $userId): ?array
     return $session ?: null;
 }
 
+function session_schedule_windows(int $start, int $end): array
+{
+    $windows = [];
+    while ($start < $end) {
+        $midnight = strtotime('tomorrow', $start);
+        $windows[] = [
+            date('Y-m-d', $start), (int)date('N', $start), date('H:i:s', $start),
+            $end >= $midnight ? '24:00:00' : date('H:i:s', $end),
+        ];
+        $start = $midnight;
+    }
+    return $windows;
+}
+
 function session_occupy(int $classroomId, int $userId, int $minutes): array
 {
     if ($userId <= 0 || $classroomId <= 0) {
         return ['ok' => false, 'error' => 'Invalid user or classroom ID.'];
-    }
-
-    if ($activeHold = session_get_active_for_user($userId)) {
-        return [
-            'ok' => false,
-            'error' => 'You are still occupying room ' . $activeHold['room_number'] . '. Release it first.',
-        ];
     }
 
     if (function_exists('is_within_scan_hours') && !is_within_scan_hours()) {
@@ -76,12 +83,23 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
     try {
         $pdo->beginTransaction();
 
+        $st = $pdo->prepare('SELECT id FROM users WHERE id = ? FOR UPDATE');
+        $st->execute([$userId]);
+        if (!$st->fetch()) {
+            throw new RuntimeException('User does not exist.');
+        }
+
         $st = $pdo->prepare('SELECT * FROM classrooms WHERE id = ? LIMIT 1 FOR UPDATE');
         $st->execute([$classroomId]);
         $room = $st->fetch();
 
         if (!$room) {
             throw new RuntimeException('Classroom does not exist.');
+        }
+
+        // Read active holds only after both locks, avoiding a stale transaction snapshot.
+        if ($activeHold = session_get_active_for_user($userId)) {
+            throw new RuntimeException('You are still occupying room ' . $activeHold['room_number'] . '. Release it first.');
         }
 
         if ($room['status'] !== 'available') {
@@ -107,25 +125,25 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
             );
         }
 
-        $startT = date('H:i:s', $now);
-        $endT   = date('H:i:s', $now + $minutes * 60);
         $st = $pdo->prepare(
             "SELECT cs.id, cs.subject, cs.start_time, cs.end_time
              FROM class_schedules cs
              LEFT JOIN schedule_force_open fo
-                    ON fo.schedule_id = cs.id AND fo.exc_date = CURDATE()
+                    ON fo.schedule_id = cs.id AND fo.exc_date = ?
              WHERE cs.classroom_id = ? AND cs.is_active = 1
                AND cs.day_of_week = ?
                AND cs.start_time < ? AND cs.end_time > ?
                AND fo.id IS NULL
              LIMIT 1"
         );
-        $st->execute([$classroomId, (int)date('N', $now), $endT, $startT]);
-        if ($cls = $st->fetch()) {
-            throw new RuntimeException(
-                'Room ' . $room['room_number'] . ' has a scheduled class ('
-                . $cls['subject'] . '). If the class is not meeting, you can open the room from the scanner.'
-            );
+        foreach (session_schedule_windows($now, $now + $minutes * 60) as [$date, $day, $startT, $endT]) {
+            $st->execute([$date, $classroomId, $day, $endT, $startT]);
+            if ($cls = $st->fetch()) {
+                throw new RuntimeException(
+                    'Room ' . $room['room_number'] . ' has a scheduled class ('
+                    . $cls['subject'] . '). If the class is not meeting, you can open the room from the scanner.'
+                );
+            }
         }
 
         $ins = $pdo->prepare(
@@ -149,14 +167,12 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
             'room' => $room,
             'end_time' => $end,
         ];
-    } catch (RuntimeException $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        return ['ok' => false, 'error' => $e->getMessage()];
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
+        }
+        if ($e instanceof RuntimeException && !($e instanceof PDOException)) {
+            return ['ok' => false, 'error' => $e->getMessage()];
         }
         error_log('session_occupy failed: ' . $e->getMessage());
         return ['ok' => false, 'error' => 'Database error while occupying room.'];

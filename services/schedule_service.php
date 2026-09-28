@@ -49,6 +49,70 @@ function schedule_fetch_by_room(int $classroomId): array
     return $st->fetchAll();
 }
 
+function schedule_upcoming_for_rooms(array $roomIds, ?int $now = null): array
+{
+    $roomIds = array_values(array_unique(array_filter(array_map('intval', $roomIds), static fn(int $id): bool => $id > 0)));
+    if (!$roomIds) {
+        return [];
+    }
+    $now ??= time();
+    $today = date('Y-m-d', $now);
+    $horizon = strtotime('+7 days', $now);
+    $placeholders = implode(',', array_fill(0, count($roomIds), '?'));
+    $result = array_fill_keys($roomIds, ['slots' => [], 'next' => null]);
+    $st = db()->prepare("SELECT * FROM class_schedules
+        WHERE classroom_id IN ($placeholders) AND is_active = 1
+        ORDER BY day_of_week, start_time, id");
+    $st->execute($roomIds);
+    foreach ($st->fetchAll() as $slot) {
+        $result[(int)$slot['classroom_id']]['slots'][] = $slot;
+    }
+    $st = db()->prepare("SELECT fo.schedule_id, fo.exc_date
+        FROM schedule_force_open fo JOIN class_schedules cs ON cs.id = fo.schedule_id
+        WHERE cs.classroom_id IN ($placeholders) AND fo.exc_date BETWEEN ? AND ?");
+    $st->execute([...$roomIds, $today, date('Y-m-d', $horizon)]);
+    $opened = [];
+    foreach ($st->fetchAll() as $exception) {
+        $opened[$exception['schedule_id'] . ':' . $exception['exc_date']] = true;
+    }
+    foreach ($result as &$room) {
+        for ($offset = 0; $offset <= 7; $offset++) {
+            $day = strtotime($today . " +$offset days");
+            $date = date('Y-m-d', $day);
+            foreach ($room['slots'] as $slot) {
+                if ((int)$slot['day_of_week'] !== (int)date('N', $day)
+                    || isset($opened[$slot['id'] . ':' . $date])) {
+                    continue;
+                }
+                $start = strtotime($date . ' ' . $slot['start_time']);
+                $end = strtotime($date . ' ' . $slot['end_time']);
+                if ($end <= $now || $start > $horizon) {
+                    continue;
+                }
+                $room['next'] = $slot + [
+                    'starts_at' => date('Y-m-d H:i:s', $start),
+                    'ends_at' => date('Y-m-d H:i:s', $end),
+                ];
+                break 2;
+            }
+        }
+    }
+    unset($room);
+    return $result;
+}
+
+function schedule_find_conflict(int $classroomId, int $day, string $start, string $end, int $excludeId): ?array
+{
+    $st = db()->prepare(
+        'SELECT subject FROM class_schedules
+         WHERE classroom_id = ? AND day_of_week = ? AND is_active = 1 AND id <> ?
+           AND start_time < ? AND end_time > ?
+         LIMIT 1'
+    );
+    $st->execute([$classroomId, $day, $excludeId, $end, $start]);
+    return $st->fetch() ?: null;
+}
+
 function schedule_save_slot(array $data, ?int $id = null, ?int $adminId = null): array
 {
     $classroomId = (int)($data['classroom_id'] ?? 0);
@@ -82,49 +146,63 @@ function schedule_save_slot(array $data, ?int $id = null, ?int $adminId = null):
     }
 
     $slotId = $id !== null && $id > 0 ? $id : 0;
-    $st = db()->prepare(
-        "SELECT subject FROM class_schedules
-         WHERE classroom_id = ? AND day_of_week = ? AND is_active = 1 AND id <> ?
-           AND start_time < ? AND end_time > ?
-         LIMIT 1"
-    );
-    $st->execute([$classroomId, $day, $slotId, $end, $start]);
-    if ($clash = $st->fetch()) {
-        return [
-            'ok' => false,
-            'error' => "Overlaps an existing class ({$clash['subject']}) on " . SCHEDULE_DAY_NAMES[$day] . '. Adjust the times.',
-        ];
-    }
-
-    if ($slotId === 0) {
-        db()->prepare(
-            'INSERT INTO class_schedules (classroom_id, day_of_week, start_time, end_time, subject, section, instructor)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
-        )->execute([$classroomId, $day, $start, $end, $subject, $section !== '' ? $section : null, $instructor !== '' ? $instructor : null]);
-        $newId = (int)db()->lastInsertId();
-
-        if (function_exists('log_action')) {
-            log_action('SCHEDULE_CREATE', $adminId, $classroomId, SCHEDULE_DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
+    $pdo = db();
+    try {
+        $pdo->beginTransaction();
+        $st = $pdo->prepare('SELECT id FROM classrooms WHERE id = ? FOR UPDATE');
+        $st->execute([$classroomId]);
+        if (!$st->fetch()) {
+            throw new RuntimeException('Classroom does not exist.');
+        }
+        if ($slotId > 0) {
+            $st = $pdo->prepare('SELECT id FROM class_schedules WHERE id = ? FOR UPDATE');
+            $st->execute([$slotId]);
+            if (!$st->fetch()) {
+                throw new RuntimeException('Schedule does not exist.');
+            }
+        }
+        if ($clash = schedule_find_conflict($classroomId, $day, $start, $end, $slotId)) {
+            throw new RuntimeException("Overlaps an existing class ({$clash['subject']}) on " . SCHEDULE_DAY_NAMES[$day] . '. Adjust the times.');
         }
 
-        return [
-            'ok' => true,
-            'message' => 'Class schedule added. The room is blocked during this slot every ' . SCHEDULE_DAY_NAMES[$day] . '.',
-            'id' => $newId,
-        ];
+        $values = [$classroomId, $day, $start, $end, $subject, $section !== '' ? $section : null, $instructor !== '' ? $instructor : null];
+        $creating = $slotId === 0;
+        if ($creating) {
+            $pdo->prepare(
+                'INSERT INTO class_schedules (classroom_id, day_of_week, start_time, end_time, subject, section, instructor)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            )->execute($values);
+            $slotId = (int)$pdo->lastInsertId();
+        } else {
+            $values[] = $slotId;
+            $pdo->prepare(
+                'UPDATE class_schedules
+                 SET classroom_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, section = ?, instructor = ?
+                 WHERE id = ?'
+            )->execute($values);
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($e instanceof PDOException) {
+            error_log('schedule_save_slot failed: ' . $e->getMessage());
+        }
+        return ['ok' => false, 'error' => $e instanceof RuntimeException && !($e instanceof PDOException)
+            ? $e->getMessage() : 'Database error while saving schedule.'];
     }
-
-    db()->prepare(
-        'UPDATE class_schedules
-         SET classroom_id = ?, day_of_week = ?, start_time = ?, end_time = ?, subject = ?, section = ?, instructor = ?
-         WHERE id = ?'
-    )->execute([$classroomId, $day, $start, $end, $subject, $section !== '' ? $section : null, $instructor !== '' ? $instructor : null, $slotId]);
 
     if (function_exists('log_action')) {
-        log_action('SCHEDULE_EDIT', $adminId, $classroomId, SCHEDULE_DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
+        log_action($creating ? 'SCHEDULE_CREATE' : 'SCHEDULE_EDIT', $adminId, $classroomId, SCHEDULE_DAY_NAMES[$day] . " {$startT}–{$endT} {$subject}");
     }
-
-    return ['ok' => true, 'message' => 'Class schedule updated.', 'id' => $slotId];
+    return [
+        'ok' => true,
+        'message' => $creating
+            ? 'Class schedule added. The room is blocked during this slot every ' . SCHEDULE_DAY_NAMES[$day] . '.'
+            : 'Class schedule updated.',
+        'id' => $slotId,
+    ];
 }
 
 function schedule_delete_slot(int $id, ?int $adminId = null): array
@@ -144,7 +222,43 @@ function schedule_toggle_slot(int $id, ?int $adminId = null): array
     if ($id <= 0) {
         return ['ok' => false, 'error' => 'Invalid schedule ID.'];
     }
-    db()->prepare('UPDATE class_schedules SET is_active = 1 - is_active WHERE id = ?')->execute([$id]);
+    $slot = schedule_get($id);
+    if (!$slot) {
+        return ['ok' => false, 'error' => 'Schedule does not exist.'];
+    }
+
+    $pdo = db();
+    try {
+        $pdo->beginTransaction();
+        $st = $pdo->prepare('SELECT id FROM classrooms WHERE id = ? FOR UPDATE');
+        $st->execute([(int)$slot['classroom_id']]);
+        if (!$st->fetch()) {
+            throw new RuntimeException('Classroom does not exist.');
+        }
+        $st = $pdo->prepare('SELECT * FROM class_schedules WHERE id = ? FOR UPDATE');
+        $st->execute([$id]);
+        $current = $st->fetch();
+        if (!$current || (int)$current['classroom_id'] !== (int)$slot['classroom_id']) {
+            throw new RuntimeException('Schedule changed — reload and try again.');
+        }
+        if (!(int)$current['is_active'] && ($clash = schedule_find_conflict(
+            (int)$current['classroom_id'], (int)$current['day_of_week'],
+            $current['start_time'], $current['end_time'], $id
+        ))) {
+            throw new RuntimeException("Overlaps an existing class ({$clash['subject']}). Adjust the times before resuming.");
+        }
+        $pdo->prepare('UPDATE class_schedules SET is_active = 1 - is_active WHERE id = ?')->execute([$id]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($e instanceof PDOException) {
+            error_log('schedule_toggle_slot failed: ' . $e->getMessage());
+        }
+        return ['ok' => false, 'error' => $e instanceof RuntimeException && !($e instanceof PDOException)
+            ? $e->getMessage() : 'Database error while toggling schedule.'];
+    }
     if (function_exists('log_action')) {
         log_action('SCHEDULE_TOGGLE', $adminId, null, 'Toggled schedule #' . $id);
     }
@@ -196,22 +310,29 @@ function schedule_force_open(int $classroomId, int $userId, string $reason, stri
         );
         $ins->execute([(int)$classroomId, (int)$slot['id'], $today, $userId, $reason, $detailsClean !== '' ? $detailsClean : null]);
         $newId = (int)db()->lastInsertId();
-    } catch (Throwable) {
-        // Lost race against concurrent insert
-        $st = db()->prepare('SELECT id, user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
-        $st->execute([(int)$slot['id'], $today]);
-        $winner = $st->fetch();
-        $isOurs = $winner && (int)$winner['user_id'] === $userId;
-        return [
-            'ok' => true,
-            'message' => $isOurs
-                ? 'Room is already open from your earlier report.'
-                : 'Room was just opened by another lecturer.',
-            'id' => $winner ? (int)$winner['id'] : 0,
-            'already' => true,
-            'until' => date('Y-m-d ') . $slot['end_time'],
-            'slot' => $slot,
-        ];
+    } catch (Throwable $e) {
+        if ($e instanceof PDOException && (int)($e->errorInfo[1] ?? 0) === 1062) {
+            try {
+                $st = db()->prepare('SELECT id, user_id FROM schedule_force_open WHERE schedule_id = ? AND exc_date = ? LIMIT 1');
+                $st->execute([(int)$slot['id'], $today]);
+                if ($winner = $st->fetch()) {
+                    return [
+                        'ok' => true,
+                        'message' => (int)$winner['user_id'] === $userId
+                            ? 'Room is already open from your earlier report.'
+                            : 'Room was just opened by another lecturer.',
+                        'id' => (int)$winner['id'],
+                        'already' => true,
+                        'until' => $today . ' ' . $slot['end_time'],
+                        'slot' => $slot,
+                    ];
+                }
+            } catch (Throwable $lookupError) {
+                error_log('schedule_force_open lookup failed: ' . $lookupError->getMessage());
+            }
+        }
+        error_log('schedule_force_open failed: ' . $e->getMessage());
+        return ['ok' => false, 'error' => 'Could not open the room. Please try again.', 'code' => 500];
     }
 
     if (function_exists('log_action')) {

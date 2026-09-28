@@ -11,7 +11,7 @@ require_once __DIR__ . '/../config/helpers.php';
 assert(function_exists('abort'), 'abort() function must exist');
 
 ob_start();
-$_GET = [];
+$_GET = ['code' => '500'];
 require __DIR__ . '/../403.php';
 $output403 = ob_get_clean();
 
@@ -19,6 +19,15 @@ assert(http_response_code() === 403, '403.php must set HTTP status 403');
 assert(str_contains($output403, '403'), '403.php must contain 403 code');
 assert(str_contains($output403, 'Access Forbidden'), '403.php must display Access Forbidden');
 assert(str_contains($output403, 'Go to Home'), '403.php must have Go to Home link');
+
+ob_start();
+$_GET = ['code' => '500'];
+require __DIR__ . '/../404.php';
+$output404 = ob_get_clean();
+
+assert(http_response_code() === 404, '404.php must set HTTP status 404');
+assert(str_contains($output404, 'Page Not Found'), '404.php must render an explanation');
+assert(str_contains($output404, 'Go to Home'), '404.php must have Go to Home link');
 
 ob_start();
 $_GET = ['code' => '500'];
