@@ -281,8 +281,10 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
         $totalMin += (int)((strtotime((string)$s['end_time']) - strtotime((string)$s['start_time'])) / 60);
     }
     $weeklyHours = rtrim(rtrim(number_format($totalMin / 60, 1), '0'), '.');
-    $sheetLogo    = get_setting('school_logo', '');
-    $hasLogoImg   = $sheetLogo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $sheetLogo);
+    $sheetLogoPath = is_file(__DIR__ . '/../assets/img/logo.png')
+        ? '../assets/img/logo.png'
+        : (is_file(__DIR__ . '/../assets/uploads/logo-3146dc738a66.png') ? '../assets/uploads/logo-3146dc738a66.png' : '');
+    $hasLogoImg   = $sheetLogoPath !== '';
     $sheetAddr    = school_address();
     $sheetContact = school_contact();
   ?>
@@ -290,7 +292,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <header class="tt-head">
       <div class="tt-head__brand">
         <?php if ($hasLogoImg): ?>
-          <img class="tt-head__logo" src="../assets/uploads/<?= e($sheetLogo) ?>" alt="">
+          <img class="tt-head__logo" src="<?= e($sheetLogoPath) ?>" alt="Clarendon College logo">
         <?php endif; ?>
         <div>
           <div class="tt-head__school"><?= e($school !== '' ? $school : APP_NAME) ?></div>

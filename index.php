@@ -36,7 +36,7 @@ try {
 
 $school    = school_name();
 $heroTitle = strtoupper($school !== '' ? $school : app_name());
-render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
+render_header('Find a Classroom', ['prefix' => '', 'wide' => true, 'public' => true]);
 ?>
 
 <?php if ($needsSetup): ?>
@@ -46,7 +46,13 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true]);
 <?php endif; ?>
 
 <section class="hero">
-  <h1><?= icon('map-pin') ?> <?= e($heroTitle) ?></h1>
+  <div class="hero__head">
+    <img class="hero__logo" src="assets/img/logo.png" alt="<?= e($heroTitle) ?> Logo" onerror="this.src='assets/uploads/logo-3146dc738a66.png'">
+    <div class="hero__titles">
+      <span class="eyebrow hero__eyebrow"><?= icon('map-pin') ?> Campus Classroom Finder</span>
+      <h1 class="hero__title"><?= e($heroTitle) ?></h1>
+    </div>
+  </div>
   <p class="hero__sub">Live availability for every classroom — see what&rsquo;s free before you walk there.</p>
 
   <form id="finderForm" class="finder" method="get" action="index.php">

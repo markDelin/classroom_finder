@@ -115,10 +115,9 @@ CREATE TABLE IF NOT EXISTS settings (
 
 INSERT INTO settings (skey, svalue) VALUES
   ('app_name',                 'Classroom Finder'),
-  ('school_name',              ''),
+  ('school_name',              'Clarendon College'),
   ('school_address',           ''),
   ('school_contact',           ''),
-  ('school_logo',              ''),
   ('min_duration_minutes',     '15'),
   ('max_duration_minutes',     '480'),
   ('duration_step_minutes',    '30'),

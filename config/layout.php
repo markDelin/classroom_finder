@@ -19,8 +19,11 @@ function render_header(string $title, array $opts = []): void
     $nav     = $opts['nav'] ?? null;
     $active  = $opts['active'] ?? '';
     $user    = function_exists('current_user') ? current_user() : null;
-    $logo    = get_setting('school_logo', '');
-    $logoPath = $prefix . 'assets/uploads/' . $logo;
+    $logoFile = is_file(__DIR__ . '/../assets/img/logo.png')
+        ? 'assets/img/logo.png'
+        : (is_file(__DIR__ . '/../assets/uploads/logo-3146dc738a66.png') ? 'assets/uploads/logo-3146dc738a66.png' : '');
+    $logoPath = $logoFile !== '' ? ($prefix . $logoFile) : '';
+    $isPublic = !empty($opts['public']) || ($active === 'landing') || ($active === 'public-view') || ($prefix === '' && empty($nav) && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php');
     $flashes = take_flashes();
 
     if ($nav === null && $user && isset($user['role'])) {
@@ -70,7 +73,7 @@ function render_header(string $title, array $opts = []): void
 <link rel="manifest" href="<?= $prefix ?>manifest.json">
 <meta name="theme-color" content="#ffffff">
 </head>
-<body class="<?= $nav ? 'has-sidebar' : '' ?><?= $active !== '' ? ' page--' . e($active) : '' ?>" data-prefix="<?= $prefix ?>">
+<body class="<?= $nav ? 'has-sidebar' : '' ?><?= $active !== '' ? ' page--' . e($active) : '' ?><?= $isPublic ? ' page--public-view' : '' ?>" data-prefix="<?= $prefix ?>">
 <!-- Loading spinner commented out
 <noscript><style>#pageLoader{display:none!important}</style></noscript>
 <div id="pageLoader" class="page-loader" aria-hidden="true">
@@ -84,8 +87,8 @@ function render_header(string $title, array $opts = []): void
     <span class="nav-toggle__icon nav-toggle__icon--close"><?= icon('x') ?></span>
   </button>
   <?php endif; ?>
-  <a class="brand" href="<?= $prefix ?>index.php"><?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
-    <img class="brand__logo" src="<?= e($logoPath) ?>" alt="<?= e(app_name()) ?> logo">
+  <a class="brand" href="<?= $prefix ?>index.php"><?php if ($logoPath !== ''): ?>
+    <img class="brand__logo" src="<?= e($logoPath) ?>" alt="<?= e(school_name() ?: app_name()) ?> logo">
   <?php else: ?><span class="brand__dot"></span><?php endif; ?> <?= e(app_name()) ?></a>
   <div class="topbar__right">
     <?php if ($user): ?>

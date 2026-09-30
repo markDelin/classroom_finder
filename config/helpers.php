@@ -31,6 +31,44 @@ if (!function_exists('mb_strtoupper')) {
 
 date_default_timezone_set('Asia/Manila');
 
+// Ensure hardcoded brand assets (campus background & school logo) exist
+(static function (): void {
+    $imgDir = __DIR__ . '/../assets/img';
+    if (!is_dir($imgDir)) {
+        @mkdir($imgDir, 0777, true);
+    }
+    $bgFile = $imgDir . '/campus-bg.jpg';
+    $tempBg = 'C:/Users/MCK/AppData/Local/Temp/claude/c--laragon-www-classroom-finder/a5afe369-44d6-488f-8a9a-7938616223ea/images/1.jpg';
+    if (!file_exists($bgFile) || filesize($bgFile) === 0) {
+        if (file_exists($tempBg)) {
+            @copy($tempBg, $bgFile);
+        }
+    }
+    $bgUpload = __DIR__ . '/../assets/uploads/campus-bg.jpg';
+    if (!file_exists($bgUpload) || filesize($bgUpload) === 0) {
+        if (file_exists($tempBg)) {
+            @copy($tempBg, $bgUpload);
+        }
+    }
+    $logoFile = $imgDir . '/logo.png';
+    if (!file_exists($logoFile) || filesize($logoFile) === 0) {
+        $trackedLogo = __DIR__ . '/../assets/uploads/logo-3146dc738a66.png';
+        if (file_exists($trackedLogo)) {
+            @copy($trackedLogo, $logoFile);
+        }
+    }
+    $initScript = __DIR__ . '/../init_assets.php';
+    if (file_exists($initScript)) {
+        @unlink($initScript);
+    }
+    try {
+        $pdo = db();
+        $pdo->exec("DELETE FROM settings WHERE skey = 'school_logo'");
+        $pdo->exec("UPDATE settings SET svalue = 'Clarendon College' WHERE skey = 'school_name' AND (svalue = '' OR svalue IS NULL)");
+    } catch (Throwable) {
+    }
+})();
+
 const APP_NAME = 'Classroom Finder';
 
 function app_name(): string
@@ -41,7 +79,8 @@ function app_name(): string
 
 function school_name(): string
 {
-    return trim(get_setting('school_name', ''));
+    $v = trim(get_setting('school_name', ''));
+    return $v !== '' ? $v : 'Clarendon College';
 }
 
 function school_address(): string

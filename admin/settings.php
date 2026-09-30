@@ -21,50 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fail('Session expired — please try again.');
     }
 
-    if (($_POST['logo_action'] ?? '') === 'upload' && isset($_FILES['school_logo'])) {
-        $f = $_FILES['school_logo'];
-        if (($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            $fail($f['error'] === UPLOAD_ERR_INI_SIZE || $f['error'] === UPLOAD_ERR_FORM_SIZE
-                ? 'Logo is too large — 2 MB maximum.'
-                : 'Upload failed — please try again.');
-        }
-        if ($f['size'] > 2 * 1024 * 1024) {
-            $fail('Logo is too large — 2 MB maximum.');
-        }
-        $info = @getimagesize($f['tmp_name']);
-        $allowed = [IMAGETYPE_PNG => '.png', IMAGETYPE_JPEG => '.jpg', IMAGETYPE_WEBP => '.webp'];
-        if ($info === false || !isset($allowed[$info[2]])) {
-            $fail('Logo must be a PNG, JPG or WebP image.');
-        }
-        if (!is_dir(__DIR__ . '/../assets/uploads')
-            && !mkdir(__DIR__ . '/../assets/uploads', 0775, true)) {
-            $fail('Could not create the uploads directory.');
-        }
-        $name    = 'logo-' . bin2hex(random_bytes(6)) . $allowed[$info[2]];
-        $dest    = __DIR__ . '/../assets/uploads/' . $name;
-        if (!move_uploaded_file($f['tmp_name'], $dest)) {
-            $fail('Could not save the uploaded file.');
-        }
-        $old = get_setting('school_logo', '');
-        if ($old !== '' && is_file(__DIR__ . '/../assets/uploads/' . $old)) {
-            @unlink(__DIR__ . '/../assets/uploads/' . $old);
-        }
-        set_setting('school_logo', $name);
-        log_action('LOGO_UPLOAD', (int)$admin['id'], null, 'School logo updated (' . $name . ')');
-        flash('success', 'Logo uploaded.');
-        redirect('settings.php');
-    }
-    if (($_POST['logo_action'] ?? '') === 'remove') {
-        $old = get_setting('school_logo', '');
-        if ($old !== '' && is_file(__DIR__ . '/../assets/uploads/' . $old)) {
-            @unlink(__DIR__ . '/../assets/uploads/' . $old);
-        }
-        set_setting('school_logo', '');
-        log_action('LOGO_REMOVE', (int)$admin['id']);
-        flash('success', 'Logo removed.');
-        redirect('settings.php');
-    }
-
     $appName  = trim((string)($_POST['app_name'] ?? ''));
     if ($appName !== '' && mb_strlen($appName) <= 80) {
         set_setting('app_name', $appName);
@@ -121,31 +77,6 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 <div class="page-head">
   <h1><?= icon('settings') ?> System settings</h1>
   <p class="muted">Tuning knobs for durations and the landing page.</p>
-</div>
-
-<div class="card">
-  <h3>School logo</h3>
-  <p class="muted small">Shown next to “<?= e(app_name()) ?>” in the top bar. PNG, JPG or WebP — up to 2&nbsp;MB.</p>
-  <?php $logo = get_setting('school_logo', ''); ?>
-  <?php if ($logo !== '' && is_file(__DIR__ . '/../assets/uploads/' . $logo)): ?>
-    <div class="logo-preview">
-      <img src="../assets/uploads/<?= e($logo) ?>" alt="Current school logo">
-      <form method="post" class="inline-form">
-        <?= csrf_field() ?>
-        <input type="hidden" name="logo_action" value="remove">
-        <button class="btn btn--danger btn--sm" type="submit"
-                data-confirm="Remove the current logo? The top bar falls back to the plain marker.">Remove logo</button>
-      </form>
-    </div>
-  <?php endif; ?>
-  <form method="post" enctype="multipart/form-data" class="logo-form">
-    <?= csrf_field() ?>
-    <input type="hidden" name="logo_action" value="upload">
-    <div class="file-upload-group">
-      <input type="file" name="school_logo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" required>
-      <button class="btn btn--primary btn--sm" type="submit"><?= icon('plus') ?> Upload logo</button>
-    </div>
-  </form>
 </div>
 
 <div class="card">
