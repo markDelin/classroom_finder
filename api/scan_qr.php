@@ -56,10 +56,15 @@ $suggestions = [
     ['minutes' => 120, 'label' => '2h'],
 ];
 
+$now = time();
+$rounded = function_exists('round_to_half_hour') ? round_to_half_hour($now) : (int)(round($now / 1800) * 1800);
+
 json_response([
-    'ok'           => true,
-    'server_now'   => date('c'),
-    'available'    => $live['computed'] === 'available',
+    'ok'            => true,
+    'server_now'    => date('c', $rounded),
+    'rounded_start' => date('c', $rounded),
+    'actual_now'    => date('c', $now),
+    'available'     => $live['computed'] === 'available',
     'room_status'  => $live['computed'],
     'reason'       => match ($live['computed']) {
         'occupied'    => empty($live['session_id'])

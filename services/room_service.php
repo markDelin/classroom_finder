@@ -88,7 +88,7 @@ function room_get_with_status(int $id): ?array
          FROM classrooms c
          LEFT JOIN classroom_sessions s
                 ON s.classroom_id = c.id AND s.status = 'active'
-               AND s.start_time <= :now1 AND s.end_time > :now2
+               AND s.end_time > :now
          LEFT JOIN users su ON su.id = s.user_id
          LEFT JOIN class_schedules cs
                 ON cs.classroom_id = c.id AND cs.is_active = 1
@@ -100,9 +100,12 @@ function room_get_with_status(int $id): ?array
          LIMIT 1"
     );
     $st->execute([
-        ':now1' => $now, ':now2' => $now,
-        ':dow'  => $dow, ':curt1' => $curt, ':curt2' => $curt,
-        ':today' => $today, ':id' => $id,
+        ':now'   => $now,
+        ':dow'   => $dow,
+        ':curt1' => $curt,
+        ':curt2' => $curt,
+        ':today' => $today,
+        ':id'    => $id,
     ]);
     $r = $st->fetch();
     if (!$r) {
@@ -153,7 +156,7 @@ function room_fetch_all(array $f = []): array
             FROM classrooms c
             LEFT JOIN classroom_sessions s
                    ON s.classroom_id = c.id AND s.status = 'active'
-                  AND s.start_time <= :now1 AND s.end_time > :now2
+                  AND s.end_time > :now
             LEFT JOIN users su ON su.id = s.user_id
             LEFT JOIN class_schedules cs
                    ON cs.classroom_id = c.id AND cs.is_active = 1
@@ -164,8 +167,7 @@ function room_fetch_all(array $f = []): array
 
     $where  = [];
     $params = [
-        ':now1'     => $now,
-        ':now2'     => $now,
+        ':now'      => $now,
         ':dow'      => $dow,
         ':curtime1' => $curtime,
         ':curtime2' => $curtime,

@@ -20,6 +20,7 @@ function db(): PDO
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_TIMEOUT            => 5,
         ]);
         $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
 
@@ -64,11 +65,13 @@ function db(): PDO
             echo json_encode(['ok' => false, 'error' => $msg]);
         } else {
             http_response_code(500);
-            echo '<!doctype html><meta charset="utf-8"><title>Database error</title>'
-               . '<body style="font-family:system-ui;max-width:42rem;margin:4rem auto;line-height:1.6">'
-               . '<h1>Database connection failed</h1><p>' . htmlspecialchars($msg) . '</p>'
-               . '<p>Start <strong>MySQL</strong> in the XAMPP control panel and import '
-               . '<code>database/classroom_finder.sql</code> (via phpMyAdmin), then reload.</p></body>';
+            echo '<!doctype html><meta charset="utf-8"><title>Database error</title><body style="font-family:system-ui;max-width:42rem;margin:4rem auto;line-height:1.6;padding:1rem"><h1>Database connection failed</h1>'
+               . '<p style="color:#b91c1c;background:#fee2e2;padding:0.75rem 1rem;border-radius:6px;word-break:break-all">' . htmlspecialchars($msg) . '</p>'
+               . '<p><strong>How to fix:</strong></p><ul>'
+               . '<li>Check credentials in <code>config/database.php</code> (DB_HOST, DB_NAME, DB_USER, DB_PASS). On hosting like InfinityFree, use the MySQL hostname from your control panel (e.g. <code>sqlXXX.infinityfree.com</code>).</li>'
+               . '<li>Import <code>database/classroom_finder.sql</code> via phpMyAdmin into your database.</li>'
+               . '<li>Ensure your database server is active and accessible.</li>'
+               . '</ul></body>';
         }
         exit;
     }

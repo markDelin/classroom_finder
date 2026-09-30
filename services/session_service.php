@@ -75,9 +75,10 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
         return ['ok' => false, 'error' => "Invalid duration — choose between {$minMinutes} and {$maxMinutes} minutes."];
     }
 
-    $now   = time();
-    $start = date('Y-m-d H:i:s', $now);
-    $end   = date('Y-m-d H:i:s', $now + $minutes * 60);
+    $now       = time();
+    $roundedTs = function_exists('round_to_half_hour') ? round_to_half_hour($now) : (int)(round($now / 1800) * 1800);
+    $start     = date('Y-m-d H:i:s', $roundedTs);
+    $end       = date('Y-m-d H:i:s', $roundedTs + $minutes * 60);
 
     $pdo = db();
     try {
@@ -136,7 +137,7 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
                AND fo.id IS NULL
              LIMIT 1"
         );
-        foreach (session_schedule_windows($now, $now + $minutes * 60) as [$date, $day, $startT, $endT]) {
+        foreach (session_schedule_windows($roundedTs, $roundedTs + $minutes * 60) as [$date, $day, $startT, $endT]) {
             $st->execute([$date, $classroomId, $day, $endT, $startT]);
             if ($cls = $st->fetch()) {
                 throw new RuntimeException(

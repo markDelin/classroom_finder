@@ -71,12 +71,6 @@ date_default_timezone_set('Asia/Manila');
     if (file_exists($initScript)) {
         @unlink($initScript);
     }
-    try {
-        $pdo = db();
-        $pdo->exec("DELETE FROM settings WHERE skey = 'school_logo'");
-        $pdo->exec("UPDATE settings SET svalue = 'Clarendon College' WHERE skey = 'school_name' AND (svalue = '' OR svalue IS NULL)");
-    } catch (Throwable) {
-    }
 })();
 
 const APP_NAME = 'Classroom Finder';
@@ -371,6 +365,17 @@ function human_duration(int $minutes): string
         return "{$h}h";
     }
     return "{$m}m";
+}
+
+function round_to_half_hour(?int $ts = null): int
+{
+    $ts ??= time();
+    $minute = (int)date('i', $ts);
+    $second = (int)date('s', $ts);
+    $totalSecondsPastHour = ($minute * 60) + $second;
+    $roundedHalfHour = (int)round($totalSecondsPastHour / 1800) * 1800;
+    $hourTimestamp = strtotime(date('Y-m-d H:00:00', $ts));
+    return $hourTimestamp + $roundedHalfHour;
 }
 
 function minutes_until(string $futureSqlDateTime): int

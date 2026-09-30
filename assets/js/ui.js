@@ -83,6 +83,17 @@
     return Promise.resolve();
   };
 
+  window.cfRoundToHalfHourIso = function (iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/.exec(String(iso || ''));
+    if (!m) { return iso; }
+    var ms = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+    var roundedMs = Math.round(ms / (1800 * 1000)) * (1800 * 1000);
+    var d = new Date(roundedMs);
+    var p = function (n) { return n < 10 ? '0' + n : String(n); };
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + 'T'
+         + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + ':00Z';
+  };
+
   window.cfWallClock = function (iso, addMinutes) {
     var m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/.exec(String(iso || ''));
     if (!m) { return null; }

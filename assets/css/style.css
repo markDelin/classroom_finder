@@ -2466,6 +2466,10 @@ label .password-toggle-wrapper,
     display: block !important;
     width: 42mm !important;
     height: 42mm !important;
+    max-width: none !important;
+    max-height: none !important;
+    aspect-ratio: 1 / 1 !important;
+    object-fit: contain !important;
     margin: 2mm auto !important;
   }
 
@@ -2549,7 +2553,7 @@ html { -webkit-tap-highlight-color: transparent; }
    Mobile layout pass — landing page & dashboards
    Sizing, spacing and grids tuned for narrow viewports.
    ========================================================================== */
-@media (max-width: 720px) {
+@media screen and (max-width: 720px) {
   /* tighter page gutter, more room at the bottom with safe area */
   .main { padding: 1rem .8rem max(2.5rem, calc(1.5rem + env(safe-area-inset-bottom, 1rem))); }
   .flashes { padding: 0 .8rem; margin-top: .6rem; }
@@ -3020,73 +3024,6 @@ html { -webkit-tap-highlight-color: transparent; }
   .form-grid input,
   .form-grid select { width: 100%; }
 
-  /* QR poster wall — compact 2-column grid on mobile */
-  .qr-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .45rem;
-  }
-  .qr-poster {
-    padding: .45rem .35rem .4rem;
-    border-radius: var(--radius-sm);
-    box-shadow: none;
-  }
-  .qr-poster strong {
-    font-size: .88rem;
-  }
-  .qr-poster__head .muted {
-    font-size: .64rem;
-  }
-  .qr-img {
-    width: 85px;
-    height: 85px;
-    max-width: 85px;
-    margin: .2rem auto;
-  }
-  .qr-token {
-    font-size: .6rem;
-    margin-top: .1rem;
-    line-height: 1.25;
-  }
-  .qr-token code {
-    font-size: .55rem;
-    padding: .05rem .2rem;
-  }
-  .qr-poster__actions {
-    display: flex;
-    gap: .25rem;
-    margin-top: .35rem;
-    width: 100%;
-  }
-  .qr-poster__actions > .btn,
-  .qr-poster__actions .qr-regen-form {
-    flex: 1 1 0;
-    min-width: 0;
-    display: flex;
-  }
-  .qr-poster__actions .qr-regen-form button,
-  .qr-poster__actions > .btn {
-    width: 100%;
-    justify-content: center;
-    padding: .35rem .25rem;
-    font-size: .68rem;
-    min-height: 32px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .qr-select-label {
-    padding: .2rem;
-    background: transparent;
-  }
-  .qr-poster:has(.qr-select-check:checked) .qr-select-label,
-  .qr-poster.is-selected .qr-select-label {
-    background: transparent;
-  }
-  .qr-select-check {
-    width: 1.1rem;
-    height: 1.1rem;
-  }
-
   /* login / registration cards sit closer to the top bar */
   .auth-wrap { padding: 1.3rem 0 2rem; }
   .auth-card__title { font-size: 1.5rem; }
@@ -3108,7 +3045,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .tt-sheet .tt-table { min-width: 32rem; }
 }
 
-@media (max-width: 380px) {
+@media screen and (max-width: 380px) {
   .room-grid { grid-template-columns: 1fr; }
   .tiles, .tiles--5 { grid-template-columns: 1fr; }
   .finder__dropdown-grid { grid-template-columns: 1fr; }

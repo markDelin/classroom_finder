@@ -247,7 +247,7 @@
 
   function openDialog(data) {
     limits = readLimits(data.limits);
-    serverNowIso = data.server_now || '';
+    serverNowIso = (window.cfRoundToHalfHourIso ? window.cfRoundToHalfHourIso(data.rounded_start || data.server_now) : data.rounded_start) || data.server_now || '';
     var num = data.room.room_number;
 
     if (!data.available) {
