@@ -638,6 +638,8 @@ body.page--public-view::before {
       rgba(241, 245, 249, 0.94) 650px,
       rgba(241, 245, 249, 0.97) 100%
     ),
+    url('../img/campus-bg.webp'),
+    url('../uploads/campus-bg.webp'),
     url('../img/campus-bg.jpg'),
     url('../uploads/campus-bg.jpg');
   background-size: cover;

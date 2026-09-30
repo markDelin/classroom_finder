@@ -37,17 +37,27 @@ date_default_timezone_set('Asia/Manila');
     if (!is_dir($imgDir)) {
         @mkdir($imgDir, 0777, true);
     }
-    $bgFile = $imgDir . '/campus-bg.jpg';
-    $tempBg = 'C:/Users/MCK/AppData/Local/Temp/claude/c--laragon-www-classroom-finder/a5afe369-44d6-488f-8a9a-7938616223ea/images/1.jpg';
-    if (!file_exists($bgFile) || filesize($bgFile) === 0) {
-        if (file_exists($tempBg)) {
-            @copy($tempBg, $bgFile);
+    $bgWebp = $imgDir . '/campus-bg.webp';
+    $bgUploadWebp = __DIR__ . '/../assets/uploads/campus-bg.webp';
+
+    if (!is_file($bgWebp) || filesize($bgWebp) === 0) {
+        if (is_file($bgUploadWebp) && filesize($bgUploadWebp) > 0) {
+            @copy($bgUploadWebp, $bgWebp);
+        }
+    } elseif (!is_file($bgUploadWebp) || filesize($bgUploadWebp) === 0) {
+        if (is_file($bgWebp) && filesize($bgWebp) > 0) {
+            @copy($bgWebp, $bgUploadWebp);
         }
     }
-    $bgUpload = __DIR__ . '/../assets/uploads/campus-bg.jpg';
-    if (!file_exists($bgUpload) || filesize($bgUpload) === 0) {
-        if (file_exists($tempBg)) {
-            @copy($tempBg, $bgUpload);
+    // Remove obsolete heavy jpg files if webp is active
+    if (is_file($bgWebp) && filesize($bgWebp) > 0) {
+        $oldJpg = $imgDir . '/campus-bg.jpg';
+        if (is_file($oldJpg)) {
+            @unlink($oldJpg);
+        }
+        $oldUploadJpg = __DIR__ . '/../assets/uploads/campus-bg.jpg';
+        if (is_file($oldUploadJpg)) {
+            @unlink($oldUploadJpg);
         }
     }
     $logoFile = $imgDir . '/logo.png';

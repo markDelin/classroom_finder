@@ -6,7 +6,6 @@ const DB_PORT = '3306';
 const DB_NAME = 'classroom_finder';
 const DB_USER = 'root';
 const DB_PASS = '';
-const DB_SOCKET = '/run/mysqld/mysqld.sock';
 
 function db(): PDO
 {
@@ -15,9 +14,7 @@ function db(): PDO
         return $pdo;
     }
 
-    $dsn = file_exists(DB_SOCKET)
-        ? 'mysql:unix_socket=' . DB_SOCKET . ';dbname=' . DB_NAME . ';charset=utf8mb4'
-        : 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+    $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,

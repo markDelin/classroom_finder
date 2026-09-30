@@ -3,7 +3,7 @@
 > Real-time campus classroom availability board, door QR code check-in engine, and academic scheduling system for Clarendon College.
 
 **Live Demo / Production:** [https://classrooom-finder.page.gd](https://classrooom-finder.page.gd)  
-**Target Environment:** PHP 8.1+ | MySQL 5.7+ / MariaDB 10.4+ | Apache (Laragon / XAMPP / Linux)
+**Target Environment:** PHP 8.1+ | MySQL 5.7+ / MariaDB 10.4+ | Any Web Server (Apache / Nginx / Shared Hosting / Laragon / XAMPP)
 
 ---
 
@@ -41,7 +41,7 @@ Clarendon College Classroom Finder eliminates physical room scouting across mult
 The system features the official identity of **Clarendon College**:
 
 - **Hardcoded Institution Seal:** The official Clarendon College seal (`assets/img/logo.png`) is permanently embedded into the sticky navigation bar, landing hero banner, administrative interfaces, and timetable printouts.
-- **Aerial Campus View:** The public room finder displays an aerial drone perspective of the Clarendon College campus (`assets/img/campus-bg.jpg`) as a fixed-attachment background beneath a calibrated, high-contrast frosted scrim.
+- **Aerial Campus View:** The public room finder displays an aerial drone perspective of the Clarendon College campus (`assets/img/campus-bg.webp`) as a fixed-attachment background beneath a calibrated, high-contrast frosted scrim.
 - **Clarendon Navy Palette:** Built on deep Clarendon blue (`#0F3B6E`), slate gray (`#0F172A`), clean white surfaces (`#FFFFFF`), and semantic status indicators (emerald green for available, crimson red for occupied, amber for warnings, slate for maintenance).
 - **Self-Hosted Typography:**
   - **Barlow Condensed** (500/600/700) for door-plate numerals, room numbers, and hero titles.
@@ -94,7 +94,7 @@ classroom_finder/
 │   │   └── vendor/toastify.min.css# Notification toaster styles
 │   ├── fonts/                     # Bundled woff2 font files (IBM Plex Sans, IBM Plex Mono, Barlow)
 │   ├── img/                       # Hardcoded brand identity assets
-│   │   ├── campus-bg.jpg          # Clarendon College aerial campus background
+│   │   ├── campus-bg.webp         # Clarendon College aerial campus background (lightweight WebP)
 │   │   └── logo.png               # Official Clarendon College crest
 │   ├── js/
 │   │   ├── admin-modals.js        # Admin dialogs and confirmation helpers
@@ -521,41 +521,22 @@ Stream a dynamic PNG QR code image for a classroom token or printable URL.
 
 ---
 
-### Method B: Linux / Ubuntu Production Setup
+### Method B: Web / Shared Hosting Setup (cPanel / InfinityFree / VPS)
 
-1. Install PHP, Apache, and MySQL packages:
-   ```bash
-   sudo apt update
-   sudo apt install -y apache2 mysql-server php8.2 php8.2-mysql php8.2-gd php8.2-mbstring php8.2-curl
-   sudo a2enmod rewrite headers
+1. Upload the codebase to your web root (e.g. `public_html` or `htdocs`).
+2. Create a MySQL database and user in your hosting control panel.
+3. Import `database/classroom_finder.sql` using phpMyAdmin.
+4. Update database credentials in `config/database.php`:
+   ```php
+   const DB_HOST = 'sqlxxx.yourhost.com'; // or '127.0.0.1' / 'localhost'
+   const DB_PORT = '3306';
+   const DB_NAME = 'your_db_name';
+   const DB_USER = 'your_db_user';
+   const DB_PASS = 'your_db_password';
    ```
-2. Deploy codebase to `/var/www/html/classroom_finder`.
-3. Set file permissions:
-   ```bash
-   sudo chown -R www-data:www-data /var/www/html/classroom_finder
-   sudo chmod -R 755 /var/www/html/classroom_finder
-   sudo chmod -R 775 /var/www/html/classroom_finder/assets/uploads
-   sudo chmod -R 775 /var/www/html/classroom_finder/assets/img
-   ```
-4. Configure Apache VirtualHost with `AllowOverride All`:
-   ```apache
-   <VirtualHost *:80>
-       ServerName classroom.clarendon.edu.ph
-       DocumentRoot /var/www/html/classroom_finder
-       <Directory /var/www/html/classroom_finder>
-           AllowOverride All
-           Require all granted
-       </Directory>
-       ErrorLog ${APACHE_LOG_DIR}/cf_error.log
-       CustomLog ${APACHE_LOG_DIR}/cf_access.log combined
-   </VirtualHost>
-   ```
-5. Enforce HTTPS via Let's Encrypt Certbot:
-   ```bash
-   sudo apt install -y certbot python3-certbot-apache
-   sudo certbot --apache -d classroom.clarendon.edu.ph
-   ```
-   *(Note: Smartphone browsers block camera QR scanning when served over insecure HTTP).*
+5. Ensure `assets/uploads/` and `assets/img/` have write permissions (755 or 775).
+6. Complete initial administrator creation via `setup.php` in your browser.
+7. Enforce HTTPS in your domain settings to allow camera QR scanning on mobile devices.
 
 ---
 
@@ -616,17 +597,16 @@ Configurable in **Admin > Settings** or directly in the `settings` database tabl
 ## Background Workers & Automation
 
 ### Automated Session Expiration Worker
-While the system performs lazy session cleanup whenever room queries execute, configure the CLI worker to guarantee immediate status turnover even during quiet campus hours:
+The system automatically performs lazy session cleanup whenever room queries execute. Optionally, you can trigger `cron/expire.php` periodically:
 
-1. **Linux Crontab (`crontab -e`):**
-   ```bash
-   * * * * * php /var/www/html/classroom_finder/cron/expire.php > /dev/null 2>&1
-   ```
-2. **Windows Task Scheduler (Laragon/XAMPP):**
-   - Action: `Start a Program`
-   - Program/script: `C:\laragon\bin\php\php-8.x.x\php.exe`
-   - Add arguments: `C:\laragon\www\classroom_finder\cron\expire.php`
-   - Trigger: `Repeat task every 1 minute for indefinitely`
+- **Web Cron / Scheduled Ping (cPanel / InfinityFree / cron-job.org):**
+  Schedule an HTTP GET request to `https://your-domain.com/cron/expire.php` every 1–5 minutes.
+- **Local Task Scheduler (Windows / Laragon):**
+  Run `php cron/expire.php` on a 1-minute interval.
+- **CLI Scheduler:**
+  ```text
+  * * * * * php /path/to/htdocs/cron/expire.php > /dev/null 2>&1
+  ```
 
 The worker automatically transitions expired active sessions to `completed` and logs each completion event to `activity_logs`.
 
@@ -674,7 +654,7 @@ Clarendon College Classroom Finder operates as an installable Progressive Web Ap
 
 ### 3. Background image or logo does not render
 - **Cause:** File permissions or missing image files in `assets/img/`.
-- **Solution:** `config/helpers.php` contains a self-initializing bootstrap that automatically copies `assets/img/campus-bg.jpg` and `assets/img/logo.png` upon any HTTP request. Ensure the web server user has write permissions to `assets/img/`.
+- **Solution:** `config/helpers.php` contains a self-initializing bootstrap that automatically copies `assets/img/campus-bg.webp` and `assets/img/logo.png` upon any HTTP request. Ensure the web server user has write permissions to `assets/img/`.
 
 ### 4. Scheduled classes show as available
 - **Cause:** Server timezone mismatch or active force-open override.
