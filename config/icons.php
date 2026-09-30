@@ -60,6 +60,8 @@ const LUCIDE_ICONS = [
         'check-square' => '<polyline points="9 11 12 14 22 4" /> <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />',
         'home' => '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /> <polyline points="9 22 9 12 15 12 15 22" />',
         'arrow-left' => '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+        'arrow-down' => '<path d="M12 5v14" /> <path d="m19 12-7 7-7-7" />',
+        'chevron-down' => '<path d="m6 9 6 6 6-6" />',
 ];
 
 function icon(string $name, string $class = ''): string

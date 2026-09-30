@@ -6,6 +6,7 @@
   var form = document.getElementById('finderForm');
   if (!grid || !form) { return; }
   var currentPage = parseInt(grid.dataset.page, 10) || 1;
+  var isLoadingMore = false;
 
   var searchBox   = document.getElementById('searchBox');
   var resultCount = document.getElementById('resultCount');
@@ -18,7 +19,7 @@
   var currentStatus = activeChip ? (activeChip.dataset.status || '') : '';
   var activeRequestId = 0;
 
-  function params() {
+  function params(pageOverride, cumulative) {
     var p = new URLSearchParams();
     if (searchBox.value.trim()) { p.set('q', searchBox.value.trim()); }
     if (currentStatus)         { p.set('status', currentStatus); }
@@ -26,7 +27,8 @@
       if (el.name && el.value !== '' && el.type !== 'number') { p.set(el.name, el.value); }
       if (el.type === 'number' && el.value !== '')            { p.set(el.name, el.value); }
     });
-    p.set('page', String(currentPage));
+    p.set('page', String(pageOverride || currentPage));
+    if (cumulative) { p.set('cumulative', '1'); }
     return p;
   }
 
@@ -45,7 +47,9 @@
   }
 
   function tickCountdowns() {
-    var nodes = grid.querySelectorAll('[data-free-at]');
+    var g = document.getElementById('roomGrid') || grid;
+    if (!g) { return; }
+    var nodes = g.querySelectorAll('[data-free-at]');
     Array.prototype.forEach.call(nodes, function (n) {
       var rel = humanRel(n.dataset.freeAt);
       if (rel) {
@@ -65,10 +69,11 @@
     }
   }
 
-  function refresh() {
+  function refresh(isBackgroundPoll) {
     var reqId = ++activeRequestId;
-    var qs = params();
+    var qs = params(currentPage, isBackgroundPoll ? true : false);
     var cleanQs = new URLSearchParams(qs);
+    cleanQs.delete('cumulative');
     qs.set('with_html', '1');
 
     var baseEndpoint = grid.dataset.endpoint || 'api/classroom_status.php';
@@ -104,11 +109,77 @@
       .catch(function () {});
   }
 
+  function loadMore() {
+    if (isLoadingMore) { return; }
+    var btn = document.getElementById('loadMoreBtn');
+    if (!btn) { return; }
+    var nextPage = parseInt(btn.dataset.nextPage, 10);
+    if (!nextPage || nextPage <= currentPage) { return; }
+
+    isLoadingMore = true;
+    btn.classList.add('is-loading');
+    var btnText = btn.querySelector('.load-more-text');
+    var originalText = btnText ? btnText.textContent : '';
+    if (btnText) { btnText.textContent = 'Loading…'; }
+
+    var qs = params(nextPage, false);
+    qs.set('with_html', '1');
+
+    var baseEndpoint = grid.dataset.endpoint || 'api/classroom_status.php';
+    var sep = baseEndpoint.indexOf('?') === -1 ? '?' : '&';
+    var fetchUrl = baseEndpoint + sep + qs.toString();
+
+    fetch(fetchUrl, {
+      headers: { 'X-Requested-With': 'fetch' }
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        isLoadingMore = false;
+        var b = document.getElementById('loadMoreBtn');
+        if (b) {
+          b.classList.remove('is-loading');
+          var bt = b.querySelector('.load-more-text');
+          if (bt) { bt.textContent = originalText; }
+        }
+
+        if (!data.ok) { return; }
+
+        currentPage = data.page;
+        var curGrid = document.getElementById('roomGrid') || grid;
+        if (curGrid) {
+          curGrid.dataset.page = String(data.page);
+          if (data.cards_html) {
+            curGrid.insertAdjacentHTML('beforeend', data.cards_html);
+          }
+        }
+
+        var pagerWrap = document.getElementById('roomPager') || (results ? results.querySelector('.load-more-wrap') : null);
+        if (pagerWrap) {
+          pagerWrap.outerHTML = data.pager_html || '';
+        } else if (results) {
+          results.insertAdjacentHTML('beforeend', data.pager_html || '');
+        }
+
+        resultCount.textContent = data.count;
+        applyStats(data.stats);
+        tickCountdowns();
+      })
+      .catch(function () {
+        isLoadingMore = false;
+        var b = document.getElementById('loadMoreBtn');
+        if (b) {
+          b.classList.remove('is-loading');
+          var bt = b.querySelector('.load-more-text');
+          if (bt) { bt.textContent = originalText; }
+        }
+      });
+  }
+
   var timer = null;
   function triggerSearch() {
     clearTimeout(timer);
     currentPage = 1;
-    timer = setTimeout(refresh, 500);
+    timer = setTimeout(function () { refresh(false); }, 500);
   }
   searchBox.addEventListener('input', triggerSearch);
   searchBox.addEventListener('search', triggerSearch);
@@ -117,7 +188,7 @@
     ev.preventDefault();
     clearTimeout(timer);
     currentPage = 1;
-    refresh();
+    refresh(false);
     var details = form.querySelector('.finder__more');
     if (details) { details.removeAttribute('open'); }
   });
@@ -128,12 +199,12 @@
       btn.classList.add('is-active');
       currentStatus = btn.dataset.status;
       currentPage = 1;
-      refresh();
+      refresh(false);
     });
   });
 
   Array.prototype.forEach.call(selects, function (el) {
-    el.addEventListener('change', function () { currentPage = 1; refresh(); });
+    el.addEventListener('change', function () { currentPage = 1; refresh(false); });
   });
 
   document.getElementById('clearFilters').addEventListener('click', function () {
@@ -145,29 +216,37 @@
         b.classList.toggle('is-active', b.dataset.status === '');
       });
       currentPage = 1;
-      refresh();
+      refresh(false);
     }, 0);
   });
 
-  (results || grid).addEventListener('click', function (ev) {
-    var btn = ev.target.closest('[data-page-go]');
-    if (!btn || btn.classList.contains('is-off')) { return; }
-    ev.preventDefault();
-    var target = parseInt(btn.dataset.pageGo, 10);
-    if (!target || target === currentPage) { return; }
-    currentPage = target;
-    refresh();
-    var g = document.getElementById('roomGrid');
-    if (g && g.scrollIntoView) { g.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  document.addEventListener('click', function (ev) {
+    var loadBtn = ev.target.closest('#loadMoreBtn');
+    if (loadBtn) {
+      ev.preventDefault();
+      loadMore();
+      return;
+    }
+
+    var pageGo = ev.target.closest('[data-page-go]');
+    if (pageGo && !pageGo.classList.contains('is-off')) {
+      ev.preventDefault();
+      var target = parseInt(pageGo.dataset.pageGo, 10);
+      if (target) {
+        currentPage = target;
+        refresh(false);
+      }
+    }
   });
 
   setInterval(function () {
-    if (!document.hidden && document.activeElement !== searchBox) {
-      refresh();
+    if (!document.hidden && document.activeElement !== searchBox && !isLoadingMore) {
+      refresh(true);
     }
   }, refreshSecs * 1000);
+
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden) { refresh(); }
+    if (!document.hidden) { refresh(true); }
   });
 
   setInterval(tickCountdowns, 30000);

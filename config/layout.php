@@ -23,7 +23,7 @@ function render_header(string $title, array $opts = []): void
         ? 'assets/img/logo.png'
         : (is_file(__DIR__ . '/../assets/uploads/logo-3146dc738a66.png') ? 'assets/uploads/logo-3146dc738a66.png' : '');
     $logoPath = $logoFile !== '' ? ($prefix . $logoFile) : '';
-    $isPublic = !empty($opts['public']) || ($active === 'landing') || ($active === 'public-view') || ($prefix === '' && empty($nav) && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php');
+    $isPublic = !empty($opts['public']) || $active === 'landing' || $active === 'public-view' || ($prefix === '' && empty($nav) && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php');
     $flashes = take_flashes();
 
     if ($nav === null && $user && isset($user['role'])) {
@@ -258,23 +258,30 @@ function room_page(array $rooms, int $page): array
 function room_pager_html(int $total, int $page, ?callable $hrefFor = null): string
 {
     $pages = max(1, (int)ceil($total / ROOMS_PER_PAGE));
-    if ($pages <= 1) {
-        return '';
+    if ($total <= ROOMS_PER_PAGE) {
+        return '<div id="roomPager" class="load-more-wrap"></div>';
     }
-    $ctrl = static function (string $label, int $target, bool $off) use ($hrefFor): string {
-        if ($off) {
-            return '<span class="pager-btn is-off" aria-disabled="true">' . $label . '</span>';
-        }
-        $go = ' data-page-go="' . $target . '"';
-        return $hrefFor === null
-            ? '<button class="pager-btn" type="button"' . $go . '>' . $label . '</button>'
-            : '<a class="pager-btn" href="' . e($hrefFor($target)) . '"' . $go . '>' . $label . '</a>';
-    };
-    return '<nav class="room-pager" aria-label="Room pages">'
-        . $ctrl('‹ Prev', max(1, $page - 1), $page <= 1)
-        . '<span class="muted small">Page ' . $page . ' of ' . $pages . '</span>'
-        . $ctrl('Next ›', min($pages, $page + 1), $page >= $pages)
-        . '</nav>';
+
+    $loaded = min($total, $page * ROOMS_PER_PAGE);
+    $remaining = max(0, $total - $loaded);
+
+    if ($page >= $pages) {
+        return '<div id="roomPager" class="load-more-wrap">'
+            . '<p class="load-more-meta muted small">All ' . $total . ' classrooms loaded</p>'
+            . '</div>';
+    }
+
+    $nextPage = $page + 1;
+    $targetHref = $hrefFor ? $hrefFor($nextPage) : '#';
+
+    return '<div id="roomPager" class="load-more-wrap">'
+        . '<a href="' . e($targetHref) . '" class="btn btn--outline btn--lg load-more-btn" id="loadMoreBtn" data-next-page="' . $nextPage . '" role="button">'
+        . icon('arrow-down') . ' '
+        . '<span class="load-more-text">Load more classrooms</span> '
+        . '<span class="load-more-count muted small">(' . $remaining . ' remaining)</span>'
+        . '</a>'
+        . '<p class="load-more-meta muted small">Showing ' . $loaded . ' of ' . $total . ' classrooms</p>'
+        . '</div>';
 }
 
 const ADMIN_PER_PAGE = 10;

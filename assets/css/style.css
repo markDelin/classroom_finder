@@ -527,10 +527,58 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
 }
 .chip-btn.is-active { background: var(--text); border-color: var(--text); color: var(--bg); }
 
-/* ---------- landing room pager (‹ Prev · Page x of y · Next ›) ---------- */
+/* ---------- landing room pager & load more controls ---------- */
+.load-more-wrap,
 .room-pager {
-  display: flex; align-items: center; justify-content: center;
-  gap: .55rem; flex-wrap: wrap; margin: 1rem 0 .3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  margin: 1.5rem 0 .5rem;
+}
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  padding: .68rem 1.75rem;
+  font-size: .92rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all .15s ease-in-out;
+}
+.load-more-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.09);
+}
+.load-more-btn:active {
+  transform: translateY(0);
+}
+.load-more-btn.is-loading {
+  opacity: .7;
+  pointer-events: none;
+  cursor: wait;
+}
+.load-more-btn .icon {
+  transition: transform .18s ease;
+}
+.load-more-btn:hover .icon {
+  transform: translateY(2px);
+}
+.load-more-meta {
+  margin: 0;
+  font-size: .84rem;
+  color: var(--muted);
 }
 .pager-btn {
   padding: .42rem .9rem; border-radius: var(--radius-sm);

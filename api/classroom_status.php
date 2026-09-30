@@ -24,14 +24,30 @@ if (!empty($_GET['id'])) {
     $rooms = room_fetch_all($filters);
 }
 
-$pg = room_page($rooms, (int)($_GET['page'] ?? 1));
+$page = max(1, (int)($_GET['page'] ?? 1));
+$cumulative = !empty($_GET['cumulative']);
+
+if ($cumulative) {
+    $roomsSorted = sort_rooms_available_first($rooms);
+    $total = count($roomsSorted);
+    $pages = max(1, (int)ceil($total / ROOMS_PER_PAGE));
+    $page = max(1, min($page, $pages));
+    $pg = [
+        'rooms' => array_slice($roomsSorted, 0, $page * ROOMS_PER_PAGE),
+        'page'  => $page,
+        'pages' => $pages,
+        'total' => $total,
+    ];
+} else {
+    $pg = room_page($rooms, $page);
+}
 
 if (($_GET['format'] ?? '') === 'html') {
     header('Content-Type: text/html; charset=utf-8');
     echo '<section id="roomGrid" class="room-grid" data-refresh="' . get_setting_int('landing_refresh_seconds', 15) . '" data-page="' . $pg['page'] . '">'
        . room_cards_html($pg['rooms'])
        . '</section>'
-       . '<div id="roomPager">' . room_pager_html($pg['total'], $pg['page']) . '</div>';
+       . room_pager_html($pg['total'], $pg['page']);
     exit;
 }
 
@@ -46,11 +62,14 @@ json_response([
     'count'      => $pg['total'],
     'page'       => $pg['page'],
     'pages'      => $pg['pages'],
+    'has_more'   => $pg['page'] < $pg['pages'],
+    'cards_html' => room_cards_html($pg['rooms']),
+    'pager_html' => room_pager_html($pg['total'], $pg['page']),
     'html'  => ($_GET['with_html'] ?? '') === '1'
         ? '<section id="roomGrid" class="room-grid" data-refresh="' . get_setting_int('landing_refresh_seconds', 15) . '" data-page="' . $pg['page'] . '">'
         . room_cards_html($pg['rooms'])
         . '</section>'
-        . '<div id="roomPager">' . room_pager_html($pg['total'], $pg['page']) . '</div>'
+        . room_pager_html($pg['total'], $pg['page'])
         : null,
     'stats' => $stats,
 

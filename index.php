@@ -138,11 +138,11 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true, 'public' => t
   <section id="roomGrid" class="room-grid" data-refresh="<?= get_setting_int('landing_refresh_seconds', 15) ?>" data-page="<?= $pg['page'] ?>">
     <?= room_cards_html($rooms) ?>
   </section>
-  <div id="roomPager"><?= room_pager_html(
+  <?= room_pager_html(
       $pg['total'],
       $pg['page'],
       static fn(int $t): string => 'index.php?' . http_build_query(array_merge($_GET, ['page' => $t]))
-  ) ?></div>
+  ) ?>
 </div>
 
 <footer class="site-footer">
