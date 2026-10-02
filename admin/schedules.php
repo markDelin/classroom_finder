@@ -266,6 +266,116 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 </div>
 
 <?php if ($sheetRoom): ?>
+<style>
+@media print {
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+  body, body.has-sidebar {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 10mm !important;
+    background: #fff !important;
+    color: #000 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .main, .main--with-nav, .tt-sheets {
+    display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .tt-sheet {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 5mm !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .tt-head {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    gap: 1rem !important;
+    padding-top: 10mm !important;
+    margin-bottom: 3mm !important;
+  }
+  .tt-head__brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.6rem !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .tt-head__logo {
+    max-height: 12mm !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+  }
+  .tt-head__school {
+    color: #000 !important;
+    font-size: 11pt !important;
+    line-height: 1.15 !important;
+    font-weight: 700 !important;
+  }
+  .tt-head__line {
+    color: #555 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.2 !important;
+  }
+  .tt-head__meta {
+    flex: 0 0 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    margin-left: auto !important;
+    color: #555 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.2 !important;
+  }
+  .tt-title {
+    color: #000 !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    letter-spacing: .08em !important;
+    border-bottom: none !important;
+    text-align: center !important;
+    margin: 5mm 0 3mm !important;
+  }
+  .tt-sheet .table-wrap,
+  .table-wrap {
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .tt-sheet .tt-table,
+  .tt-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    font-size: 8pt !important;
+    line-height: 1.2 !important;
+    border: 1pt solid #000 !important;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+  }
+}
+</style>
 <h3 class="tt-heading">Printable schedule sheet · <?= e($sheetRoom['building']) ?> — Room <?= e($sheetRoom['room_number']) ?></h3>
 <div class="tt-sheets">
   <?php

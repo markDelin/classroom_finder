@@ -2187,6 +2187,7 @@ label .password-toggle-wrapper,
 .tt-head__meta {
   font-size: .7rem; color: var(--muted);
   text-align: right; white-space: nowrap; line-height: 1.3;
+  margin-left: auto;
 }
 .tt-title {
   margin: 1.6rem 0 .8rem;
@@ -3075,17 +3076,40 @@ html { -webkit-tap-highlight-color: transparent; }
     border-radius: 0 !important;
     background: #fff !important;
     color: #000 !important;
-    max-width: 180mm !important;
-    margin: 0 auto 5mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 5mm !important;
     padding: 0 !important;
   }
   .tt-head {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    flex-wrap: nowrap !important;
+    width: 100% !important;
+    gap: 1rem !important;
     padding-top: 12mm !important;
   }
-  .tt-head__logo { max-height: 10mm !important; width: auto !important; }
+  .tt-head__brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: .6rem !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .tt-head__logo { max-height: 10mm !important; width: auto !important; flex-shrink: 0 !important; }
   .tt-head__school { color: #000 !important; font-size: 11pt !important; line-height: 1.15 !important; }
   .tt-head__line { color: #555 !important; font-size: 7.5pt !important; line-height: 1.2 !important; }
-  .tt-head__meta { color: #555 !important; font-size: 7.5pt !important; line-height: 1.2 !important; }
+  .tt-head__meta {
+    flex: 0 0 auto !important;
+    text-align: right !important;
+    white-space: nowrap !important;
+    margin-left: auto !important;
+    color: #555 !important;
+    font-size: 7.5pt !important;
+    line-height: 1.2 !important;
+  }
   .tt-title {
     color: #000 !important; font-size: 11pt !important;
     letter-spacing: .08em !important; border-bottom: none !important;
@@ -3098,6 +3122,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .table-wrap { overflow: visible !important; }
   .tt-sheet .tt-table,
   .tt-table {
+    width: 100% !important;
     min-width: 0 !important;
     font-size: 8pt !important;
     line-height: 1.2 !important;
