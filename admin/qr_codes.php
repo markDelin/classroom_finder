@@ -41,7 +41,7 @@ try {
             }
         }
     }
-} catch (Throwable) {}
+} catch (Throwable $e) {}
 
 $allRooms  = fetch_classrooms($filters);
 $buildings = db()->query('SELECT DISTINCT building FROM classrooms WHERE building IS NOT NULL AND building != "" ORDER BY building')->fetchAll(PDO::FETCH_COLUMN);

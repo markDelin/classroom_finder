@@ -3,7 +3,7 @@
 > Real-time campus classroom availability board, door QR code check-in engine, and academic scheduling system for Clarendon College.
 
 **Live Demo / Production:** [https://classrooom-finder.page.gd](https://classrooom-finder.page.gd)  
-**Target Environment:** PHP 8.1+ | MySQL 5.7+ / MariaDB 10.4+ | Any Web Server (Apache / Nginx / Shared Hosting / Laragon / XAMPP)
+**Target Environment:** PHP 7.4+ / 8.0+ / 8.1+ / 8.2+ / 8.3+ | MySQL 5.7+ / MariaDB 10.4+ | Any Web Server (Apache / Nginx / Shared Hosting / Laragon / XAMPP)
 
 ---
 

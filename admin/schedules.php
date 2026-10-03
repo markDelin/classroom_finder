@@ -6,7 +6,7 @@ require_once __DIR__ . '/../auth/auth_check.php';
 const DAY_NAMES = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
 
 $admin = require_admin();
-$fail  = function (string $m): never {
+$fail  = function (string $m) {
     flash('error', $m);
     redirect('schedules.php');
 };
@@ -130,6 +130,7 @@ foreach ($st->fetchAll() as $row) {
     $weekByRoom[(int)$row['classroom_id']][$row['day_of_week']][] = $row;
 }
 $sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoom] : null;
+$sheetRooms = $sheetRoom ? [$sheetRoom] : array_values(array_filter($rooms, static fn($r) => !empty($weekByRoom[(int)$r['id']])));
 
 $school = school_name();
 
@@ -265,121 +266,107 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
 <?php endif; ?>
 </div>
 
-<?php if ($sheetRoom): ?>
+<?php if ($sheetRooms): ?>
 <style>
+/* Fixed Paper Preview Canvas: exactly A4 dimensions, never reflows */
+.tt-stage {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.2rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+.tt-sheet {
+  width: 210mm !important;
+  min-width: 210mm !important;
+  max-width: 210mm !important;
+  min-height: 297mm !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  padding: 16mm 14mm !important;
+  box-shadow: 0 4px 16px rgb(15 23 42 / .08), 0 1px 3px rgb(15 23 42 / .04) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  box-sizing: border-box !important;
+  font-family: var(--font-body) !important;
+  margin: 0 !important;
+}
+.tt-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 1rem !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1.5px solid #0f172a !important;
+}
+.tt-sheet .table-wrap {
+  overflow: visible !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+.tt-sheet .tt-table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
 @media print {
   @page {
-    size: auto;
-    margin: 0mm;
+    size: A4 portrait;
+    margin: 10mm 10mm;
   }
-  body, body.has-sidebar {
+  body, body.has-sidebar, .main, .main--with-nav {
     display: block !important;
-    margin: 0 !important;
-    padding: 0 10mm !important;
-    background: #fff !important;
-    color: #000 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .main, .main--with-nav, .tt-sheets {
-    display: block !important;
-    position: static !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
   }
-  .tt-sheet {
+  .no-print {
+    display: none !important;
+  }
+  .tt-stage {
+    padding: 0 !important;
+    background: none !important;
+    overflow: visible !important;
     display: block !important;
+    gap: 0 !important;
+  }
+  .tt-sheet {
     width: 100% !important;
+    min-width: 0 !important;
     max-width: 100% !important;
-    margin: 0 0 5mm !important;
+    min-height: auto !important;
     padding: 0 !important;
     border: 0 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 0 10mm !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+    page-break-after: always !important;
   }
-  .tt-head {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    flex-wrap: nowrap !important;
-    width: 100% !important;
-    gap: 1rem !important;
-    padding-top: 10mm !important;
-    margin-bottom: 3mm !important;
-  }
-  .tt-head__brand {
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.6rem !important;
-    min-width: 0 !important;
-    flex: 1 1 auto !important;
-  }
-  .tt-head__logo {
-    max-height: 12mm !important;
-    width: auto !important;
-    flex-shrink: 0 !important;
-  }
-  .tt-head__school {
-    color: #000 !important;
-    font-size: 11pt !important;
-    line-height: 1.15 !important;
-    font-weight: 700 !important;
-  }
-  .tt-head__line {
-    color: #555 !important;
-    font-size: 7.5pt !important;
-    line-height: 1.2 !important;
-  }
-  .tt-head__meta {
-    flex: 0 0 auto !important;
-    text-align: right !important;
-    white-space: nowrap !important;
-    margin-left: auto !important;
-    color: #555 !important;
-    font-size: 7.5pt !important;
-    line-height: 1.2 !important;
-  }
-  .tt-title {
-    color: #000 !important;
-    font-size: 11pt !important;
-    font-weight: 700 !important;
-    letter-spacing: .08em !important;
-    border-bottom: none !important;
-    text-align: center !important;
-    margin: 5mm 0 3mm !important;
-  }
-  .tt-sheet .table-wrap,
-  .table-wrap {
-    overflow: visible !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-  .tt-sheet .tt-table,
-  .tt-table {
-    width: 100% !important;
-    min-width: 0 !important;
-    font-size: 8pt !important;
-    line-height: 1.2 !important;
-    border: 1pt solid #000 !important;
-    border-collapse: collapse !important;
-    margin: 0 !important;
+  .tt-sheet:last-child {
+    page-break-after: auto !important;
   }
 }
 </style>
-<h3 class="tt-heading">Printable schedule sheet · <?= e($sheetRoom['building']) ?> — Room <?= e($sheetRoom['room_number']) ?></h3>
-<div class="tt-sheets">
-  <?php
-    $rid = (int)$sheetRoom['id'];
+
+<h3 class="tt-heading no-print">Printable schedule sheet<?= $sheetRoom ? ' · ' . e($sheetRoom['building']) . ' — Room ' . e($sheetRoom['room_number']) : 's (' . count($sheetRooms) . ' classrooms)' ?></h3>
+
+<div class="tt-stage">
+  <?php foreach ($sheetRooms as $sRoom):
+    $rid = (int)$sRoom['id'];
     $roomSlots = [];
     foreach ($weekByRoom[$rid] ?? [] as $daySlots) {
         foreach ($daySlots as $s) {
@@ -398,7 +385,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     $sheetAddr    = school_address();
     $sheetContact = school_contact();
   ?>
-  <div class="card tt-sheet">
+  <article class="tt-sheet">
     <header class="tt-head">
       <div class="tt-head__brand">
         <?php if ($hasLogoImg): ?>
@@ -411,12 +398,13 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
         </div>
       </div>
       <div class="tt-head__meta">
+        <div>Classroom: <strong><?= e($sRoom['room_number']) ?></strong> (<?= e($sRoom['building']) ?>)</div>
         <div>Schedule No.: SC-<?= str_pad((string)$rid, 3, '0', STR_PAD_LEFT) ?>-<?= date('Ymd') ?></div>
         <div>Date: <?= date('Y-m-d H:i:s') ?></div>
       </div>
     </header>
 
-    <h2 class="tt-title">Room Weekly Class Schedule</h2>
+    <h2 class="tt-title">Room Weekly Class Schedule — <?= e($sRoom['room_number']) ?></h2>
 
     <?php if (empty($roomSlots)): ?>
       <p class="muted" style="margin: 1.2rem 0; text-align: center;">No scheduled classes recorded for this classroom.</p>
@@ -457,7 +445,8 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
       </div>
     </section>
     <?php endif; ?>
-  </div>
+  </article>
+  <?php endforeach; ?>
 </div>
 <?php endif; ?>
 

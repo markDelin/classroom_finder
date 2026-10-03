@@ -31,7 +31,7 @@ foreach ($allRooms as $r) {
 $needsSetup = false;
 try {
     $needsSetup = (int)db()->query('SELECT COUNT(*) AS n FROM users')->fetch()['n'] === 0;
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 $school    = school_name();

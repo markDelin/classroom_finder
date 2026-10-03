@@ -14,19 +14,84 @@ function db(): PDO
         return $pdo;
     }
 
-    $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
-    try {
-        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-            PDO::ATTR_TIMEOUT            => 5,
-        ]);
-        $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
+    $hosts = [DB_HOST];
+    if (DB_HOST === '127.0.0.1') {
+        $hosts[] = 'localhost';
+    } elseif (DB_HOST === 'localhost') {
+        $hosts[] = '127.0.0.1';
+    }
 
-        static $checked = false;
-        if (!$checked) {
-            $checked = true;
+    $lastException = null;
+
+    foreach ($hosts as $host) {
+        $dsn = 'mysql:host=' . $host . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
+        try {
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES   => false,
+                PDO::ATTR_TIMEOUT            => 5,
+            ]);
+            break;
+        } catch (PDOException $e) {
+            $lastException = $e;
+            // If unknown database on local XAMPP/WAMP/Laragon setup, auto-create & import schema
+            $isLocal = ($host === '127.0.0.1' || $host === 'localhost');
+            if ($isLocal && DB_USER === 'root' && ($e->getCode() === 1049 || strpos($e->getMessage(), 'Unknown database') !== false)) {
+                try {
+                    $initPdo = new PDO('mysql:host=' . $host . ';port=' . DB_PORT, DB_USER, DB_PASS, [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_TIMEOUT => 5,
+                    ]);
+                    $initPdo->exec("CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                    $schemaFile = __DIR__ . '/../schema.sql';
+                    if (is_file($schemaFile)) {
+                        $initPdo->exec("USE `" . DB_NAME . "`");
+                        $initPdo->exec(file_get_contents($schemaFile));
+                    }
+                    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+                        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES   => false,
+                        PDO::ATTR_TIMEOUT            => 5,
+                    ]);
+                    break;
+                } catch (Throwable $initErr) {
+                    // Fall through to error handler
+                }
+            }
+        }
+    }
+
+    if (!$pdo) {
+        $msg = 'Could not connect to MySQL: ' . ($lastException ? $lastException->getMessage() : 'Unknown error');
+        if (defined('CF_WANTS_JSON')) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => $msg]);
+        } else {
+            http_response_code(500);
+            echo '<!doctype html><meta charset="utf-8"><title>Database error</title><body style="font-family:system-ui;max-width:42rem;margin:4rem auto;line-height:1.6;padding:1rem"><h1>Database connection failed</h1>'
+               . '<p style="color:#b91c1c;background:#fee2e2;padding:0.75rem 1rem;border-radius:6px;word-break:break-all">' . htmlspecialchars($msg) . '</p>'
+               . '<p><strong>How to fix:</strong></p><ul>'
+               . '<li>Check credentials in <code>config/database.php</code> (DB_HOST, DB_NAME, DB_USER, DB_PASS). On hosting like InfinityFree, use the MySQL hostname from your control panel (e.g. <code>sqlXXX.infinityfree.com</code>).</li>'
+               . '<li>Import <code>database/classroom_finder.sql</code> via phpMyAdmin into your database.</li>'
+               . '<li>Ensure your database server is active and accessible.</li>'
+               . '</ul></body>';
+        }
+        exit;
+    }
+
+    try {
+        $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
+    } catch (Throwable $tzErr) {
+        // Ignore timezone configuration errors on older MySQL / MariaDB instances
+    }
+
+    static $checked = false;
+    if (!$checked) {
+        $checked = true;
+        try {
             $pdo->exec("
                 CREATE TABLE IF NOT EXISTS class_schedules (
                   id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -56,24 +121,10 @@ function db(): PDO
                   UNIQUE KEY uq_force_slot (schedule_id, exc_date)
                 ) ENGINE = InnoDB;
             ");
+        } catch (Throwable $schemaErr) {
+            // Ignore if tables exist or permissions prevent runtime creation
         }
-    } catch (PDOException $e) {
-        $msg = 'Could not connect to MySQL: ' . $e->getMessage();
-        if (defined('CF_WANTS_JSON')) {
-            http_response_code(500);
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => $msg]);
-        } else {
-            http_response_code(500);
-            echo '<!doctype html><meta charset="utf-8"><title>Database error</title><body style="font-family:system-ui;max-width:42rem;margin:4rem auto;line-height:1.6;padding:1rem"><h1>Database connection failed</h1>'
-               . '<p style="color:#b91c1c;background:#fee2e2;padding:0.75rem 1rem;border-radius:6px;word-break:break-all">' . htmlspecialchars($msg) . '</p>'
-               . '<p><strong>How to fix:</strong></p><ul>'
-               . '<li>Check credentials in <code>config/database.php</code> (DB_HOST, DB_NAME, DB_USER, DB_PASS). On hosting like InfinityFree, use the MySQL hostname from your control panel (e.g. <code>sqlXXX.infinityfree.com</code>).</li>'
-               . '<li>Import <code>database/classroom_finder.sql</code> via phpMyAdmin into your database.</li>'
-               . '<li>Ensure your database server is active and accessible.</li>'
-               . '</ul></body>';
-        }
-        exit;
     }
+
     return $pdo;
 }

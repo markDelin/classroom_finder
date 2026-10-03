@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('../login.php');
 }
 
-$back = function (string $msg): never {
+$back = function (string $msg) {
     flash('error', $msg);
     redirect('../login.php');
 };

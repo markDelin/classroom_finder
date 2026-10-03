@@ -13,7 +13,7 @@ $intKeys = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $fail = function (string $m): never {
+    $fail = function (string $m) {
         flash('error', $m);
         redirect('settings.php');
     };
@@ -110,16 +110,17 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
     </div>
 
     <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-      <?php foreach ($intKeys as $key => [$min, $max, $label]): ?>
+      <?php
+      $settingDefaults = [
+          'min_duration_minutes'  => 15,
+          'max_duration_minutes'  => 480,
+          'duration_step_minutes' => 30,
+      ];
+      foreach ($intKeys as $key => [$min, $max, $label]): ?>
         <label>
           <span style="font-weight:600;display:block;margin-bottom:.35rem"><?= e($label) ?></span>
           <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>" style="width:100%"
-                 value="<?= get_setting_int($key, match ($key) {
-                     'min_duration_minutes'   => 15,
-                     'max_duration_minutes'   => 480,
-                     'duration_step_minutes'  => 30,
-                     default                  => 15,
-                 }) ?>">
+                 value="<?= get_setting_int($key, $settingDefaults[$key] ?? 15) ?>">
           <small class="muted" style="display:block;margin-top:.3rem">Allowed range: <?= $min ?> – <?= $max ?></small>
         </label>
       <?php endforeach; ?>

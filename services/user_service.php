@@ -122,13 +122,13 @@ function user_set_status(int $targetUserId, string $action, int $adminId): array
         return ['ok' => false, 'error' => 'User not found.'];
     }
 
-    $newStatus = match ($action) {
+    $statusMap = [
         'approve'    => 'approved',
         'reject'     => 'rejected',
         'suspend'    => 'suspended',
         'reactivate' => 'approved',
-        default      => null,
-    };
+    ];
+    $newStatus = $statusMap[$action] ?? null;
 
     if ($newStatus === null) {
         return ['ok' => false, 'error' => 'Invalid action.'];

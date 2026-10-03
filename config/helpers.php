@@ -9,6 +9,11 @@ require_once __DIR__ . '/../services/session_service.php';
 require_once __DIR__ . '/../services/user_service.php';
 require_once __DIR__ . '/../services/schedule_service.php';
 
+if (PHP_VERSION_ID < 70400) {
+    http_response_code(500);
+    exit('Classroom Finder requires PHP 7.4 or higher. Current PHP version: ' . PHP_VERSION);
+}
+
 if (!function_exists('mb_strlen')) {
     function mb_strlen(string $s): int
     {
@@ -134,13 +139,13 @@ function e(?string $v): string
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
-function redirect(string $url): never
+function redirect(string $url)
 {
     header('Location: ' . $url);
     exit;
 }
 
-function abort(int $code = 404, string $message = ''): never
+function abort(int $code = 404, string $message = '')
 {
     http_response_code($code);
     $_GET['code'] = $code;
@@ -230,7 +235,7 @@ function get_setting(string $key, string $default = ''): string
             foreach (db()->query('SELECT skey, svalue FROM settings') as $row) {
                 $settings_cache[$row['skey']] = $row['svalue'];
             }
-        } catch (Throwable) {
+        } catch (Throwable $e) {
         }
     }
     return $settings_cache[$key] ?? $default;
@@ -262,7 +267,7 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
     try {
         db()->prepare('INSERT INTO activity_logs (user_id, classroom_id, action, details) VALUES (?, ?, ?, ?)')
             ->execute([$userId, $classroomId, $action, mb_substr($details, 0, 255)]);
-    } catch (Throwable) {
+    } catch (Throwable $e) {
     }
 }
 
@@ -426,7 +431,7 @@ function wants_csv(): bool
     return ($_GET['export'] ?? '') === 'csv';
 }
 
-function stream_csv(string $filename, array $headers, iterable $rows): never
+function stream_csv(string $filename, array $headers, iterable $rows)
 {
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . str_replace('"', '', $filename) . '"');
@@ -445,7 +450,7 @@ function stream_csv(string $filename, array $headers, iterable $rows): never
     exit;
 }
 
-function json_response(array $data, int $code = 200): never
+function json_response(array $data, int $code = 200)
 {
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');

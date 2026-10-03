@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
-$fail  = function (string $msg, string $back = 'classrooms.php'): never {
+$fail  = function (string $msg, string $back = 'classrooms.php') {
     flash('error', $msg);
     redirect($back);
 };

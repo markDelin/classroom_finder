@@ -331,7 +331,7 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
   body.has-sidebar {
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
     min-height: 100vh;
   }
   body.has-sidebar .topbar {
@@ -341,15 +341,9 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
     top: 0;
     z-index: 40;
   }
-  body.has-sidebar .flashes {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 0 1.6rem;
-    margin-top: 1.2rem;
-  }
   body.has-sidebar .sidebar {
     grid-column: 1;
-    grid-row: 2 / 4;
+    grid-row: 2;
     position: sticky;
     top: var(--cf-nav-top, 3.45rem);
     height: calc(100vh - var(--cf-nav-top, 3.45rem));
@@ -361,7 +355,7 @@ body.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
   }
   body.has-sidebar .main--with-nav {
     grid-column: 2;
-    grid-row: 3;
+    grid-row: 2;
     padding: 1.2rem 1.6rem;
     min-width: 0;
     max-width: none;
@@ -633,21 +627,38 @@ h1 .icon, h2 .icon, h3 .icon { width: .95em; height: .95em; vertical-align: -.1e
 .dot--off    { background: var(--off); }
 
 /* ---------- flash messages ---------- */
-.flashes { width: 100%; max-width: 78rem; margin: .8rem auto 0; padding: 0 1.2rem; box-sizing: border-box; }
+/* ---------- flash messages (inline within main content) ---------- */
+.flashes {
+  width: 100%;
+  margin: 0 0 1rem;
+  padding: 0;
+  box-sizing: border-box;
+}
 .card-flashes { margin: .6rem 0; }
 .card-flashes:empty { margin: 0; }
 .flash {
-  display: flex; align-items: flex-start; gap: .5rem;
-  padding: .6rem .9rem; border-radius: var(--radius-sm); margin-bottom: .45rem;
-  font-size: .9rem; border: 1px solid transparent; border-left-width: 3px;
-  min-width: 0; word-break: break-word; overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .7rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: .5rem;
+  font-size: .88rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-left-width: 3.5px;
+  width: 100%;
+  box-sizing: border-box;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  box-shadow: var(--shadow);
 }
-.flash > span { flex: 1; min-width: 0; }
-.flash .icon { flex-shrink: 0; margin-top: .14rem; }
+.flash > span { flex: 1; min-width: 0; line-height: 1.4; }
+.flash .icon { flex-shrink: 0; width: 1.15rem; height: 1.15rem; }
 .flash--success { background: var(--ok-soft);     color: var(--ok);     border-left-color: var(--ok); }
 .flash--error   { background: var(--danger-soft); color: var(--danger); border-left-color: var(--danger); }
 .flash--warn    { background: var(--warn-soft);   color: var(--warn);   border-left-color: var(--warn); }
-.flash--info    { background: var(--surface-2);   color: var(--text);   border-left-color: var(--text); }
+.flash--info    { background: var(--surface-2);   color: var(--text);   border-left-color: var(--primary); }
 .flash__close {
   background: transparent;
   border: 0;
@@ -657,7 +668,7 @@ h1 .icon, h2 .icon, h3 .icon { width: .95em; height: .95em; vertical-align: -.1e
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-  opacity: .6;
+  opacity: .55;
   border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
@@ -2362,6 +2373,69 @@ label .password-toggle-wrapper,
   background: var(--text); opacity: .75;
 }
 
+/* donut chart & legend */
+.donut-container {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.donut-chart-box {
+  width: 140px;
+  height: 140px;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+.donut-svg {
+  width: 100%;
+  height: 100%;
+}
+.donut-slice {
+  transition: opacity .15s ease, stroke-width .15s ease;
+}
+.donut-slice:hover {
+  opacity: .85;
+}
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.donut-legend__item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: .85rem;
+}
+.donut-legend__swatch {
+  width: .65rem;
+  height: .65rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.donut-legend__info {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  width: 100%;
+  gap: .5rem;
+  min-width: 0;
+}
+.donut-legend__name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.donut-legend__val {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: .75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
 /* ==========================================================================
    Print — QR posters become a clean handout sheet
    ========================================================================== */
@@ -2557,8 +2631,8 @@ html { -webkit-tap-highlight-color: transparent; }
 @media screen and (max-width: 720px) {
   /* tighter page gutter, more room at the bottom with safe area */
   .main { padding: 1rem .8rem max(2.5rem, calc(1.5rem + env(safe-area-inset-bottom, 1rem))); }
-  .flashes { padding: 0 .8rem; margin-top: .6rem; }
-  .flash { padding: .5rem .75rem; font-size: .84rem; }
+  .flashes { padding: 0; margin-bottom: .8rem; }
+  .flash { padding: .6rem .85rem; font-size: .84rem; width: 100%; }
 
   /* cards breathe less but keep their rhythm */
   .card { padding: .9rem .95rem; margin-bottom: .9rem; border-radius: var(--radius-sm); }
@@ -3032,9 +3106,6 @@ html { -webkit-tap-highlight-color: transparent; }
   /* password-reset row inside Manage wraps instead of overflowing */
   .mini-menu .reset-form { flex-wrap: wrap; }
   .mini-menu .reset-form button { flex: 1 1 auto; }
-
-  /* flash strip matches the page gutter */
-  .flashes { padding: 0 .8rem; }
 
   /* Printable timetable sheet preview on mobile screen */
   .tt-sheet { padding: 0.85rem 0.65rem; border-radius: var(--radius-sm); }

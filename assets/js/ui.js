@@ -356,6 +356,20 @@
     }
   });
 
+  // Auto-dismiss static page flash alerts after 5 seconds
+  document.querySelectorAll('.flashes .flash').forEach(function (f) {
+    setTimeout(function () {
+      if (f.parentNode) {
+        f.style.transition = 'opacity .25s ease, transform .25s ease';
+        f.style.opacity = '0';
+        f.style.transform = 'translateY(-4px)';
+        setTimeout(function () {
+          if (f.parentNode) { f.remove(); }
+        }, 250);
+      }
+    }, 5000);
+  });
+
   /* ---------- page loader (commented out) ----------
   var loader = document.getElementById('pageLoader');
   if (loader) {

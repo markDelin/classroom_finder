@@ -59,6 +59,15 @@ $suggestions = [
 $now = time();
 $rounded = function_exists('round_to_half_hour') ? round_to_half_hour($now) : (int)(round($now / 1800) * 1800);
 
+$reason = null;
+if ($live['computed'] === 'occupied') {
+    $reason = empty($live['session_id'])
+        ? 'This room has a scheduled class (' . $live['sched_subject'] . ') until ' . fmt_time($live['sched_end']) . '.'
+        : 'This room is currently occupied until ' . fmt_time($live['session_end']) . '.';
+} elseif ($live['computed'] === 'unavailable') {
+    $reason = 'This room is marked unavailable (' . ($live['status'] === 'maintenance' ? 'maintenance' : 'disabled') . ').';
+}
+
 json_response([
     'ok'            => true,
     'server_now'    => date('c', $rounded),
@@ -66,14 +75,7 @@ json_response([
     'actual_now'    => date('c', $now),
     'available'     => $live['computed'] === 'available',
     'room_status'  => $live['computed'],
-    'reason'       => match ($live['computed']) {
-        'occupied'    => empty($live['session_id'])
-            ? 'This room has a scheduled class (' . $live['sched_subject'] . ') until '
-              . fmt_time($live['sched_end']) . '.'
-            : 'This room is currently occupied until ' . fmt_time($live['session_end']) . '.',
-        'unavailable' => 'This room is marked unavailable (' . ($live['status'] === 'maintenance' ? 'maintenance' : 'disabled') . ').',
-        default       => null,
-    },
+    'reason'       => $reason,
     'fixed_class' => ($live['computed'] === 'occupied' && empty($live['session_id']) && !empty($live['sched_id'])) ? [
         'schedule_id' => (int)$live['sched_id'],
         'subject'     => $live['sched_subject'],

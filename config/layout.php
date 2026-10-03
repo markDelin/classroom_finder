@@ -5,11 +5,11 @@ require_once __DIR__ . '/helpers.php';
 
 function room_status_meta(string $status): array
 {
-    return match ($status) {
-        'occupied'    => ['OCCUPIED',    'clock',        'danger'],
-        'unavailable' => ['UNAVAILABLE', 'ban',          'off'],
-        default       => ['AVAILABLE',   'circle-check', 'ok'],
-    };
+    switch ($status) {
+        case 'occupied':    return ['OCCUPIED',    'clock',        'danger'];
+        case 'unavailable': return ['UNAVAILABLE', 'ban',          'off'];
+        default:            return ['AVAILABLE',   'circle-check', 'ok'];
+    }
 }
 
 function render_header(string $title, array $opts = []): void
@@ -49,6 +49,7 @@ function render_header(string $title, array $opts = []): void
             ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => $adminHref('sessions.php'),     'icon' => 'clock'],
             ['key' => 'schedules',    'label' => 'Print Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],
             ['key' => 'history',      'label' => 'Usage History',    'href' => $adminHref('history.php'),      'icon' => 'history'],
+            ['key' => 'reports',      'label' => 'Reports',          'href' => $adminHref('reports.php'),      'icon' => 'scroll-text'],
             ['key' => 'logs',         'label' => 'Activity Logs',    'href' => $adminHref('logs.php'),         'icon' => 'file-text'],
             ['key' => 'settings',     'label' => 'Settings',         'href' => $adminHref('settings.php'),     'icon' => 'settings'],
             ['key' => 'finder',       'label' => 'Find Rooms',       'href' => $prefix . 'index.php',          'icon' => 'search'],
@@ -106,17 +107,6 @@ function render_header(string $title, array $opts = []): void
     <?php endif; ?>
   </div>
 </header>
-<?php if ($flashes): ?>
-<div class="flashes">
-  <?php foreach ($flashes as $f): ?>
-    <div class="flash flash--<?= e($f['t']) ?>">
-      <?= icon($f['t'] === 'success' ? 'circle-check' : ($f['t'] === 'error' ? 'triangle-alert' : 'info')) ?>
-      <span><?= e($f['m']) ?></span>
-      <button type="button" class="flash__close" aria-label="Dismiss">&times;</button>
-    </div>
-  <?php endforeach; ?>
-</div>
-<?php endif; ?>
 <?php if ($nav && isset($menus[$nav])): ?>
 <nav class="sidebar" id="cfSidebar">
   <ul>
@@ -138,6 +128,17 @@ function render_header(string $title, array $opts = []): void
 <main class="main main--with-nav">
 <?php else: ?>
 <main class="main">
+<?php endif; ?>
+<?php if ($flashes): ?>
+<div class="flashes">
+  <?php foreach ($flashes as $f): ?>
+    <div class="flash flash--<?= e($f['t']) ?>">
+      <?= icon($f['t'] === 'success' ? 'circle-check' : ($f['t'] === 'error' ? 'triangle-alert' : 'info')) ?>
+      <span><?= e($f['m']) ?></span>
+      <button type="button" class="flash__close" aria-label="Dismiss">&times;</button>
+    </div>
+  <?php endforeach; ?>
+</div>
 <?php endif; ?>
 <?php
 }

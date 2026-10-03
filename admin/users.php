@@ -5,7 +5,7 @@ require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 $back  = $_POST['back'] ?? 'users.php';
-$fail  = function (string $msg) use ($back): never {
+$fail  = function (string $msg) use ($back) {
     flash('error', $msg);
     redirect($back);
 };

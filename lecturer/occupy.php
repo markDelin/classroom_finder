@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../auth/auth_check.php';
 
-$fail = function (string $msg): never {
+$fail = function (string $msg) {
     flash('error', $msg);
     redirect('scanner.php');
 };

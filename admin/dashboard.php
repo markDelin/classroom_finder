@@ -52,6 +52,19 @@ $forceOpensToday = (int)db()->query(
     "SELECT COUNT(*) FROM schedule_force_open WHERE exc_date = CURDATE()"
 )->fetchColumn();
 
+$topRooms = db()->query(
+    'SELECT c.id, c.room_number, c.building,
+            COUNT(s.id) AS session_count,
+            COALESCE(SUM(TIMESTAMPDIFF(MINUTE, s.start_time, s.end_time)), 0) AS total_minutes
+     FROM classroom_sessions s
+     JOIN classrooms c ON c.id = s.classroom_id
+     GROUP BY c.id, c.room_number, c.building
+     ORDER BY session_count DESC, total_minutes DESC
+     LIMIT 5'
+)->fetchAll();
+$totalTopSessions = (int)array_sum(array_column($topRooms, 'session_count'));
+$donutColors = ['#0F3B6E', '#2563eb', '#0d9488', '#d97706', '#64748b'];
+
 render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' => 'dashboard']);
 ?>
 
@@ -118,7 +131,74 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
     </div>
   </div>
 </div>
-<div class="two-col">
+<div class="two-col" style="margin-bottom:1.2rem;">
+  <div class="card">
+    <div class="card__head">
+      <h3><?= icon('chart-column') ?> Most used classrooms</h3>
+      <a class="btn btn--ghost btn--sm" href="history.php">Usage history</a>
+    </div>
+    <?php if (!$topRooms || $totalTopSessions === 0): ?>
+      <p class="muted">No room usage recorded yet.</p>
+    <?php else:
+      $radius = 40;
+      $circumference = 2 * M_PI * $radius;
+      $runningOffset = 0.0;
+      $hasMultiple = count($topRooms) > 1;
+      $gap = $hasMultiple ? 2.5 : 0.0;
+    ?>
+      <div class="donut-container">
+        <div class="donut-chart-box">
+          <svg viewBox="0 0 120 120" class="donut-svg" role="img" aria-label="Donut chart showing most used classrooms">
+            <circle cx="60" cy="60" r="<?= $radius ?>" fill="none" stroke="var(--track)" stroke-width="14" />
+            <?php foreach ($topRooms as $i => $room):
+              $cnt = (int)$room['session_count'];
+              $fraction = $cnt / $totalTopSessions;
+              $arc = $fraction * $circumference;
+              $dashLength = $arc > $gap ? ($arc - $gap) : max(0.5, $arc * 0.8);
+              $dashSpace = max(0.0, $circumference - $dashLength);
+              $dashOffset = -($runningOffset + ($arc - $dashLength) / 2);
+              $runningOffset += $arc;
+              $pct = (int)round($fraction * 100);
+              $color = $donutColors[$i % count($donutColors)];
+            ?>
+              <circle
+                class="donut-slice"
+                cx="60"
+                cy="60"
+                r="<?= $radius ?>"
+                fill="none"
+                stroke="<?= $color ?>"
+                stroke-width="14"
+                stroke-dasharray="<?= sprintf('%.2f %.2f', $dashLength, $dashSpace) ?>"
+                stroke-dashoffset="<?= sprintf('%.2f', $dashOffset) ?>"
+                transform="rotate(-90 60 60)"
+              >
+                <title><?= e($room['room_number']) ?>: <?= $cnt ?> <?= $cnt === 1 ? 'session' : 'sessions' ?> (<?= $pct ?>%)</title>
+              </circle>
+            <?php endforeach; ?>
+            <text x="60" y="56" text-anchor="middle" font-family="var(--font-display)" font-size="19" font-weight="700" fill="var(--text)"><?= $totalTopSessions ?></text>
+            <text x="60" y="69" text-anchor="middle" font-family="var(--font-mono)" font-size="7.5" font-weight="600" fill="var(--muted)" letter-spacing="0.5">SESSIONS</text>
+          </svg>
+        </div>
+        <div class="donut-legend">
+          <?php foreach ($topRooms as $i => $room):
+            $cnt = (int)$room['session_count'];
+            $pct = (int)round(($cnt / $totalTopSessions) * 100);
+            $color = $donutColors[$i % count($donutColors)];
+          ?>
+            <div class="donut-legend__item">
+              <span class="donut-legend__swatch" style="background-color: <?= $color ?>;"></span>
+              <div class="donut-legend__info">
+                <span class="donut-legend__name"><strong><?= e($room['room_number']) ?></strong> <span class="muted small"><?= e($room['building']) ?></span></span>
+                <span class="donut-legend__val"><?= $cnt ?> (<?= $pct ?>%)</span>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    <?php endif; ?>
+  </div>
+
   <div class="card">
     <div class="card__head">
       <h3><?= icon('clock') ?> Active sessions now</h3>
@@ -139,26 +219,26 @@ render_header('Admin Dashboard', ['prefix' => '../', 'nav' => 'admin', 'active' 
       </ul>
     <?php endif; ?>
   </div>
+</div>
 
-  <div class="card">
-    <div class="card__head">
-      <h3>Recent activity</h3>
-      <a class="btn btn--ghost btn--sm" href="logs.php">Full log</a>
-    </div>
-    <?php if (!$recentLogs): ?>
-      <p class="muted">No activity logged yet.</p>
-    <?php else: ?>
-      <ul class="plain-list">
-        <?php foreach ($recentLogs as $l): ?>
-        <li>
-          <strong><?= e(ucwords(strtolower(str_replace('_', ' ', $l['action'])))) ?></strong>
-          <span class="muted">· <?= e($l['full_name'] ?? 'System') ?></span>
-          <div class="muted small"><?= e($l['details'] ?: '') ?> · <?= fmt_time($l['timestamp']) ?></div>
-        </li>
-        <?php endforeach; ?>
-      </ul>
-    <?php endif; ?>
+<div class="card">
+  <div class="card__head">
+    <h3>Recent activity</h3>
+    <a class="btn btn--ghost btn--sm" href="logs.php">Full log</a>
   </div>
+  <?php if (!$recentLogs): ?>
+    <p class="muted">No activity logged yet.</p>
+  <?php else: ?>
+    <ul class="plain-list">
+      <?php foreach ($recentLogs as $l): ?>
+      <li>
+        <strong><?= e(ucwords(strtolower(str_replace('_', ' ', $l['action'])))) ?></strong>
+        <span class="muted">· <?= e($l['full_name'] ?? 'System') ?></span>
+        <div class="muted small"><?= e($l['details'] ?: '') ?> · <?= fmt_time($l['timestamp']) ?></div>
+      </li>
+      <?php endforeach; ?>
+    </ul>
+  <?php endif; ?>
 </div>
 
 <?php render_footer(); ?>

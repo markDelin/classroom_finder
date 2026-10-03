@@ -6,7 +6,7 @@ require_once __DIR__ . '/config/helpers.php';
 $needsSetup = false;
 try {
     $needsSetup = (int)db()->query('SELECT COUNT(*) AS n FROM users')->fetch()['n'] === 0;
-} catch (Throwable) {
+} catch (Throwable $e) {
 }
 
 if ($u = current_user()) {
