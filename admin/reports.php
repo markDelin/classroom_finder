@@ -100,15 +100,25 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: .75rem 1rem;
   flex-wrap: wrap;
   margin-bottom: 1rem;
 }
 .report-controls__left {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
+  gap: .35rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  max-width: 100%;
+}
+.report-controls__left::-webkit-scrollbar {
+  display: none;
+}
+.report-controls__left .chip-btn {
+  flex: 0 0 auto !important;
+  white-space: nowrap;
 }
 
 /* Minimal Paper Preview: A4 standard, no reflow on screen resize */
@@ -148,7 +158,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   font-family: Arial, Calibri, 'Segoe UI', sans-serif;
 }
 
-@media (max-width: 820px) {
+@media screen and (max-width: 820px) {
   .report-stage {
     margin-left: -.8rem;
     margin-right: -.8rem;
@@ -156,21 +166,38 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     padding: .5rem .8rem 1.5rem;
   }
 }
-@media (max-width: 640px) {
+@media screen and (max-width: 640px) {
   .report-controls {
     flex-direction: column;
     align-items: stretch;
-    gap: .75rem;
+    gap: .65rem;
+    margin-bottom: .85rem;
+  }
+  .report-controls__left {
+    width: 100%;
+    padding-bottom: .2rem;
+  }
+  .report-controls__left .chip-btn {
+    flex: 0 0 auto !important;
+    padding: .35rem .65rem;
+    font-size: .78rem;
+    white-space: nowrap;
   }
   .report-controls form.filter-row {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
-    gap: .5rem;
+    align-items: center;
+    gap: .45rem;
   }
   .report-controls .date-input-group {
     flex: 1 1 calc(50% - .25rem);
     min-width: 120px;
+  }
+  .report-controls form.filter-row .btn {
+    flex: 0 0 auto;
+    padding: .4rem .65rem;
+    font-size: .8rem;
   }
 }
 
@@ -344,12 +371,13 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   border-bottom: 1.5px solid #64748b;
 }
 
+@page {
+  size: A4 portrait;
+  margin: 8mm 10mm;
+}
+
 /* Print Styles */
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 5mm 8mm;
-  }
   body, body.has-sidebar, .main, .main--with-nav {
     background: #ffffff !important;
     padding: 0 !important;
@@ -362,6 +390,9 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   }
   .report-stage {
     padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     background: none !important;
     overflow: visible !important;
     display: block !important;
@@ -376,22 +407,37 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     max-width: 100% !important;
     min-height: auto !important;
     padding: 0 !important;
+    margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
   }
-  .excel-table,
+  .excel-table {
+    border: 1px solid #cbd5e1 !important;
+  }
+  .excel-table thead {
+    display: table-header-group !important;
+  }
+  .excel-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
   .excel-table th,
   .excel-table td {
-    border: 1pt solid #000000 !important;
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .excel-table th {
     background: #f1f5f9 !important;
-    color: #000000 !important;
+    color: #0f172a !important;
+  }
+  .excel-table tbody tr:nth-child(even) td {
+    background: #f8fafc !important;
   }
   .excel-table .row-total td {
-    background: #e5e7eb !important;
-    border-top: 1.5pt solid #000000 !important;
-    border-bottom: 1.5pt solid #000000 !important;
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
   }
 }
 </style>
@@ -411,7 +457,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   </div>
 
   <div class="report-controls">
-    <div class="report-controls__left">
+    <div class="report-controls__left range-presets">
       <span class="muted small">Range:</span>
       <a class="chip-btn <?= $activeRange === 'today' ? 'is-active' : '' ?>" href="<?= $presetUrl('today') ?>">Today</a>
       <a class="chip-btn <?= $activeRange === 'week' ? 'is-active' : '' ?>" href="<?= $presetUrl('week') ?>">This week</a>

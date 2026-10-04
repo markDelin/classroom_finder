@@ -1,77 +1,155 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../config/database.php';
-
 if (PHP_SAPI !== 'cli') {
     require_once __DIR__ . '/../auth/auth_check.php';
     require_admin();
+} else {
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../config/helpers.php';
 }
 
-$classrooms = [
-    ['room_number' => '101', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '102', 'building' => 'New Building', 'floor' => 1, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '103', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '104', 'building' => 'New Building', 'floor' => 1, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '105', 'building' => 'New Building', 'floor' => 1, 'capacity' => 25, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '201', 'building' => 'New Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '202', 'building' => 'New Building', 'floor' => 2, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '203', 'building' => 'New Building', 'floor' => 2, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '204', 'building' => 'New Building', 'floor' => 2, 'capacity' => 35, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '301', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '302', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '303', 'building' => 'New Building', 'floor' => 3, 'capacity' => 30, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+$pdo = db();
 
-    ['room_number' => 'C10', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => 'C11', 'building' => 'New Building', 'floor' => 1, 'capacity' => 45, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => 'C9', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => 'C8', 'building' => 'New Building', 'floor' => 2, 'capacity' => 40, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => 'College Computer Lab 2'],
-    ['room_number' => '2hs1', 'building' => 'New Building', 'floor' => 3, 'capacity' => 50, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
-    ['room_number' => '2hs2', 'building' => 'New Building', 'floor' => 3, 'capacity' => 80, 'room_type' => 'Lecture Room', 'status' => 'available', 'note' => null],
+$stUser = $pdo->query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
+$userId = (int)($stUser ? $stUser->fetchColumn() : 0);
+if ($userId === 0) {
+    $pdo->prepare("INSERT INTO users (staff_id, email, username, password, role, account_status)
+                   VALUES ('ADMIN-001', 'admin@example.com', 'admin', 'seeded', 'admin', 'approved')")
+        ->execute();
+    $userId = (int)$pdo->lastInsertId();
+}
 
+$buildings = [
+    'Main Academic Building' => [
+        'code' => 'M',
+        'floors' => [
+            1 => 10,
+            2 => 10,
+            3 => 10,
+            4 => 10,
+        ],
+    ],
+    'Science & Technology Wing' => [
+        'code' => 'ST',
+        'floors' => [
+            1 => 10,
+            2 => 10,
+            3 => 10,
+        ],
+    ],
+    'Engineering Complex' => [
+        'code' => 'EC',
+        'floors' => [
+            1 => 10,
+            2 => 10,
+            3 => 10,
+        ],
+    ],
 ];
 
-$stmtCheck = db()->prepare('SELECT id FROM classrooms WHERE building = ? AND room_number = ?');
-$stmtInsert = db()->prepare(
+$roomTypes = ['Lecture Room', 'Computer Laboratory', 'Science Laboratory', 'Seminar Room', 'Multimedia Hall'];
+$capacities = [30, 35, 40, 45, 50, 60];
+
+$classrooms = [];
+$totalTarget = 100;
+
+foreach ($buildings as $bName => $bData) {
+    foreach ($bData['floors'] as $floor => $roomCount) {
+        for ($i = 1; $i <= $roomCount; $i++) {
+            if (count($classrooms) >= $totalTarget) {
+                break 2;
+            }
+            $rNum = sprintf('%s%d%02d', $bData['code'], $floor, $i);
+            $type = $roomTypes[($i + $floor) % count($roomTypes)];
+            $cap  = $capacities[($i * 7 + $floor) % count($capacities)];
+            $note = ($type === 'Computer Laboratory') ? "Lab equipped with {$cap} PCs" : null;
+            $classrooms[] = [
+                'room_number' => $rNum,
+                'building'    => $bName,
+                'floor'       => $floor,
+                'capacity'    => $cap,
+                'room_type'   => $type,
+                'status'      => 'available',
+                'note'        => $note,
+            ];
+        }
+    }
+}
+
+$stmtCheck = $pdo->prepare('SELECT id FROM classrooms WHERE building = ? AND room_number = ?');
+$stmtInsert = $pdo->prepare(
     'INSERT INTO classrooms (room_number, building, floor, capacity, room_type, qr_token, status, note)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 );
-$stmtUpdate = db()->prepare(
+$stmtUpdate = $pdo->prepare(
     'UPDATE classrooms SET floor = ?, capacity = ?, room_type = ?, note = COALESCE(?, note)
      WHERE id = ?'
+);
+$stmtCheckSession = $pdo->prepare('SELECT COUNT(*) FROM classroom_sessions WHERE classroom_id = ?');
+$stmtInsertSession = $pdo->prepare(
+    'INSERT INTO classroom_sessions (classroom_id, user_id, start_time, end_time, status)
+     VALUES (?, ?, ?, ?, "completed")'
 );
 
 $inserted = 0;
 $updated = 0;
+$sessionsAdded = 0;
 
-foreach ($classrooms as $c) {
-    $stmtCheck->execute([$c['building'], $c['room_number']]);
-    $existing = $stmtCheck->fetch();
+$pdo->beginTransaction();
+try {
+    foreach ($classrooms as $c) {
+        $stmtCheck->execute([$c['building'], $c['room_number']]);
+        $existing = $stmtCheck->fetch();
 
-    if ($existing) {
-        $stmtUpdate->execute([$c['floor'], $c['capacity'], $c['room_type'], $c['note'], $existing['id']]);
-        $updated++;
-    } else {
-        $token = bin2hex(random_bytes(4));
-        $stmtInsert->execute([
-            $c['room_number'],
-            $c['building'],
-            $c['floor'],
-            $c['capacity'],
-            $c['room_type'],
-            $token,
-            $c['status'],
-            $c['note']
-        ]);
-        $inserted++;
+        if ($existing) {
+            $roomId = (int)$existing['id'];
+            $stmtUpdate->execute([$c['floor'], $c['capacity'], $c['room_type'], $c['note'], $roomId]);
+            $updated++;
+        } else {
+            $token = bin2hex(random_bytes(4));
+            $stmtInsert->execute([
+                $c['room_number'],
+                $c['building'],
+                $c['floor'],
+                $c['capacity'],
+                $c['room_type'],
+                $token,
+                $c['status'],
+                $c['note']
+            ]);
+            $roomId = (int)$pdo->lastInsertId();
+            $inserted++;
+        }
+
+        $stmtCheckSession->execute([$roomId]);
+        $hasSessions = (int)$stmtCheckSession->fetchColumn();
+        if ($hasSessions === 0) {
+            $numSessions = (($roomId % 4) + 2);
+            for ($s = 0; $s < $numSessions; $s++) {
+                $daysAgo = ($s * 2) + ($roomId % 5);
+                $hour = 8 + (($s * 2 + $roomId) % 8);
+                $duration = [60, 90, 120][($roomId + $s) % 3];
+                $startTime = date('Y-m-d H:i:s', strtotime("-{$daysAgo} days {$hour}:00:00"));
+                $endTime = date('Y-m-d H:i:s', strtotime("-{$daysAgo} days {$hour}:00:00 +{$duration} minutes"));
+                $stmtInsertSession->execute([$roomId, $userId, $startTime, $endTime]);
+                $sessionsAdded++;
+            }
+        }
     }
+    $pdo->commit();
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    throw $e;
 }
 
-$summary = "Seeding completed: {$inserted} inserted, {$updated} updated. Total seed classrooms: " . count($classrooms);
+$summary = "100 classrooms seeded successfully ({$inserted} inserted, {$updated} updated, {$sessionsAdded} sessions generated).";
 
 if (PHP_SAPI === 'cli') {
     echo $summary . PHP_EOL;
 } else {
     flash('success', $summary);
-    redirect('admin/classrooms.php');
+    redirect('../admin/classrooms.php');
 }

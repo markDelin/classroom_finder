@@ -144,7 +144,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
             data-modal-form="#slotForm"
             data-title="Add class schedule"
             data-confirm-text="Add"><?= icon('plus') ?> Add <span class="hide-mobile">schedule</span></button>
-    <button class="btn btn--ghost btn--sm" type="button" onclick="window.print()"><?= icon('printer') ?> Print <span class="hide-mobile">schedule</span></button>
+    <button class="btn btn--ghost btn--sm" type="button" onclick="cfPrintSchedule()"><?= icon('printer') ?> Print <span class="hide-mobile">schedule</span></button>
   </div>
   <p class="muted">Rooms are shown as OCCUPIED and cannot be taken during their scheduled class times. Lecturers can open a room instantly when a class is not meeting; those reports appear below.</p>
 </div>
@@ -302,14 +302,14 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   border: 1px solid var(--border) !important;
   border-radius: 0 !important;
   box-sizing: border-box !important;
-  font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
 }
 .tt-sheet,
 .tt-sheet * {
-  font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
 }
 
-@media (max-width: 820px) {
+@media screen and (max-width: 820px) {
   .tt-stage {
     margin-left: -.8rem;
     margin-right: -.8rem;
@@ -372,7 +372,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   font-size: .72rem !important;
   line-height: 1.25 !important;
   margin-top: .35rem !important;
-  border: 1px solid #94a3b8 !important;
+  border: 1px solid #cbd5e1 !important;
 }
 .tt-sheet .excel-table th {
   background: #f1f5f9 !important;
@@ -399,15 +399,15 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   font-weight: 700 !important;
   background: #e2e8f0 !important;
   color: #0f172a !important;
-  border-top: 1.5px solid #64748b !important;
-  border-bottom: 1.5px solid #64748b !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 8mm 10mm;
 }
 
 @media print {
-  @page {
-    size: A4 portrait;
-    margin: 5mm 8mm;
-  }
   body, body.has-sidebar, .main, .main--with-nav {
     background: #ffffff !important;
     padding: 0 !important;
@@ -421,6 +421,9 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-stage {
     padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     background: none !important;
     overflow: visible !important;
     display: block !important;
@@ -428,7 +431,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-sheet,
   .tt-sheet * {
-    font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
   }
   .tt-sheet {
     width: 100% !important;
@@ -448,6 +451,9 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-sheet:last-child {
     page-break-after: auto !important;
+  }
+  .tt-head {
+    padding-top: 0 !important;
   }
   .tt-head__logo {
     height: 2.2rem !important;
@@ -469,20 +475,22 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     color: var(--primary, #0F3B6E) !important;
     font-size: 1.05rem !important;
     padding: .9rem 0 .65rem !important;
+    margin: 0 0 .2rem !important;
   }
-  .tt-sheet .excel-table,
+  .tt-sheet .excel-table {
+    border: 1px solid #cbd5e1 !important;
+  }
   .tt-sheet .excel-table th,
   .tt-sheet .excel-table td {
-    border: 1pt solid #000000 !important;
+    border: 1px solid #cbd5e1 !important;
   }
   .tt-sheet .excel-table th {
     background: #f1f5f9 !important;
-    color: #000000 !important;
+    color: #0f172a !important;
   }
   .tt-sheet .excel-table .row-total td {
-    background: #e5e7eb !important;
-    border-top: 1.5pt solid #000000 !important;
-    border-bottom: 1.5pt solid #000000 !important;
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
   }
 }
 </style>
@@ -600,5 +608,16 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <label>Course / Section <input name="section" maxlength="80" placeholder="e.g. BSCS 3-A"></label>
   <label>Instructor <input name="instructor" maxlength="120" placeholder="Name on the program"></label>
 </form>
+
+<script>
+function cfPrintSchedule() {
+  var orig = document.title;
+  document.title = 'Classroom-Schedules-<?= date('Ymd') ?>';
+  window.addEventListener('afterprint', function () {
+    document.title = orig;
+  }, { once: true });
+  window.print();
+}
+</script>
 
 <?php render_footer(['assets/js/admin-modals.js']); ?>

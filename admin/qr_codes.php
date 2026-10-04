@@ -269,7 +269,6 @@ function cfPrintAllQrs() {
     return true;
   });
   window.print();
-  setTimeout(cfRestorePrint, 1000);
 }
 
 function cfPrintSelected() {
@@ -297,7 +296,6 @@ function cfPrintSelected() {
     return !!selectedCards[p.dataset.roomId];
   });
   window.print();
-  setTimeout(cfRestorePrint, 1000);
 }
 
 function cfPrintSingleQr(roomId) {
@@ -309,7 +307,6 @@ function cfPrintSingleQr(roomId) {
     return String(p.dataset.roomId) === String(roomId);
   });
   window.print();
-  setTimeout(cfRestorePrint, 1000);
 }
 
 window.addEventListener('beforeprint', function () {
