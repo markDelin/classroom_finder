@@ -306,31 +306,40 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   gap: 1rem !important;
   margin-bottom: .35rem !important;
 }
+.tt-head__brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: .6rem !important;
+}
 .tt-head__logo {
-  max-height: 1.6rem !important;
+  height: 2.2rem !important;
+  max-height: 2.2rem !important;
   width: auto !important;
   flex-shrink: 0 !important;
+  object-fit: contain !important;
 }
 .tt-head__school {
-  font-size: .88rem !important;
+  font-size: .92rem !important;
   line-height: 1.15 !important;
   font-weight: 700 !important;
+  text-transform: uppercase !important;
 }
 .tt-head__line {
-  font-size: .68rem !important;
+  font-size: .7rem !important;
   line-height: 1.25 !important;
 }
 .tt-head__meta {
-  font-size: .66rem !important;
+  font-size: .68rem !important;
   line-height: 1.25 !important;
+  text-align: right !important;
 }
 .tt-title {
   color: var(--primary, #0F3B6E) !important;
-  font-size: 1.1rem !important;
+  font-size: 1.05rem !important;
   font-weight: 700 !important;
   letter-spacing: .02em !important;
   text-transform: uppercase !important;
-  padding: 1.5rem 0 1.1rem !important;
+  padding: .9rem 0 .65rem !important;
   margin: 0 !important;
 }
 .tt-sheet .table-wrap {
@@ -420,6 +429,27 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-sheet:last-child {
     page-break-after: auto !important;
+  }
+  .tt-head__logo {
+    height: 2.2rem !important;
+    max-height: 2.2rem !important;
+  }
+  .tt-head__school {
+    font-size: .92rem !important;
+    line-height: 1.15 !important;
+  }
+  .tt-head__line {
+    font-size: .7rem !important;
+    line-height: 1.25 !important;
+  }
+  .tt-head__meta {
+    font-size: .68rem !important;
+    line-height: 1.25 !important;
+  }
+  .tt-title {
+    color: var(--primary, #0F3B6E) !important;
+    font-size: 1.05rem !important;
+    padding: .9rem 0 .65rem !important;
   }
   .tt-sheet .excel-table,
   .tt-sheet .excel-table th,

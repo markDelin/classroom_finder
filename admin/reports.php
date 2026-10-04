@@ -149,29 +149,29 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 .rp-brand {
   display: flex;
   align-items: center;
-  gap: .55rem;
+  gap: .6rem;
 }
 .rp-logo {
-  height: 1.6rem;
+  height: 2.2rem;
   width: auto;
   object-fit: contain;
 }
 .rp-school-name {
   font-weight: 700;
-  font-size: .88rem;
+  font-size: .92rem;
   line-height: 1.15;
-  letter-spacing: .02em;
+  letter-spacing: .01em;
   text-transform: uppercase;
   color: #0f172a;
 }
 .rp-subline {
-  font-size: .68rem;
+  font-size: .7rem;
   color: #64748b;
   line-height: 1.25;
 }
 .rp-meta {
   text-align: right;
-  font-size: .66rem;
+  font-size: .68rem;
   color: #64748b;
   line-height: 1.25;
   white-space: nowrap;
@@ -179,18 +179,18 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 
 /* Table Title: Blue color, generous header padding */
 .rp-title-block {
-  padding: 1.5rem 0 1.1rem;
+  padding: .9rem 0 .65rem;
 }
 .rp-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: .02em;
   text-transform: uppercase;
-  margin: 0 0 .25rem;
+  margin: 0 0 .2rem;
   color: var(--primary, #0F3B6E);
 }
 .rp-period {
-  font-size: .7rem;
+  font-size: .72rem;
   color: #64748b;
   margin: 0;
 }
