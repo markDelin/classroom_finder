@@ -116,15 +116,25 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   padding: 1.2rem 0 2rem;
-  display: flex;
-  justify-content: center;
+  display: block;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.report-stage::-webkit-scrollbar {
+  height: 6px;
+}
+.report-stage::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 .report-paper {
   width: 210mm;
   min-width: 210mm;
   max-width: 210mm;
   min-height: 297mm;
+  margin: 0 auto;
   background: #ffffff;
   color: #0f172a;
   padding: 8mm 10mm;
@@ -136,6 +146,32 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 .report-paper,
 .report-paper * {
   font-family: Arial, Calibri, 'Segoe UI', sans-serif;
+}
+
+@media (max-width: 820px) {
+  .report-stage {
+    margin-left: -.8rem;
+    margin-right: -.8rem;
+    width: calc(100% + 1.6rem);
+    padding: .5rem .8rem 1.5rem;
+  }
+}
+@media (max-width: 640px) {
+  .report-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: .75rem;
+  }
+  .report-controls form.filter-row {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .report-controls .date-input-group {
+    flex: 1 1 calc(50% - .25rem);
+    min-width: 120px;
+  }
 }
 
 /* Header (no extra separator lines) */

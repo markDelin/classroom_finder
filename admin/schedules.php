@@ -273,17 +273,28 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   padding: 1.2rem 0 2rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 1.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.tt-stage::-webkit-scrollbar {
+  height: 6px;
+}
+.tt-stage::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 .tt-sheet {
   width: 210mm !important;
   min-width: 210mm !important;
   max-width: 210mm !important;
   min-height: 297mm !important;
+  margin: 0 auto !important;
   background: #ffffff !important;
   color: #0f172a !important;
   padding: 8mm 10mm !important;
@@ -292,11 +303,19 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   border-radius: 0 !important;
   box-sizing: border-box !important;
   font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
-  margin: 0 !important;
 }
 .tt-sheet,
 .tt-sheet * {
   font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+}
+
+@media (max-width: 820px) {
+  .tt-stage {
+    margin-left: -.8rem;
+    margin-right: -.8rem;
+    width: calc(100% + 1.6rem);
+    padding: .5rem .8rem 1.5rem;
+  }
 }
 .tt-head {
   display: flex !important;
