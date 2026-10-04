@@ -79,9 +79,12 @@ if (count($roomUsage) > 5) {
 }
 $donutColors = ['#0F3B6E', '#2563eb', '#0d9488', '#d97706', '#8b5cf6', '#94a3b8'];
 
-$schoolLogo = is_file(__DIR__ . '/../assets/img/logo.png')
-    ? '../assets/img/logo.png'
-    : (is_file(__DIR__ . '/../assets/uploads/logo-3146dc738a66.png') ? '../assets/uploads/logo-3146dc738a66.png' : '');
+$schoolLogo = '';
+if (is_file(__DIR__ . '/../assets/img/logo.png')) {
+    $schoolLogo = '../assets/img/logo.png';
+} elseif (is_file(__DIR__ . '/../assets/uploads/logo-3146dc738a66.png')) {
+    $schoolLogo = '../assets/uploads/logo-3146dc738a66.png';
+}
 $schoolName    = school_name();
 $schoolAddr    = school_address();
 $schoolContact = school_contact();
@@ -108,7 +111,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   flex-wrap: wrap;
 }
 
-/* Fixed Paper Preview Canvas: Exactly A4 dimensions, never reflows */
+/* Minimal Paper Preview: A4 standard, no reflow on screen resize */
 .report-stage {
   width: 100%;
   overflow-x: auto;
@@ -124,195 +127,192 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   min-height: 297mm;
   background: #ffffff;
   color: #0f172a;
-  padding: 16mm 14mm;
+  padding: 8mm 10mm;
   box-shadow: 0 4px 16px rgb(15 23 42 / .08), 0 1px 3px rgb(15 23 42 / .04);
   border: 1px solid var(--border);
   box-sizing: border-box;
-  font-family: var(--font-body);
+  font-family: Arial, Calibri, 'Segoe UI', sans-serif;
+}
+.report-paper,
+.report-paper * {
+  font-family: Arial, Calibri, 'Segoe UI', sans-serif;
 }
 
-/* Header Letterhead */
+/* Header (no extra separator lines) */
 .rp-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #0f172a;
   gap: 1rem;
+  margin-bottom: .35rem;
 }
 .rp-brand {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: .55rem;
 }
 .rp-logo {
-  height: 2.2rem;
+  height: 1.6rem;
   width: auto;
   object-fit: contain;
 }
 .rp-school-name {
   font-weight: 700;
-  font-size: 1.05rem;
-  line-height: 1.2;
+  font-size: .88rem;
+  line-height: 1.15;
   letter-spacing: .02em;
   text-transform: uppercase;
   color: #0f172a;
 }
 .rp-subline {
-  font-size: .75rem;
+  font-size: .68rem;
   color: #64748b;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 .rp-meta {
   text-align: right;
-  font-size: .72rem;
+  font-size: .66rem;
   color: #64748b;
-  line-height: 1.4;
+  line-height: 1.25;
   white-space: nowrap;
 }
 
-/* Report Title */
+/* Table Title: Blue color, generous header padding */
 .rp-title-block {
-  text-align: center;
-  margin: 1.2rem 0 .9rem;
+  padding: 1.5rem 0 1.1rem;
 }
 .rp-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .02em;
   text-transform: uppercase;
-  margin: 0;
-  color: #0f172a;
+  margin: 0 0 .25rem;
+  color: var(--primary, #0F3B6E);
 }
 .rp-period {
-  font-size: .78rem;
+  font-size: .7rem;
   color: #64748b;
-  margin-top: .2rem;
+  margin: 0;
 }
 
-/* KPI Strip */
-.rp-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: .8rem;
-  padding: .75rem .9rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  margin-bottom: 1.2rem;
+/* Minimal inline stats (no bulky borders/boxes) */
+.rp-stats-line {
+  display: flex;
+  gap: 1.2rem;
+  font-size: .72rem;
+  margin: .3rem 0 .45rem;
+  flex-wrap: wrap;
 }
-.rp-kpi {
-  text-align: center;
+.rp-stats-item {
+  color: #64748b;
 }
-.rp-kpi__val {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.1;
+.rp-stats-item strong {
   color: #0f172a;
-}
-.rp-kpi__label {
-  font-size: .68rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  margin-top: .15rem;
+  font-weight: 600;
 }
 
-/* Visual Section: Donut + Legend (Fixed, No reflow) */
+/* Compact Visual Section (no border separator) */
 .rp-viz {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2.2rem;
-  padding: .8rem 1rem 1.2rem;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 1.2rem;
+  gap: 1.2rem;
+  margin-bottom: .55rem;
 }
 .rp-viz__chart {
-  width: 140px;
-  height: 140px;
+  width: 85px;
+  height: 85px;
   flex-shrink: 0;
 }
 .rp-viz__legend {
-  display: flex;
-  flex-direction: column;
-  gap: .45rem;
-  width: 280px;
-  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .25rem 1rem;
+  flex: 1;
 }
 .rp-legend-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: .8rem;
-  line-height: 1.2;
+  font-size: .7rem;
+  gap: .4rem;
 }
 .rp-legend-item__left {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rp-legend-item__swatch {
-  width: .65rem;
-  height: .65rem;
+  width: .48rem;
+  height: .48rem;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .rp-legend-item__val {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: .74rem;
+  font-size: .66rem;
   color: #64748b;
+  white-space: nowrap;
 }
 
-/* Table styling */
-.rp-table {
+/* Real Excel Spreadsheet Table */
+.excel-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: .78rem;
-  line-height: 1.3;
-}
-.rp-table th {
-  text-align: left;
-  font-size: .7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #475569;
-  padding: .45rem .5rem;
-  border-bottom: 1.5px solid #0f172a;
-}
-.rp-table td {
-  padding: .45rem .5rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-.rp-table tr:last-child td {
-  border-bottom: 1.5px solid #0f172a;
-}
-.rp-table__rank {
-  font-family: var(--font-mono);
   font-size: .72rem;
-  color: #64748b;
-  width: 2.5rem;
+  line-height: 1.25;
+  margin-top: .35rem;
+  border: 1px solid #94a3b8;
 }
-.rp-table__num {
+.excel-table th {
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  text-align: left;
+  padding: .32rem .45rem;
+  border: 1px solid #cbd5e1;
+  white-space: nowrap;
+}
+.excel-table td {
+  padding: .28rem .45rem;
+  border: 1px solid #cbd5e1;
+  vertical-align: middle;
+  background: #ffffff;
+}
+.excel-table tbody tr:nth-child(even) td {
+  background: #f8fafc;
+}
+.excel-table tbody tr:hover td {
+  background: #f1f5f9;
+}
+.excel-table .cell-rank {
+  text-align: center;
+  font-size: .66rem;
+  color: #64748b;
+  width: 2rem;
+}
+.excel-table .cell-num {
   text-align: right;
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
-.rp-table tr.rp-total-row td {
+.excel-table .row-total td {
   font-weight: 700;
-  border-top: 1.5px solid #0f172a;
-  border-bottom: 2px solid #0f172a;
-  background: #f8fafc;
+  background: #e2e8f0 !important;
+  color: #0f172a;
+  border-top: 1.5px solid #64748b;
+  border-bottom: 1.5px solid #64748b;
 }
 
 /* Print Styles */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 10mm;
+    margin: 5mm 8mm;
   }
   body, body.has-sidebar, .main, .main--with-nav {
     background: #ffffff !important;
@@ -330,6 +330,10 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     overflow: visible !important;
     display: block !important;
   }
+  .report-paper,
+  .report-paper * {
+    font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+  }
   .report-paper {
     width: 100% !important;
     min-width: 0 !important;
@@ -339,15 +343,19 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     box-shadow: none !important;
     border: none !important;
   }
-  .rp-kpis {
-    background: #ffffff !important;
+  .excel-table,
+  .excel-table th,
+  .excel-table td {
     border: 1pt solid #000000 !important;
   }
-  .rp-head {
-    border-bottom: 1.5pt solid #000000 !important;
+  .excel-table th {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
   }
-  .rp-table th, .rp-table tr:last-child td, .rp-table tr.rp-total-row td {
-    border-color: #000000 !important;
+  .excel-table .row-total td {
+    background: #e5e7eb !important;
+    border-top: 1.5pt solid #000000 !important;
+    border-bottom: 1.5pt solid #000000 !important;
   }
 }
 </style>
@@ -411,7 +419,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     </header>
 
     <div class="rp-title-block">
-      <h2 class="rp-title">Classroom Utilization & Frequency Report</h2>
+      <h2 class="rp-title">Classroom Utilization &amp; Frequency Report</h2>
       <div class="rp-period">
         <?php if ($from !== '' || $to !== ''): ?>
           Coverage: <?= e($from ?: 'Start') ?> to <?= e($to ?: 'Present') ?>
@@ -421,29 +429,17 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
       </div>
     </div>
 
-    <div class="rp-kpis">
-      <div class="rp-kpi">
-        <div class="rp-kpi__val"><?= number_format($totalSessions) ?></div>
-        <div class="rp-kpi__label">Total Sessions</div>
-      </div>
-      <div class="rp-kpi">
-        <div class="rp-kpi__val"><?= rtrim(rtrim(number_format($totalMinutes / 60, 1), '0'), '.') ?> hrs</div>
-        <div class="rp-kpi__label">Room Time</div>
-      </div>
-      <div class="rp-kpi">
-        <div class="rp-kpi__val"><?= $totalRoomsUsed ?></div>
-        <div class="rp-kpi__label">Rooms Used</div>
-      </div>
-      <div class="rp-kpi">
-        <div class="rp-kpi__val"><?= $roomUsage ? e($roomUsage[0]['room_number']) : '—' ?></div>
-        <div class="rp-kpi__label">Peak Room</div>
-      </div>
+    <div class="rp-stats-line">
+      <div class="rp-stats-item">Total Sessions: <strong><?= number_format($totalSessions) ?></strong></div>
+      <div class="rp-stats-item">Total Room Time: <strong><?= rtrim(rtrim(number_format($totalMinutes / 60, 1), '0'), '.') ?> hrs</strong></div>
+      <div class="rp-stats-item">Rooms Used: <strong><?= $totalRoomsUsed ?></strong></div>
+      <div class="rp-stats-item">Peak Room: <strong><?= $roomUsage ? e($roomUsage[0]['room_number']) : '—' ?></strong></div>
     </div>
 
     <?php if (!$roomUsage || $totalSessions === 0): ?>
-      <p class="muted" style="text-align: center; margin: 3rem 0;">No classroom session activity recorded for this period.</p>
+      <p class="muted" style="text-align: center; margin: 2rem 0;">No classroom session activity recorded for this period.</p>
     <?php else:
-      $radius = 42;
+      $radius = 40;
       $circumference = 2 * M_PI * $radius;
       $runningOffset = 0.0;
       $hasMultiple = count($chartItems) > 1;
@@ -478,8 +474,8 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
                 <title><?= e($item['room_number']) ?>: <?= $cnt ?> sessions (<?= $pct ?>%)</title>
               </circle>
             <?php endforeach; ?>
-            <text x="60" y="56" text-anchor="middle" font-family="var(--font-display)" font-size="18" font-weight="700" fill="#0f172a"><?= $totalSessions ?></text>
-            <text x="60" y="69" text-anchor="middle" font-family="var(--font-mono)" font-size="7.5" font-weight="600" fill="#64748b" letter-spacing="0.5">SESSIONS</text>
+            <text x="60" y="56" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="18" font-weight="700" fill="#0f172a"><?= $totalSessions ?></text>
+            <text x="60" y="69" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="7.5" font-weight="600" fill="#64748b" letter-spacing="0.5">SESSIONS</text>
           </svg>
         </div>
         <div class="rp-viz__legend">
@@ -491,7 +487,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
             <div class="rp-legend-item">
               <div class="rp-legend-item__left">
                 <span class="rp-legend-item__swatch" style="background-color: <?= $color ?>;"></span>
-                <span><strong><?= e($item['room_number']) ?></strong> <span style="color:#64748b; font-size:.74rem;">(<?= e($item['building']) ?>)</span></span>
+                <span><strong><?= e($item['room_number']) ?></strong> <span style="color:#64748b; font-size:.7rem;">(<?= e($item['building']) ?>)</span></span>
               </div>
               <span class="rp-legend-item__val"><?= $cnt ?> (<?= $pct ?>%)</span>
             </div>
@@ -499,17 +495,17 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
         </div>
       </div>
 
-      <table class="rp-table">
+      <table class="excel-table">
         <thead>
           <tr>
-            <th class="rp-table__rank">#</th>
+            <th class="cell-rank">#</th>
             <th>Classroom</th>
             <th>Building</th>
             <th>Room Type</th>
-            <th class="rp-table__num">Capacity</th>
-            <th class="rp-table__num">Sessions</th>
-            <th class="rp-table__num">Total Time</th>
-            <th class="rp-table__num">Share</th>
+            <th class="cell-num">Capacity</th>
+            <th class="cell-num">Sessions</th>
+            <th class="cell-num">Total Time</th>
+            <th class="cell-num">Share</th>
           </tr>
         </thead>
         <tbody>
@@ -519,21 +515,21 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
             $pct = $totalSessions > 0 ? round(($cnt / $totalSessions) * 100, 1) : 0;
           ?>
           <tr>
-            <td class="rp-table__rank"><?= str_pad((string)($idx + 1), 2, '0', STR_PAD_LEFT) ?></td>
+            <td class="cell-rank"><?= str_pad((string)($idx + 1), 2, '0', STR_PAD_LEFT) ?></td>
             <td><strong><?= e($r['room_number']) ?></strong></td>
             <td><?= e($r['building']) ?></td>
             <td><?= e($r['room_type']) ?></td>
-            <td class="rp-table__num"><?= (int)$r['capacity'] ?></td>
-            <td class="rp-table__num"><strong><?= $cnt ?></strong></td>
-            <td class="rp-table__num"><?= human_duration($mins) ?></td>
-            <td class="rp-table__num"><?= $pct ?>%</td>
+            <td class="cell-num"><?= (int)$r['capacity'] ?></td>
+            <td class="cell-num"><strong><?= $cnt ?></strong></td>
+            <td class="cell-num"><?= human_duration($mins) ?></td>
+            <td class="cell-num"><?= $pct ?>%</td>
           </tr>
           <?php endforeach; ?>
-          <tr class="rp-total-row">
-            <td colspan="5" style="text-align: right;">Total Utilization:</td>
-            <td class="rp-table__num"><?= number_format($totalSessions) ?></td>
-            <td class="rp-table__num"><?= human_duration($totalMinutes) ?></td>
-            <td class="rp-table__num">100.0%</td>
+          <tr class="row-total">
+            <td colspan="5" style="text-align: right;">Total:</td>
+            <td class="cell-num"><?= number_format($totalSessions) ?></td>
+            <td class="cell-num"><?= human_duration($totalMinutes) ?></td>
+            <td class="cell-num">100%</td>
           </tr>
         </tbody>
       </table>

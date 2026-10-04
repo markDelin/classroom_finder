@@ -286,13 +286,17 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   min-height: 297mm !important;
   background: #ffffff !important;
   color: #0f172a !important;
-  padding: 16mm 14mm !important;
+  padding: 8mm 10mm !important;
   box-shadow: 0 4px 16px rgb(15 23 42 / .08), 0 1px 3px rgb(15 23 42 / .04) !important;
   border: 1px solid var(--border) !important;
   border-radius: 0 !important;
   box-sizing: border-box !important;
-  font-family: var(--font-body) !important;
+  font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
   margin: 0 !important;
+}
+.tt-sheet,
+.tt-sheet * {
+  font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
 }
 .tt-head {
   display: flex !important;
@@ -300,32 +304,86 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   align-items: flex-start !important;
   flex-wrap: nowrap !important;
   gap: 1rem !important;
-  padding-bottom: 8px !important;
-  border-bottom: 1.5px solid #0f172a !important;
+  margin-bottom: .35rem !important;
+}
+.tt-head__logo {
+  max-height: 1.6rem !important;
+  width: auto !important;
+  flex-shrink: 0 !important;
+}
+.tt-head__school {
+  font-size: .88rem !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+}
+.tt-head__line {
+  font-size: .68rem !important;
+  line-height: 1.25 !important;
+}
+.tt-head__meta {
+  font-size: .66rem !important;
+  line-height: 1.25 !important;
+}
+.tt-title {
+  color: var(--primary, #0F3B6E) !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em !important;
+  text-transform: uppercase !important;
+  padding: 1.5rem 0 1.1rem !important;
+  margin: 0 !important;
 }
 .tt-sheet .table-wrap {
   overflow: visible !important;
   width: 100% !important;
   max-width: 100% !important;
 }
-.tt-sheet .tt-table {
+.tt-sheet .excel-table {
   width: 100% !important;
-  min-width: 0 !important;
-  table-layout: fixed !important;
   border-collapse: collapse !important;
+  font-size: .72rem !important;
+  line-height: 1.25 !important;
+  margin-top: .35rem !important;
+  border: 1px solid #94a3b8 !important;
+}
+.tt-sheet .excel-table th {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  font-size: .66rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+  text-align: left !important;
+  padding: .32rem .45rem !important;
+  border: 1px solid #cbd5e1 !important;
+  white-space: nowrap !important;
+}
+.tt-sheet .excel-table td {
+  padding: .28rem .45rem !important;
+  border: 1px solid #cbd5e1 !important;
+  vertical-align: middle !important;
+  background: #ffffff !important;
+}
+.tt-sheet .excel-table tbody tr:nth-child(even) td {
+  background: #f8fafc !important;
+}
+.tt-sheet .excel-table .row-total td {
+  font-weight: 700 !important;
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-top: 1.5px solid #64748b !important;
+  border-bottom: 1.5px solid #64748b !important;
 }
 
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 10mm;
+    margin: 5mm 8mm;
   }
   body, body.has-sidebar, .main, .main--with-nav {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
     background: #ffffff !important;
-    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
@@ -339,6 +397,10 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     overflow: visible !important;
     display: block !important;
     gap: 0 !important;
+  }
+  .tt-sheet,
+  .tt-sheet * {
+    font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
   }
   .tt-sheet {
     width: 100% !important;
@@ -358,6 +420,20 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-sheet:last-child {
     page-break-after: auto !important;
+  }
+  .tt-sheet .excel-table,
+  .tt-sheet .excel-table th,
+  .tt-sheet .excel-table td {
+    border: 1pt solid #000000 !important;
+  }
+  .tt-sheet .excel-table th {
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+  }
+  .tt-sheet .excel-table .row-total td {
+    background: #e5e7eb !important;
+    border-top: 1.5pt solid #000000 !important;
+    border-bottom: 1.5pt solid #000000 !important;
   }
 }
 </style>
@@ -411,7 +487,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     <?php else: ?>
     <section>
       <div class="table-wrap">
-        <table class="tt-table">
+        <table class="excel-table">
           <thead>
             <tr>
               <th style="width: 12%; text-align: center;">Days</th>
@@ -427,7 +503,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
               <?php foreach ($daySlots as $idx => $s): ?>
               <tr>
                 <?php if ($idx === 0): ?>
-                  <td rowspan="<?= $rowCount ?>" class="cell-day"><?= DAY_NAMES[(int)$dayNum] ?></td>
+                  <td rowspan="<?= $rowCount ?>" class="cell-day" style="text-align: center; font-weight: 700;"><?= DAY_NAMES[(int)$dayNum] ?></td>
                 <?php endif; ?>
                 <td class="nowrap"><?= e(fmt_range($s['start_time'], $s['end_time'])) ?></td>
                 <td><?= e($s['subject']) ?></td>
@@ -436,7 +512,7 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
               </tr>
               <?php endforeach; ?>
             <?php endforeach; ?>
-            <tr class="tt-table__total">
+            <tr class="row-total">
               <td colspan="2" style="text-align: right;">Total weekly class hours:</td>
               <td colspan="3"><?= $weeklyHours ?> hrs</td>
             </tr>
