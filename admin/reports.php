@@ -215,7 +215,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   gap: .6rem;
 }
 .rp-logo {
-  height: 2.2rem;
+  height: 3rem;
   width: auto;
   object-fit: contain;
 }
@@ -360,7 +360,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   width: 2rem;
 }
 .excel-table .cell-num {
-  text-align: right;
+  text-align: left;
   font-variant-numeric: tabular-nums;
 }
 .excel-table .row-total td {

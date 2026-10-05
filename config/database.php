@@ -57,7 +57,9 @@ function db(): PDO
                     ]);
                     break;
                 } catch (Throwable $initErr) {
-                    // Fall through to error handler
+                    if (function_exists('app_log')) {
+                        app_log('WARNING', 'Auto-schema init failed: ' . $initErr->getMessage());
+                    }
                 }
             }
         }
@@ -65,6 +67,9 @@ function db(): PDO
 
     if (!$pdo) {
         $msg = 'Could not connect to MySQL: ' . ($lastException ? $lastException->getMessage() : 'Unknown error');
+        if (function_exists('app_log')) {
+            app_log('CRITICAL', $msg);
+        }
         if (defined('CF_WANTS_JSON')) {
             http_response_code(500);
             header('Content-Type: application/json');
@@ -85,7 +90,9 @@ function db(): PDO
     try {
         $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
     } catch (Throwable $tzErr) {
-        // Ignore timezone configuration errors on older MySQL / MariaDB instances
+        if (function_exists('app_log')) {
+            app_log('DEBUG', 'Timezone set notice: ' . $tzErr->getMessage());
+        }
     }
 
     static $checked = false;
@@ -122,7 +129,9 @@ function db(): PDO
                 ) ENGINE = InnoDB;
             ");
         } catch (Throwable $schemaErr) {
-            // Ignore if tables exist or permissions prevent runtime creation
+            if (function_exists('app_log')) {
+                app_log('DEBUG', 'Runtime table check notice: ' . $schemaErr->getMessage());
+            }
         }
     }
 

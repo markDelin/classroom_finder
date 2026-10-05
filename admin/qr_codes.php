@@ -41,7 +41,9 @@ try {
             }
         }
     }
-} catch (Throwable $e) {}
+} catch (Throwable $e) {
+    app_log('WARNING', 'Legacy QR token migration check failed: ' . $e->getMessage());
+}
 
 $allRooms  = fetch_classrooms($filters);
 $buildings = db()->query('SELECT DISTINCT building FROM classrooms WHERE building IS NOT NULL AND building != "" ORDER BY building')->fetchAll(PDO::FETCH_COLUMN);
@@ -160,6 +162,7 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
       </tbody>
     </table>
   </div>
+  <?= page_nav($total, $pP['page'], $perPage, 'page', 'QR codes') ?>
 </div>
 
 <div class="qr-grid qr-print-sheet" aria-hidden="true">
@@ -174,10 +177,6 @@ render_header('QR Codes', ['prefix' => '../', 'nav' => 'admin', 'active' => 'qr'
     <p class="qr-token muted small" title="Token for manual entry">Classroom ID: CF-<?= e($r['room_number']) ?><br>Token: <code><?= e($r['qr_token']) ?></code></p>
   </div>
   <?php endforeach; ?>
-</div>
-
-<div class="no-print">
-  <?= page_nav($total, $pP['page'], $perPage, 'page', 'QR codes') ?>
 </div>
 
 <script>

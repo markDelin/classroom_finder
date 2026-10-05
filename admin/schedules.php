@@ -331,8 +331,8 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   gap: .6rem !important;
 }
 .tt-head__logo {
-  height: 2.2rem !important;
-  max-height: 2.2rem !important;
+  height: 3rem !important;
+  max-height: 3rem !important;
   width: auto !important;
   flex-shrink: 0 !important;
   object-fit: contain !important;
@@ -456,8 +456,8 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     padding-top: 0 !important;
   }
   .tt-head__logo {
-    height: 2.2rem !important;
-    max-height: 2.2rem !important;
+    height: 3rem !important;
+    max-height: 3rem !important;
   }
   .tt-head__school {
     font-size: .92rem !important;

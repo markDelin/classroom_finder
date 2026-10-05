@@ -82,62 +82,95 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
 <div class="card">
   <div class="card__head">
     <h3>System parameters</h3>
-    <p class="muted small">Configure durations and live feed intervals.</p>
+    <p class="muted small">Configure institutional details, room session bounds, and scanning schedules.</p>
   </div>
   <form method="post">
     <?= csrf_field() ?>
-    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.2rem;">
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">App name</span>
-        <input name="app_name" maxlength="80" value="<?= e(app_name()) ?>" style="width:100%">
-        <small class="muted" style="display:block;margin-top:.3rem">This system’s own name — top bar, browser title.</small>
-      </label>
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">School name</span>
-        <input name="school_name" maxlength="80" value="<?= e(school_name()) ?>" style="width:100%">
-        <small class="muted" style="display:block;margin-top:.3rem">Your institution — landing page hero and printed sheets.</small>
-      </label>
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">School address</span>
-        <input name="school_address" maxlength="120" value="<?= e(school_address()) ?>" style="width:100%" placeholder="e.g. Odiong, Roxas, Oriental Mindoro">
-        <small class="muted" style="display:block;margin-top:.3rem">Printed under the school name on sheets.</small>
-      </label>
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">School contact</span>
-        <input name="school_contact" maxlength="120" value="<?= e(school_contact()) ?>" style="width:100%" placeholder="e.g. Tel No. (043) 289-7056 / email@school.com">
-        <small class="muted" style="display:block;margin-top:.3rem">Tel / email line printed under the address.</small>
-      </label>
-    </div>
 
-    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
-      <?php
-      $settingDefaults = [
-          'min_duration_minutes'  => 15,
-          'max_duration_minutes'  => 480,
-          'duration_step_minutes' => 30,
-      ];
-      foreach ($intKeys as $key => [$min, $max, $label]): ?>
+    <div class="settings-group">
+      <div class="settings-group__head">
+        <h4 class="settings-group__title"><?= icon('school') ?> Institution &amp; App Identity</h4>
+        <p class="settings-group__desc">Branding, school name, and contact details shown on headers, reports, and hero banners.</p>
+      </div>
+      <div class="settings-grid--4">
         <label>
-          <span style="font-weight:600;display:block;margin-bottom:.35rem"><?= e($label) ?></span>
-          <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>" style="width:100%"
-                 value="<?= get_setting_int($key, $settingDefaults[$key] ?? 15) ?>">
-          <small class="muted" style="display:block;margin-top:.3rem">Allowed range: <?= $min ?> – <?= $max ?></small>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">App name</span>
+          <input name="app_name" maxlength="80" value="<?= e(app_name()) ?>" style="width:100%">
+          <small class="muted" style="display:block;margin-top:.3rem">This system’s own name — top bar, browser title.</small>
         </label>
-      <?php endforeach; ?>
-      <?php [$scanStart, $scanEnd] = get_scan_hours(); ?>
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning start time</span>
-        <input type="time" name="scan_day_start" value="<?= e($scanStart) ?>" style="width:100%" required>
-        <small class="muted" style="display:block;margin-top:.3rem">Start of daily room scanning (default: 07:00 AM)</small>
-      </label>
-      <label>
-        <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning end time</span>
-        <input type="time" name="scan_day_end" value="<?= e($scanEnd) ?>" style="width:100%" required>
-        <small class="muted" style="display:block;margin-top:.3rem">End of daily room scanning (default: 07:00 PM)</small>
-      </label>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">School name</span>
+          <input name="school_name" maxlength="80" value="<?= e(school_name()) ?>" style="width:100%">
+          <small class="muted" style="display:block;margin-top:.3rem">Your institution — landing page hero and printed sheets.</small>
+        </label>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">School address</span>
+          <input name="school_address" maxlength="120" value="<?= e(school_address()) ?>" style="width:100%" placeholder="e.g. Odiong, Roxas, Oriental Mindoro">
+          <small class="muted" style="display:block;margin-top:.3rem">Printed under the school name on sheets.</small>
+        </label>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">School contact</span>
+          <input name="school_contact" maxlength="120" value="<?= e(school_contact()) ?>" style="width:100%" placeholder="e.g. Tel No. (043) 289-7056 / email@school.com">
+          <small class="muted" style="display:block;margin-top:.3rem">Tel / email line printed under the address.</small>
+        </label>
+      </div>
     </div>
 
-    <div style="margin-top: 1.3rem; display: flex; justify-content: flex-end;">
+    <div class="settings-group">
+      <div class="settings-group__head">
+        <h4 class="settings-group__title"><?= icon('timer') ?> Room Occupancy &amp; Duration Rules</h4>
+        <p class="settings-group__desc">Allowed duration range and picker increments when lecturers scan to occupy classrooms.</p>
+      </div>
+      <div class="settings-grid--3">
+        <?php
+        $durationDefaults = [
+            'min_duration_minutes'  => 15,
+            'max_duration_minutes'  => 480,
+            'duration_step_minutes' => 30,
+        ];
+        $durationKeys = [
+            'min_duration_minutes'  => [5, 480, 'Minimum occupancy (minutes)'],
+            'max_duration_minutes'  => [15, 1440, 'Maximum occupancy (minutes)'],
+            'duration_step_minutes' => [5, 120, 'Duration picker step (minutes)'],
+        ];
+        foreach ($durationKeys as $key => [$min, $max, $label]): ?>
+          <label>
+            <span style="font-weight:600;display:block;margin-bottom:.35rem"><?= e($label) ?></span>
+            <input type="number" name="<?= $key ?>" min="<?= $min ?>" max="<?= $max ?>" style="width:100%"
+                   value="<?= get_setting_int($key, $durationDefaults[$key] ?? 15) ?>">
+            <small class="muted" style="display:block;margin-top:.3rem">Allowed range: <?= $min ?> – <?= $max ?></small>
+          </label>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group__head">
+        <h4 class="settings-group__title"><?= icon('clock') ?> Scanning Schedule &amp; Live Display</h4>
+        <p class="settings-group__desc">Daily active window for room scanning and public landing page auto-refresh rate.</p>
+      </div>
+      <div class="settings-grid--3">
+        <?php [$scanStart, $scanEnd] = get_scan_hours(); ?>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning start time</span>
+          <input type="time" name="scan_day_start" value="<?= e($scanStart) ?>" style="width:100%" required>
+          <small class="muted" style="display:block;margin-top:.3rem">Start of daily room scanning (default: 07:00 AM)</small>
+        </label>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">Scanning end time</span>
+          <input type="time" name="scan_day_end" value="<?= e($scanEnd) ?>" style="width:100%" required>
+          <small class="muted" style="display:block;margin-top:.3rem">End of daily room scanning (default: 07:00 PM)</small>
+        </label>
+        <label>
+          <span style="font-weight:600;display:block;margin-bottom:.35rem">Landing page refresh (seconds)</span>
+          <input type="number" name="landing_refresh_seconds" min="5" max="600" style="width:100%"
+                 value="<?= get_setting_int('landing_refresh_seconds', 20) ?>">
+          <small class="muted" style="display:block;margin-top:.3rem">Allowed range: 5 – 600 (live feed reload interval)</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-actions">
       <button class="btn btn--primary" type="submit"><?= icon('circle-check') ?> Save settings</button>
     </div>
   </form>

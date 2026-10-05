@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/debug.php';
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/icons.php';
 require_once __DIR__ . '/layout.php';
@@ -236,6 +237,7 @@ function get_setting(string $key, string $default = ''): string
                 $settings_cache[$row['skey']] = $row['svalue'];
             }
         } catch (Throwable $e) {
+            app_log('WARNING', 'Failed to read settings from DB: ' . $e->getMessage());
         }
     }
     return $settings_cache[$key] ?? $default;
@@ -268,6 +270,7 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
         db()->prepare('INSERT INTO activity_logs (user_id, classroom_id, action, details) VALUES (?, ?, ?, ?)')
             ->execute([$userId, $classroomId, $action, mb_substr($details, 0, 255)]);
     } catch (Throwable $e) {
+        app_log('ERROR', 'Failed to insert activity_log: ' . $e->getMessage(), ['action' => $action, 'user_id' => $userId]);
     }
 }
 

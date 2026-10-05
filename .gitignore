@@ -22,3 +22,6 @@ qr/lib/cache/
 # Uploaded files (per-deployment)
 assets/uploads/*
 !assets/uploads/.gitkeep
+
+# Application logs
+logs/*.log

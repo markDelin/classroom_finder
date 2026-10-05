@@ -187,7 +187,7 @@ render_header('Users', ['prefix' => '../', 'nav' => 'admin', 'active' => 'users'
         <td class="cell-main nowrap" data-label="User">
           <strong><?= e($u['full_name']) ?></strong><br><span class="muted small">@<?= e($u['username']) ?></span>
         </td>
-        <td class="cell-sub small" data-label="Department"><?= e($u['department'] ?: '—') ?></td>
+        <td class="cell-sub small" data-label="Department" title="<?= e($u['department'] ?: '') ?>"><?= e($u['department'] ?: '—') ?></td>
         <td class="cell-status nowrap" data-label="Role & Status">
           <span class="pill pill--<?= $u['role'] === 'admin' ? 'admin' : 'lecturer' ?>"><?= e($u['role']) ?></span>
           <?php $badge = ['pending' => 'warn', 'approved' => 'ok', 'suspended' => 'danger', 'rejected' => 'off']; ?>
