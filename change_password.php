@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// Change Password: self-service password update form for authenticated faculty members.
 require_once __DIR__ . '/auth/auth_check.php';
 
 $user = require_login();
 
+// Administrators change passwords via the admin users console
 if ($user['role'] === 'admin') {
     redirect('admin/users.php');
 }
@@ -18,6 +20,7 @@ if (!$userDb || $userDb['account_status'] !== 'approved') {
 
 $errors = [];
 
+// POST: Validate current password and update bcrypt hash
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $errors[] = 'Session expired — please try again.';

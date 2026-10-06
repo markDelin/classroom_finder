@@ -1,14 +1,17 @@
 <?php
 declare(strict_types=1);
 
+// Login: faculty and administrator authentication interface with setup check and role-based redirect.
 require_once __DIR__ . '/config/helpers.php';
 
+// First-time setup check: detect empty users table
 $needsSetup = false;
 try {
     $needsSetup = (int)db()->query('SELECT COUNT(*) AS n FROM users')->fetch()['n'] === 0;
 } catch (Throwable $e) {
 }
 
+// Redirect already logged-in users to their respective dashboards
 if ($u = current_user()) {
     require_once __DIR__ . '/auth/auth_check.php';
     redirect($u['role'] === 'admin' ? 'admin/dashboard.php' : 'lecturer/scanner.php');

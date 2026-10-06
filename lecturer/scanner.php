@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Lecturer Scanner: mobile camera QR code scanner and fallback manual token check-in interface.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $user = require_approved_lecturer();

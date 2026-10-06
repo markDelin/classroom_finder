@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Lecturer Occupy: processes classroom check-in requests via pessimistic lock transaction.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $fail = function (string $msg) {
@@ -10,10 +11,12 @@ $fail = function (string $msg) {
 
 $user = require_approved_lecturer();
 
+// Enforce POST method and anti-CSRF token
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !check_csrf()) {
     $fail('Your session expired — scan the QR code again.');
 }
 
+// Validate token and selected occupancy duration
 $token   = extract_qr_token((string)($_POST['token'] ?? ''));
 $minutes = filter_var($_POST['minutes'] ?? '', FILTER_VALIDATE_INT);
 

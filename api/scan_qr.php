@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// API: QR Scanner token verification endpoint (validates token and checks occupancy eligibility).
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth_check.php';
 
+// Authentication & account approval gates
 $user = current_user();
 if (!$user) {
     json_response(['ok' => false, 'error' => 'Please log in first.', 'code' => 'auth'], 401);
@@ -16,6 +18,7 @@ if (!check_csrf()) {
     json_response(['ok' => false, 'error' => 'Invalid CSRF token. Reload the page and try again.', 'code' => 'csrf'], 403);
 }
 
+// Operating hours verification
 if (!is_within_scan_hours()) {
     [$scanStart, $scanEnd] = get_scan_hours();
     json_response([
@@ -25,6 +28,7 @@ if (!is_within_scan_hours()) {
     ], 403);
 }
 
+// Prevent lecturer from holding multiple simultaneous active room sessions
 if ($activeSession = get_active_session_for((int)$user['id'])) {
     json_response([
         'ok'    => false,

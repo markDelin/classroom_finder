@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Icons: inline Lucide SVG dictionary and rendering helper function.
 const LUCIDE_ICONS = [
         'pause' => '<rect width="4" height="16" x="6" y="4" rx="1" /> <rect width="4" height="16" x="14" y="4" rx="1" />',
         'play' => '<polygon points="6 3 20 12 6 21 6 3" />',
@@ -64,6 +65,7 @@ const LUCIDE_ICONS = [
         'chevron-down' => '<path d="m6 9 6 6 6-6" />',
 ];
 
+// Returns SVG markup for named Lucide icon with optional CSS classes
 function icon(string $name, string $class = ''): string
 {
     if (!isset(LUCIDE_ICONS[$name])) {

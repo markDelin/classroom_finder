@@ -1,3 +1,4 @@
+// Landing Finder: live room grid controller handling search filtering, pagination, countdowns, and background polling.
 (function () {
   'use strict';
 

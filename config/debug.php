@@ -1,17 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Classroom Finder - Debug & Error Handling Subsystem
- *
- * Provides:
- * - Environment detection (CF_DEBUG)
- * - Centralized file logging (app_log)
- * - Exception, fatal error, and warning handlers
- * - Interactive visual debug inspector in development
- * - Secure error responses and Error IDs in production
- */
-
+// Debug: environment detection, centralized file logging, error/exception handlers, and development trace inspector.
 if (!defined('CF_DEBUG')) {
     $serverName = (string)($_SERVER['SERVER_NAME'] ?? '');
     $remoteAddr = (string)($_SERVER['REMOTE_ADDR'] ?? '');

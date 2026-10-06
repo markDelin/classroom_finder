@@ -1,16 +1,19 @@
 <?php
 declare(strict_types=1);
 
+// Admin Dashboard: real-time room availability KPIs, pending lecturer approvals, and usage stats.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+// Fetch all classrooms and compute live availability breakdown
 $rooms = fetch_classrooms();
 $count = ['available' => 0, 'occupied' => 0, 'unavailable' => 0];
 foreach ($rooms as $r) {
     $count[$r['computed']]++;
 }
 
+// Pending lecturer accounts awaiting administrator review
 $pending = db()->query(
     "SELECT id, full_name, username, email, staff_id, department, created_at
      FROM users WHERE role = 'lecturer' AND account_status = 'pending'
@@ -18,19 +21,23 @@ $pending = db()->query(
 )->fetchAll();
 $pendingN = count($pending);
 
+// Rooms currently occupied by active sessions or scheduled classes
 $activeSessions = array_filter($rooms, fn($r) => $r['computed'] === 'occupied');
 
+// 5 most recent security and operational activity log entries
 $recentLogs = db()->query(
     'SELECT l.*, u.full_name FROM activity_logs l
      LEFT JOIN users u ON u.id = l.user_id
      ORDER BY l.timestamp DESC LIMIT 5'
 )->fetchAll();
 
+// Capacity and utilization KPI calculations
 $totalCapacity = array_reduce($rooms, fn($sum, $r) => $sum + (int)($r['capacity'] ?? 0), 0);
 $totalRooms = count($rooms);
 $activeRoomsCount = $count['occupied'];
 $utilizationRate = $totalRooms > 0 ? (int)round(($activeRoomsCount / $totalRooms) * 100) : 0;
 
+// User role distribution counts
 $userStats = db()->query(
     "SELECT
         COUNT(*) AS total_users,
@@ -39,6 +46,7 @@ $userStats = db()->query(
      FROM users"
 )->fetch();
 
+// Daily schedule slots, sessions initiated, and force-open counts
 $todayDayOfWeek = (int)date('N');
 $schedulesToday = (int)db()->query(
     "SELECT COUNT(*) FROM class_schedules WHERE day_of_week = {$todayDayOfWeek} AND is_active = 1"
@@ -52,6 +60,7 @@ $forceOpensToday = (int)db()->query(
     "SELECT COUNT(*) FROM schedule_force_open WHERE exc_date = CURDATE()"
 )->fetchColumn();
 
+// Top 5 classrooms with highest usage over past 30 days
 $topRooms = db()->query(
     'SELECT c.id, c.room_number, c.building,
             COUNT(s.id) AS session_count,

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Admin Classrooms: inventory management (add, edit, status transitions, and deletion).
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -9,12 +10,14 @@ $fail  = function (string $msg, string $back = 'classrooms.php') {
     redirect($back);
 };
 
+// POST: Classroom CRUD operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $fail('Session expired — please try again.');
     }
     $action = (string)($_POST['action'] ?? '');
 
+    // Add new room or update existing room details
     if ($action === 'add' || $action === 'update') {
         $id = $action === 'update' ? (int)($_POST['id'] ?? 0) : null;
         $res = room_save($_POST, $id, (int)$admin['id']);

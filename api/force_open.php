@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// API: Force-Open endpoint: records an audited schedule exception for cancelled/dismissed classes.
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../auth/auth_check.php';
 
+// Authentication and approval verification
 $user = current_user();
 if (!$user) {
     json_response(['ok' => false, 'error' => 'Please log in first.', 'code' => 'auth'], 401);
@@ -16,6 +18,7 @@ if (!check_csrf()) {
     json_response(['ok' => false, 'error' => 'Invalid CSRF token. Reload the page and try again.', 'code' => 'csrf'], 403);
 }
 
+// Extract and validate room token
 $input = request_input();
 $token = extract_qr_token((string)($input['token'] ?? ''));
 if ($token === null) {

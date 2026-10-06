@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
 
+// Cron Expire: background job releasing expired room sessions via CLI or web invocation.
 require_once __DIR__ . '/../config/helpers.php';
 
 try {
+    // Release active sessions whose end_time has passed
     expire_stale();
     $now = date('Y-m-d H:i:s');
     $msg = "[{$now}] Classroom Finder expire_stale sweep completed successfully.\n";

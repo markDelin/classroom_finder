@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// Admin Reports: room utilization metrics, faculty occupancy frequency, and printable summaries.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+// Resolve active reporting date range
 [$from, $to, $rangeLabel] = report_range();
 $activeRange = (string)($_GET['range'] ?? '');
 $rangesOn    = $activeRange !== '' || $from !== '' || $to !== '';
@@ -21,6 +23,7 @@ if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
 }
 $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
+// 1. Room utilization aggregation (sessions count and cumulative occupancy minutes)
 $st = db()->prepare(
     'SELECT c.id, c.room_number, c.building, c.room_type, c.capacity,
             COUNT(s.id) AS session_count,

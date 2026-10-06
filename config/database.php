@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
+// Database Configuration: PDO connection factory with host fallback, auto-schema migration, and error handling.
 const DB_HOST = '127.0.0.1';
 const DB_PORT = '3306';
 const DB_NAME = 'classroom_finder';
 const DB_USER = 'root';
 const DB_PASS = '';
 
+// Returns a singleton PDO instance with prepared statement emulation disabled
 function db(): PDO
 {
     static $pdo = null;
@@ -14,6 +16,7 @@ function db(): PDO
         return $pdo;
     }
 
+    // Try primary host then fallback (127.0.0.1 <-> localhost)
     $hosts = [DB_HOST];
     if (DB_HOST === '127.0.0.1') {
         $hosts[] = 'localhost';
@@ -23,6 +26,7 @@ function db(): PDO
 
     $lastException = null;
 
+    // Connect to MySQL with auto-creation fallback on local development
     foreach ($hosts as $host) {
         $dsn = 'mysql:host=' . $host . ';port=' . DB_PORT . ';dbname=' . DB_NAME . ';charset=utf8mb4';
         try {
@@ -65,6 +69,7 @@ function db(): PDO
         }
     }
 
+    // Fail gracefully with helpful error screen or JSON if unconnectable
     if (!$pdo) {
         $msg = 'Could not connect to MySQL: ' . ($lastException ? $lastException->getMessage() : 'Unknown error');
         if (function_exists('app_log')) {
@@ -87,6 +92,7 @@ function db(): PDO
         exit;
     }
 
+    // Align MySQL session timezone with PHP server timezone
     try {
         $pdo->prepare('SET time_zone = ?')->execute([date('P')]);
     } catch (Throwable $tzErr) {
@@ -95,6 +101,7 @@ function db(): PDO
         }
     }
 
+    // Self-healing check: guarantee presence of schedule and exception tables
     static $checked = false;
     if (!$checked) {
         $checked = true;

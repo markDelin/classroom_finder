@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// Admin Settings: institutional branding, session bounds, scan window, and refresh rates.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+// Configurable integer settings with [min, max, label] bounds
 $intKeys = [
     'min_duration_minutes'    => [5, 480, 'Minimum occupancy (minutes)'],
     'max_duration_minutes'    => [15, 1440, 'Maximum occupancy (minutes)'],
@@ -12,6 +14,7 @@ $intKeys = [
     'landing_refresh_seconds' => [5, 600, 'Landing page refresh (seconds)'],
 ];
 
+// POST: Save updated settings
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fail = function (string $m) {
         flash('error', $m);
@@ -21,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fail('Session expired — please try again.');
     }
 
+    // 1. Branding & Institution Strings
     $appName  = trim((string)($_POST['app_name'] ?? ''));
     if ($appName !== '' && mb_strlen($appName) <= 80) {
         set_setting('app_name', $appName);
@@ -38,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         set_setting('school_contact', $schoolContact);
     }
 
+    // 2. Numeric Parameter Clamping
     foreach ($intKeys as $key => [$min, $max, $label]) {
         $v = filter_var($_POST[$key] ?? '', FILTER_VALIDATE_INT);
         if ($v !== false && $v >= $min && $v <= $max) {
@@ -51,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('error', 'Minimum occupancy cannot exceed maximum — minimum was reset.');
     }
 
+    // 3. Daily Scanning Window (HH:MM format)
     $dayStart = trim((string)($_POST['scan_day_start'] ?? ''));
     $dayEnd   = trim((string)($_POST['scan_day_end'] ?? ''));
     if ($dayStart !== '' && $dayEnd !== '') {

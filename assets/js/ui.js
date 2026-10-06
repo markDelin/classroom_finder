@@ -1,3 +1,4 @@
+// UI Core: mobile navigation drawer toggle, toast/alert flash notifications, SweetAlert confirmation bridges, and password reveals.
 (function () {
   'use strict';
 

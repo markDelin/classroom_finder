@@ -1,3 +1,4 @@
+// QR Scanner Client: camera feed manager, html5-qrcode integration, duration modal, and token check-in submission.
 (function () {
   'use strict';
 

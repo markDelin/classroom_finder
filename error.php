@@ -1,14 +1,17 @@
 <?php
 declare(strict_types=1);
 
+// Error Page: unified HTTP error renderer supporting 400, 401, 403, 404, 500, and 503.
 require_once __DIR__ . '/config/helpers.php';
 
+// Validate and normalize HTTP status code
 $rawCode = $_GET['code'] ?? ($_SERVER['REDIRECT_STATUS'] ?? null);
 $code = filter_var($rawCode, FILTER_VALIDATE_INT);
 $code = ($code !== false && $code >= 400 && $code <= 599) ? $code : 500;
 
 http_response_code($code);
 
+// Lookup user-friendly error title, description, and accent theme
 $knownErrors = [
     400 => [
         'title'       => 'Bad Request',

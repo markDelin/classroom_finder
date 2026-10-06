@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// Admin Sessions: monitors live room sessions, handles admin force-end, and lists past history.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+// POST: Force-end active session (CSRF protected, audited)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'force_end') {
     if (!check_csrf()) {
         flash('error', 'Session expired — please try again.');
@@ -20,11 +22,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'force
     redirect('sessions.php');
 }
 
+// Expire any overdue sessions before querying live state
 expire_stale();
 
 $q    = trim((string)($_GET['q'] ?? ''));
 $now  = date('Y-m-d H:i:s');
 
+// Query 1: Active sessions (status = active and end_time > now)
 $whereActive  = ["s.status = 'active'", 's.end_time > ?'];
 $activeParams = [$now];
 if ($q !== '') {
@@ -46,6 +50,7 @@ $actPerPage  = admin_per_page(ADMIN_PER_PAGE, 'act_per_page');
 $actPp       = page_params(count($allActive), (int)($_GET['act_page'] ?? 1), $actPerPage);
 $active      = array_slice($allActive, $actPp['offset'], $actPp['limit']);
 
+// Query 2: Recently finished sessions (status != active)
 $wherePast  = ["s.status <> 'active'"];
 $pastParams = [];
 if ($q !== '') {
@@ -93,6 +98,7 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <?php if (!$active): ?>
     <p class="muted">No active sessions right now.</p>
   <?php else: ?>
+  <!-- .table-wrap: horizontal scrollbar on mobile -->
   <div class="table-wrap">
   <table class="table">
     <thead>
@@ -112,12 +118,13 @@ render_header('Active Sessions', ['prefix' => '../', 'nav' => 'admin', 'active' 
         <td class="nowrap" data-label="Window"><?= fmt_range($s['start_time'], $s['end_time']) ?></td>
         <td class="nowrap" data-label="Ends in"><span class="pill pill--warn"><?= human_duration(minutes_until($s['end_time'])) ?> left</span></td>
         <td data-label="Action">
+          <!-- .btn-text hides on mobile (<=720px) to show icon only -->
           <div class="actions-cell" style="justify-content:flex-end">
           <form method="post" data-confirm="Force-end this session now?">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="force_end">
             <input type="hidden" name="session_id" value="<?= (int)$s['id'] ?>">
-            <button class="btn btn--danger btn--sm" type="submit"><?= icon('ban') ?> Force end</button>
+            <button class="btn btn--danger btn--sm" type="submit" title="Force end session"><?= icon('ban') ?> <span class="btn-text">Force end</span></button>
           </form>
           </div>
         </td>

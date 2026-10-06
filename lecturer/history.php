@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 
+// Lecturer History: displays logged-in lecturer's past room occupancies with search filtering.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $user = require_approved_lecturer();
 $q    = trim((string)($_GET['q'] ?? ''));
 
+// Build search filter query
 $where  = ['s.user_id = ?'];
 $params = [(int)$user['id']];
 if ($q !== '') {
@@ -13,6 +15,7 @@ if ($q !== '') {
     array_push($params, "%$q%", "%$q%");
 }
 
+// Fetch up to 200 recent sessions for this lecturer
 $st = db()->prepare(
     'SELECT s.*, c.room_number, c.building
      FROM classroom_sessions s JOIN classrooms c ON c.id = s.classroom_id
@@ -23,6 +26,7 @@ $st = db()->prepare(
 $st->execute($params);
 $rows = $st->fetchAll();
 
+// Tally total occupied minutes (capped to now for active sessions)
 $totalMinutes = 0;
 foreach ($rows as $r) {
     if ($r['status'] === 'active') {

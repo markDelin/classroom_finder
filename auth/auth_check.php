@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Auth Guards: session enforcement and role-based access control gates.
 require_once __DIR__ . '/../config/helpers.php';
 
+// Guard: requires any authenticated user session
 function require_login(): array
 {
     $u = current_user();
@@ -13,6 +15,7 @@ function require_login(): array
     return $u;
 }
 
+// Guard: requires administrator role
 function require_admin(): array
 {
     $u = require_login();
@@ -23,6 +26,7 @@ function require_admin(): array
     return $u;
 }
 
+// Guard: requires lecturer role with approved account status (or admin)
 function require_approved_lecturer(): array
 {
     $u = require_login();

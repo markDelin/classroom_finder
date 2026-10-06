@@ -1,3 +1,4 @@
+// Admin Modals: delegates click events on [data-modal-form] elements to SweetAlert dialogs with form prefill.
 (function () {
   'use strict';
 

@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Session Service: classroom occupancy sessions, pessimistic concurrency check-in, and releases.
 require_once __DIR__ . '/../config/database.php';
 
+// Fetch active session details by session ID
 function session_get_active(int $sessionId): ?array
 {
     if ($sessionId <= 0) {
@@ -21,6 +23,7 @@ function session_get_active(int $sessionId): ?array
     return $row ?: null;
 }
 
+// Find any currently active session held by the specified user
 function session_get_active_for_user(int $userId): ?array
 {
     if ($userId <= 0) {

@@ -1,12 +1,15 @@
 <?php
 declare(strict_types=1);
 
+// Lecturer Dashboard: live occupancy status, personal teaching hours KPI, and quick actions.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $user = require_approved_lecturer();
 
+// Check if lecturer currently holds an active classroom session
 $active = get_active_session_for((int)$user['id']);
 
+// Monthly usage metrics: total sessions and accumulated teaching minutes
 $st = db()->prepare(
     "SELECT COUNT(*) AS sessions,
             COALESCE(SUM(TIMESTAMPDIFF(MINUTE, start_time, IF(status = 'active', LEAST(?, end_time), end_time))), 0) AS minutes
@@ -17,6 +20,7 @@ $nowSql = date('Y-m-d H:i:s');
 $st->execute([$nowSql, $user['id'], $nowSql, $nowSql]);
 $stats = $st->fetch();
 
+// 6 most recent classroom sessions held by this lecturer
 $st = db()->prepare(
     'SELECT s.*, c.room_number, c.building
      FROM classroom_sessions s JOIN classrooms c ON c.id = s.classroom_id

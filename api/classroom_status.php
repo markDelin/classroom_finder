@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// API: Classroom Status endpoint: returns live availability JSON or rendered HTML cards.
 define('CF_WANTS_JSON', true);
 require_once __DIR__ . '/../config/helpers.php';
 require_once __DIR__ . '/../config/layout.php';
 
+// Parse search and filter parameters
 $filters = [
     'q'        => trim((string)($_GET['q'] ?? '')),
     'status'   => (string)($_GET['status'] ?? ''),

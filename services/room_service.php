@@ -1,15 +1,18 @@
 <?php
 declare(strict_types=1);
 
+// Room Service: classroom retrieval, token extraction, live status calculation, and CRUD.
 require_once __DIR__ . '/../config/database.php';
 
 const ROOM_SERVICE_TYPES = ['Lecture Room', 'Highschool Comlab', 'College Comlab', 'Highschool Room', 'Other', 'Lecture', 'Laboratory', 'Seminar'];
 
+// Retrieve single classroom with computed live availability status
 function room_get(int $id): ?array
 {
     return room_get_with_status($id);
 }
 
+// Fetch raw classroom row without joined session or schedule status
 function room_get_raw(int $id): ?array
 {
     if ($id <= 0) {
@@ -21,6 +24,7 @@ function room_get_raw(int $id): ?array
     return $row ?: null;
 }
 
+// Find classroom by 8-character unique QR token
 function room_get_by_token(string $token): ?array
 {
     $token = strtolower(trim($token));
@@ -33,6 +37,7 @@ function room_get_by_token(string $token): ?array
     return $room ?: null;
 }
 
+// Generate unique 8-character hex token for QR door posters
 function room_generate_token(): string
 {
     do {

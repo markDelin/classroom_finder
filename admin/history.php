@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 
+// Admin History: historical room occupancy logs with filters and CSV export.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
 
+// Parse search filters (room, user, date range)
 $q      = trim((string)($_GET['q'] ?? ''));
 $roomId = (string)($_GET['room'] ?? '');
 $userId = (string)($_GET['user'] ?? '');
@@ -35,6 +37,7 @@ if ($userId !== '') {
 }
 $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
+// CSV Export: stream filtered dataset as downloadable spreadsheet
 if (wants_csv()) {
     $st = db()->prepare(
         'SELECT s.*, c.room_number, c.building, u.full_name

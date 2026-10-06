@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Initial Setup: first-run wizard creating the primary root administrator account.
 require_once __DIR__ . '/config/helpers.php';
 
+// Prevent re-entry if installed.lock exists or users already populated
 if (is_file(__DIR__ . '/installed.lock')) {
     redirect('index.php');
 }
@@ -15,6 +17,7 @@ if ($any > 0) {
 
 $errors = [];
 
+// POST: Validate input, ensure unique credentials, insert admin, and create lock file
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $errors[] = 'Session expired — please submit the form again.';

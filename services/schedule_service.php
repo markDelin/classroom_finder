@@ -1,12 +1,14 @@
 <?php
 declare(strict_types=1);
 
+// Schedule Service: weekly recurring timetables, slot conflict checks, and force-open overrides.
 require_once __DIR__ . '/../config/database.php';
 
 const SCHEDULE_DAY_NAMES = [
     1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'
 ];
 
+// Fetch single schedule slot by ID
 function schedule_get(int $id): ?array
 {
     if ($id <= 0) {
@@ -18,6 +20,7 @@ function schedule_get(int $id): ?array
     return $row ?: null;
 }
 
+// Check if a classroom has an active recurring schedule at the given day and time
 function schedule_get_active_slot(int $classroomId, int $dayOfWeek, string $time): ?array
 {
     if ($classroomId <= 0) {

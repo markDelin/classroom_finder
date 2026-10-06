@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Layout: HTML shell templates (header, sidebar navigation, footer, room cards) and status presentation helpers.
 require_once __DIR__ . '/helpers.php';
 
+// Maps room status slug to badge label, icon, and styling class
 function room_status_meta(string $status): array
 {
     switch ($status) {
@@ -12,6 +14,7 @@ function room_status_meta(string $status): array
     }
 }
 
+// Emits HTML document head, responsive topbar, role-based sidebar, and flash notifications
 function render_header(string $title, array $opts = []): void
 {
     $prefix  = $opts['prefix'] ?? '';
@@ -143,6 +146,7 @@ function render_header(string $title, array $opts = []): void
 <?php
 }
 
+// Emits closing main tag, SweetAlert2 / UI scripts, and page-specific script tags
 function render_footer(array $scripts = []): void
 {
     $prefix = $GLOBALS['cf_prefix'] ?? '';
@@ -157,6 +161,7 @@ function render_footer(array $scripts = []): void
 </html><?php
 }
 
+// Generates HTML markup for an individual classroom status card
 function room_card(array $r, int $i = 0): string
 {
     [$label, $statusIcon, $cls] = room_status_meta($r['computed']);
@@ -211,6 +216,7 @@ function room_card(array $r, int $i = 0): string
     return (string)ob_get_clean();
 }
 
+// Renders grid of room cards or empty state illustration
 function room_cards_html(array $rooms): string
 {
     if (!$rooms) {
@@ -224,6 +230,7 @@ function room_cards_html(array $rooms): string
     return $html;
 }
 
+// Sorts rooms with available first, followed by building and room number
 function sort_rooms_available_first(array $rooms): array
 {
     $band = ['available' => 0, 'occupied' => 1, 'unavailable' => 2];

@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// User Service: account management, password hashing, authentication, and status transitions.
 require_once __DIR__ . '/../config/database.php';
 
+// Retrieve user by ID
 function user_get(int $id): ?array
 {
     if ($id <= 0) {
@@ -14,6 +16,7 @@ function user_get(int $id): ?array
     return $user ?: null;
 }
 
+// Retrieve user by username
 function user_get_by_username(string $username): ?array
 {
     $username = trim($username);
@@ -26,6 +29,7 @@ function user_get_by_username(string $username): ?array
     return $user ?: null;
 }
 
+// Authenticate credentials against bcrypt hash and verify active account status
 function user_authenticate(string $username, string $password): array
 {
     $username = trim($username);

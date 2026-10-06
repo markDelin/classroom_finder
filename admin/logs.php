@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Admin Logs: system-wide activity and security audit trail with keyword search and pagination.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -10,6 +11,7 @@ $perPage = admin_per_page();
 
 $q = trim((string)($_GET['q'] ?? ''));
 
+// Filter audit records by action keyword, details, user name, or room number
 $where  = [];
 $params = [];
 if ($q !== '') {
@@ -18,12 +20,14 @@ if ($q !== '') {
 }
 $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
+// Count matching log entries for pagination
 $totalSt = db()->prepare('SELECT COUNT(*) AS n FROM activity_logs l LEFT JOIN users u ON u.id = l.user_id LEFT JOIN classrooms c ON c.id = l.classroom_id' . $whereSql);
 $totalSt->execute($params);
 $total = (int)($totalSt ? $totalSt->fetch()['n'] : 0);
 
 $pP = page_params($total, $page, $perPage);
 
+// Fetch paginated log records ordered by newest first
 $st = db()->prepare(
     'SELECT l.*, u.full_name, c.room_number
      FROM activity_logs l

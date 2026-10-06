@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Helpers: global utility functions covering auth sessions, CSRF, formatting, settings, and responders.
 require_once __DIR__ . '/debug.php';
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/icons.php';
@@ -110,6 +111,7 @@ function is_https(): bool
         || (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_SSL']) === 'on');
 }
 
+// Initializes secure HTTP-only session and security headers (CSP, HSTS, frame guard)
 function boot_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -135,17 +137,20 @@ function boot_session(): void
 }
 boot_session();
 
+// Escapes output for safe HTML rendering
 function e(?string $v): string
 {
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
 
+// Issues HTTP Location header redirect and exits
 function redirect(string $url)
 {
     header('Location: ' . $url);
     exit;
 }
 
+// Terminates request with HTTP error status code and view
 function abort(int $code = 404, string $message = '')
 {
     http_response_code($code);
@@ -165,6 +170,7 @@ function abort(int $code = 404, string $message = '')
     exit;
 }
 
+// Generates or returns active session CSRF token
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf'])) {
@@ -173,11 +179,13 @@ function csrf_token(): string
     return $_SESSION['csrf'];
 }
 
+// Returns hidden HTML input for CSRF verification
 function csrf_field(): string
 {
     return '<input type="hidden" name="csrf" value="' . e(csrf_token()) . '">';
 }
 
+// Verifies anti-CSRF token using timing-safe comparison
 function check_csrf(?string $token = null): bool
 {
     $token ??= (string)($_POST['csrf'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
@@ -185,11 +193,13 @@ function check_csrf(?string $token = null): bool
     return $known !== '' && $token !== '' && hash_equals($known, $token);
 }
 
+// Appends user flash notification to session queue
 function flash(string $type, string $message): void
 {
     $_SESSION['flash'][] = ['t' => $type, 'm' => $message];
 }
 
+// Retrieves and clears queued flash notifications
 function take_flashes(): array
 {
     $f = $_SESSION['flash'] ?? [];
@@ -197,6 +207,7 @@ function take_flashes(): array
     return $f;
 }
 
+// Returns authenticated user profile or null if logged out
 function current_user(): ?array
 {
     static $user = false;
@@ -227,6 +238,7 @@ function is_logged_in(): bool
 
 $settings_cache ??= null;
 
+// Retrieves cached system setting by key with fallback default
 function get_setting(string $key, string $default = ''): string
 {
     global $settings_cache;
@@ -243,18 +255,21 @@ function get_setting(string $key, string $default = ''): string
     return $settings_cache[$key] ?? $default;
 }
 
+// Retrieves integer setting with fallback
 function get_setting_int(string $key, int $default): int
 {
     $v = filter_var(get_setting($key, ''), FILTER_VALIDATE_INT);
     return $v === false ? $default : $v;
 }
 
+// Clears in-memory settings cache
 function bust_settings_cache(): void
 {
     global $settings_cache;
     $settings_cache = null;
 }
 
+// Persists setting to database and clears cache
 function set_setting(string $key, string $value): void
 {
     db()->prepare(
@@ -264,6 +279,7 @@ function set_setting(string $key, string $value): void
     bust_settings_cache();
 }
 
+// Inserts activity record for audit trail
 function log_action(string $action, ?int $userId = null, ?int $classroomId = null, string $details = ''): void
 {
     try {
@@ -274,6 +290,7 @@ function log_action(string $action, ?int $userId = null, ?int $classroomId = nul
     }
 }
 
+// Releases expired active classroom sessions
 function expire_stale(): void
 {
     session_expire_stale();
@@ -355,6 +372,7 @@ function fmt_iso(?string $sqlDateTime): string
     return $t === false ? '' : date('Y-m-d\TH:i:sP', $t);
 }
 
+// Calculates elapsed minutes between two date strings
 function minutes_between(string $start, string $end): int
 {
     $s = strtotime($start);
@@ -362,6 +380,7 @@ function minutes_between(string $start, string $end): int
     return ($s === false || $e === false) ? 0 : max(0, (int)(($e - $s) / 60));
 }
 
+// Converts minutes to compact "Xh Ym" human-readable string
 function human_duration(int $minutes): string
 {
     $h = intdiv($minutes, 60);
@@ -375,6 +394,7 @@ function human_duration(int $minutes): string
     return "{$m}m";
 }
 
+// Rounds Unix timestamp to nearest 30-minute mark
 function round_to_half_hour(?int $ts = null): int
 {
     $ts ??= time();
@@ -386,12 +406,14 @@ function round_to_half_hour(?int $ts = null): int
     return $hourTimestamp + $roundedHalfHour;
 }
 
+// Calculates remaining minutes until target SQL datetime
 function minutes_until(string $futureSqlDateTime): int
 {
     $t = strtotime($futureSqlDateTime);
     return $t === false ? 0 : max(0, (int)ceil(($t - time()) / 60));
 }
 
+// Reads configured daily QR scanning hours window [start, end]
 function get_scan_hours(): array
 {
     $start = substr(trim(get_setting('scan_day_start', '07:00')), 0, 5);
@@ -402,6 +424,7 @@ function get_scan_hours(): array
     ];
 }
 
+// Checks if specified timestamp falls inside scanning hours
 function is_within_scan_hours(?int $time = null): bool
 {
     $time ??= time();
@@ -429,11 +452,13 @@ function report_range(): array
     return [$ok($from) ? $from : '', $ok($to) ? $to : '', 'Custom range'];
 }
 
+// Checks if current request requests CSV export
 function wants_csv(): bool
 {
     return ($_GET['export'] ?? '') === 'csv';
 }
 
+// Streams CSV download with formula injection escaping
 function stream_csv(string $filename, array $headers, iterable $rows)
 {
     header('Content-Type: text/csv; charset=utf-8');
@@ -453,6 +478,7 @@ function stream_csv(string $filename, array $headers, iterable $rows)
     exit;
 }
 
+// Emits JSON response with status code and exits
 function json_response(array $data, int $code = 200)
 {
     http_response_code($code);
@@ -461,6 +487,7 @@ function json_response(array $data, int $code = 200)
     exit;
 }
 
+// Parses JSON body or POST form data into unified array
 function request_input(): array
 {
     $json = [];

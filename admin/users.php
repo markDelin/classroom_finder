@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Admin Users: account approvals, status changes, manual user creation, and password resets.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 $admin = require_admin();
@@ -10,6 +11,7 @@ $fail  = function (string $msg) use ($back) {
     redirect($back);
 };
 
+// POST: Account management actions (status transition, create, password reset, delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $fail('Session expired — please try again.');

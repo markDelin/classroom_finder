@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
 
+// Public Classroom Finder: interactive student/faculty landing page showing real-time room availability.
 require_once __DIR__ . '/config/layout.php';
 
+// Extract search and filter query parameters
 $filters = [
     'q'        => trim((string)($_GET['q'] ?? '')),
     'status'   => (string)($_GET['status'] ?? ''),
@@ -12,10 +14,12 @@ $filters = [
     'mincap'   => (string)($_GET['mincap'] ?? ''),
 ];
 
+// Fetch rooms and calculate paginated slice
 $allRooms = fetch_classrooms();
 $pg       = room_page(fetch_classrooms($filters), (int)($_GET['page'] ?? 1));
 $rooms    = $pg['rooms'];
 
+// Distinct filter dropdown options
 $buildings = array_values(array_unique(array_column($allRooms, 'building')));
 sort($buildings);
 $floors = array_values(array_unique(array_map('intval', array_column($allRooms, 'floor'))));
@@ -23,11 +27,13 @@ sort($floors);
 $types  = array_values(array_unique(array_column($allRooms, 'room_type')));
 sort($types);
 
+// Tally live availability metrics
 $count = ['available' => 0, 'occupied' => 0, 'unavailable' => 0];
 foreach ($allRooms as $r) {
     $count[$r['computed']]++;
 }
 
+// First-time setup check: detect empty users table
 $needsSetup = false;
 try {
     $needsSetup = (int)db()->query('SELECT COUNT(*) AS n FROM users')->fetch()['n'] === 0;

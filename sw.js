@@ -1,4 +1,4 @@
-// Classroom Finder Service Worker for offline shell caching
+// Service Worker: PWA shell caching for offline stylesheet, vendor scripts, and client UI assets.
 const CACHE_NAME = 'cf-shell-v1';
 const ASSETS_TO_CACHE = [
   'assets/css/style.css',

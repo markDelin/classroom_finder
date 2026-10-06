@@ -1292,7 +1292,27 @@ label .password-toggle-wrapper,
 
 /* ---------- tables ---------- */
 .table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Horizontal scroll wrapper with styled slim scrollbar */
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--track);
+}
+.table-wrap::-webkit-scrollbar {
+  height: 6px;
+}
+.table-wrap::-webkit-scrollbar-track {
+  background: var(--track);
+  border-radius: 3px;
+}
+.table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+.table-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
 .table th {
   text-align: left;
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
@@ -2840,12 +2860,27 @@ html { -webkit-tap-highlight-color: transparent; }
   .site-footer { flex-direction: column; align-items: center; text-align: center; gap: .3rem; }
 
   /* ---------- mobile list layout for tables (Single-line per row) ---------- */
+  /* Mobile table scroll container with thin visible scrollbar */
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
-    margin-bottom: .4rem;
+    margin-bottom: .5rem;
+    padding-bottom: .3rem;
     scrollbar-width: thin;
+    scrollbar-color: var(--border) var(--track);
+  }
+  .table-wrap::-webkit-scrollbar {
+    height: 6px;
+    display: block;
+  }
+  .table-wrap::-webkit-scrollbar-track {
+    background: var(--track);
+    border-radius: 3px;
+  }
+  .table-wrap::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
   }
   .table {
     display: table !important;
@@ -2919,6 +2954,7 @@ html { -webkit-tap-highlight-color: transparent; }
     margin-top: 0 !important;
     border-top: none !important;
   }
+  /* Mobile table action buttons: compact icon-only sizing */
   .table td.actions-cell .btn--sm,
   .table td.actions-cell .mini-details summary,
   .table td[data-label="Actions"] .actions-cell .btn--sm,
@@ -2926,13 +2962,24 @@ html { -webkit-tap-highlight-color: transparent; }
   .table td[data-label="Action"] .actions-cell .btn--sm,
   .table td[data-label="Action"] .actions-cell .mini-details summary {
     width: auto !important;
-    padding: .25rem .45rem;
+    min-width: 1.75rem;
+    padding: .25rem .4rem;
     font-size: .75rem;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
   }
+  /* Hide button label text on mobile (<=720px) to show icon only */
   .table td.actions-cell .btn-text,
   .table td[data-label="Actions"] .actions-cell .btn-text,
-  .table td[data-label="Action"] .actions-cell .btn-text {
-    display: inline !important;
+  .table td[data-label="Action"] .actions-cell .btn-text,
+  .actions-cell .btn-text {
+    display: none !important;
+  }
+  .actions-cell .btn--sm .icon,
+  .actions-cell .mini-details summary .icon {
+    width: .9rem;
+    height: .9rem;
   }
 
   /* button words like "Print schedule" collapse to "Print" on phones */
@@ -3161,10 +3208,11 @@ html { -webkit-tap-highlight-color: transparent; }
   .tiles, .tiles--5 { grid-template-columns: 1fr; }
   .finder__dropdown-grid { grid-template-columns: 1fr; }
   .qr-grid { grid-template-columns: 1fr; }
+  /* Prevent table action buttons from wrapping on small mobile screens */
   .table td.actions-cell,
   .table td[data-label="Actions"] .actions-cell,
   .table td[data-label="Action"] .actions-cell {
-    flex-wrap: wrap !important;
+    flex-wrap: nowrap !important;
   }
 }
 
@@ -3488,11 +3536,6 @@ html { -webkit-tap-highlight-color: transparent; }
   margin-bottom: 1.25rem;
   border-bottom: 1px solid var(--border);
 }
-.settings-group:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
 .settings-group__head {
   margin-bottom: 0.85rem;
 }
@@ -3526,10 +3569,8 @@ html { -webkit-tap-highlight-color: transparent; }
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
+/* Action bar below settings (no top border to prevent double lines with preceding group) */
 .settings-actions {
-  margin-top: 1.3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
 }

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Admin Schedules: weekly timetables, force-open override audits, and printable room schedule sheets.
 require_once __DIR__ . '/../auth/auth_check.php';
 
 const DAY_NAMES = [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'];
@@ -11,6 +12,7 @@ $fail  = function (string $m) {
     redirect('schedules.php');
 };
 
+// POST: Schedule slot deletion, force-open revert, or new slot creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!check_csrf()) {
         $fail('Session expired — please try again.');
