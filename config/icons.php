@@ -63,6 +63,8 @@ const LUCIDE_ICONS = [
         'arrow-left' => '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
         'arrow-down' => '<path d="M12 5v14" /> <path d="m19 12-7 7-7-7" />',
         'chevron-down' => '<path d="m6 9 6 6 6-6" />',
+        'upload' => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <polyline points="17 8 12 3 7 8" /> <line x1="12" x2="12" y1="3" y2="15" />',
+        'file-up' => '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /> <path d="M14 2v4a2 2 0 0 0 2 2h4" /> <path d="M12 12v6" /> <path d="m15 15-3-3-3 3" />',
 ];
 
 // Returns SVG markup for named Lucide icon with optional CSS classes

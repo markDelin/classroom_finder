@@ -149,16 +149,16 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   min-height: 297mm;
   margin: 0 auto;
   background: #ffffff;
-  color: #0f172a;
+  color: #000000;
   padding: 8mm 10mm;
   box-shadow: 0 4px 16px rgb(15 23 42 / .08), 0 1px 3px rgb(15 23 42 / .04);
   border: 1px solid var(--border);
   box-sizing: border-box;
-  font-family: Arial, Calibri, 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
 }
 .report-paper,
 .report-paper * {
-  font-family: Arial, Calibri, 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
 }
 
 @media screen and (max-width: 820px) {
@@ -228,17 +228,17 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   line-height: 1.15;
   letter-spacing: .01em;
   text-transform: uppercase;
-  color: #0f172a;
+  color: #000000;
 }
 .rp-subline {
   font-size: .7rem;
-  color: #64748b;
+  color: #000000;
   line-height: 1.25;
 }
 .rp-meta {
   text-align: right;
   font-size: .68rem;
-  color: #64748b;
+  color: #000000;
   line-height: 1.25;
   white-space: nowrap;
 }
@@ -257,7 +257,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 }
 .rp-period {
   font-size: .72rem;
-  color: #64748b;
+  color: #000000;
   margin: 0;
 }
 
@@ -270,10 +270,10 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   flex-wrap: wrap;
 }
 .rp-stats-item {
-  color: #64748b;
+  color: #000000;
 }
 .rp-stats-item strong {
-  color: #0f172a;
+  color: #000000;
   font-weight: 600;
 }
 
@@ -301,6 +301,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   justify-content: space-between;
   font-size: .7rem;
   gap: .4rem;
+  color: #000000;
 }
 .rp-legend-item__left {
   display: flex;
@@ -319,48 +320,61 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 .rp-legend-item__val {
   font-variant-numeric: tabular-nums;
   font-size: .66rem;
-  color: #64748b;
+  color: #000000;
   white-space: nowrap;
 }
 
 /* Real Excel Spreadsheet Table */
 .excel-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: .72rem;
+  max-width: 100%;
+  margin: .35rem auto 0;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: .7rem;
   line-height: 1.25;
-  margin-top: .35rem;
-  border: 1px solid #94a3b8;
+  border-top: 0.5px solid #000000;
+  border-left: 0.5px solid #000000;
+  box-sizing: border-box;
+  color: #000000;
 }
 .excel-table th {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: transparent;
+  color: #000000;
   font-weight: 700;
-  font-size: .66rem;
+  font-size: .65rem;
   text-transform: uppercase;
-  letter-spacing: .04em;
+  letter-spacing: .02em;
   text-align: left;
-  padding: .32rem .45rem;
-  border: 1px solid #cbd5e1;
+  padding: .28rem .35rem;
+  border: none;
+  border-right: 0.5px solid #000000;
+  border-bottom: 0.5px solid #000000;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 .excel-table td {
-  padding: .28rem .45rem;
-  border: 1px solid #cbd5e1;
+  padding: .28rem .35rem;
+  border: none;
+  border-right: 0.5px solid #000000;
+  border-bottom: 0.5px solid #000000;
   vertical-align: middle;
-  background: #ffffff;
+  background: transparent;
+  color: #000000;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .excel-table tbody tr:nth-child(even) td {
-  background: #f8fafc;
+  background: transparent;
 }
 .excel-table tbody tr:hover td {
-  background: #f1f5f9;
+  background: transparent;
 }
 .excel-table .cell-rank {
   text-align: center;
-  font-size: .66rem;
-  color: #64748b;
-  width: 2rem;
+  font-size: .65rem;
+  color: #000000;
 }
 .excel-table .cell-num {
   text-align: left;
@@ -368,10 +382,11 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
 }
 .excel-table .row-total td {
   font-weight: 700;
-  background: #e2e8f0 !important;
-  color: #0f172a;
-  border-top: 1.5px solid #64748b;
-  border-bottom: 1.5px solid #64748b;
+  background: transparent !important;
+  color: #000000;
+  border: none;
+  border-right: 0.5px solid #000000;
+  border-bottom: 0.5px solid #000000;
 }
 
 @page {
@@ -402,7 +417,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   }
   .report-paper,
   .report-paper * {
-    font-family: Arial, Calibri, 'Segoe UI', sans-serif !important;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
   }
   .report-paper {
     width: 100% !important;
@@ -413,9 +428,24 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    color: #000000 !important;
+  }
+  .report-paper .rp-title {
+    color: var(--primary, #0F3B6E) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .excel-table {
-    border: 1px solid #cbd5e1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: .35rem auto 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-top: 0.5px solid #000000 !important;
+    border-left: 0.5px solid #000000 !important;
+    box-sizing: border-box !important;
+    color: #000000 !important;
   }
   .excel-table thead {
     display: table-header-group !important;
@@ -426,21 +456,30 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
   }
   .excel-table th,
   .excel-table td {
-    border: 1px solid #cbd5e1 !important;
+    padding: .28rem .35rem !important;
+    border: none !important;
+    border-right: 0.5px solid #000000 !important;
+    border-bottom: 0.5px solid #000000 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    color: #000000 !important;
+    background: transparent !important;
   }
   .excel-table th {
-    background: #f1f5f9 !important;
-    color: #0f172a !important;
+    background: transparent !important;
+    color: #000000 !important;
   }
   .excel-table tbody tr:nth-child(even) td {
-    background: #f8fafc !important;
+    background: transparent !important;
   }
   .excel-table .row-total td {
-    background: #e2e8f0 !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
+    background: transparent !important;
+    color: #000000 !important;
+    border: none !important;
+    border-right: 0.5px solid #000000 !important;
+    border-bottom: 0.5px solid #000000 !important;
   }
 }
 </style>
@@ -452,7 +491,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
       <a class="btn btn--ghost btn--sm" href="reports.php?<?= e(http_build_query(array_merge($_GET, ['export' => 'csv']))) ?>">
         <?= icon('download') ?> Export CSV
       </a>
-      <button class="btn btn--primary btn--sm" type="button" onclick="window.print()">
+      <button class="btn btn--primary btn--sm" type="button" onclick="cfPrintReport()">
         <?= icon('printer') ?> Print Report
       </button>
     </div>
@@ -559,8 +598,8 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
                 <title><?= e($item['room_number']) ?>: <?= $cnt ?> sessions (<?= $pct ?>%)</title>
               </circle>
             <?php endforeach; ?>
-            <text x="60" y="56" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="18" font-weight="700" fill="#0f172a"><?= $totalSessions ?></text>
-            <text x="60" y="69" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="7.5" font-weight="600" fill="#64748b" letter-spacing="0.5">SESSIONS</text>
+            <text x="60" y="56" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="18" font-weight="700" fill="#000000"><?= $totalSessions ?></text>
+            <text x="60" y="69" text-anchor="middle" font-family="Arial, Calibri, sans-serif" font-size="7.5" font-weight="600" fill="#000000" letter-spacing="0.5">SESSIONS</text>
           </svg>
         </div>
         <div class="rp-viz__legend">
@@ -572,7 +611,7 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
             <div class="rp-legend-item">
               <div class="rp-legend-item__left">
                 <span class="rp-legend-item__swatch" style="background-color: <?= $color ?>;"></span>
-                <span><strong><?= e($item['room_number']) ?></strong> <span style="color:#64748b; font-size:.7rem;">(<?= e($item['building']) ?>)</span></span>
+                <span><strong><?= e($item['room_number']) ?></strong> <span style="color:#000000; font-size:.7rem;">(<?= e($item['building']) ?>)</span></span>
               </div>
               <span class="rp-legend-item__val"><?= $cnt ?> (<?= $pct ?>%)</span>
             </div>
@@ -581,6 +620,16 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
       </div>
 
       <table class="excel-table">
+        <colgroup>
+          <col style="width: 4%;">
+          <col style="width: 11%;">
+          <col style="width: 25%;">
+          <col style="width: 21%;">
+          <col style="width: 9%;">
+          <col style="width: 10%;">
+          <col style="width: 12%;">
+          <col style="width: 8%;">
+        </colgroup>
         <thead>
           <tr>
             <th class="cell-rank">#</th>
@@ -621,5 +670,16 @@ render_header('Most Used Classrooms Report', ['prefix' => '../', 'nav' => 'admin
     <?php endif; ?>
   </article>
 </div>
+
+<script>
+function cfPrintReport() {
+  var orig = document.title;
+  document.title = 'Classroom-Utilization-Report-<?= date('Ymd') ?>';
+  window.addEventListener('afterprint', function () {
+    document.title = orig;
+  }, { once: true });
+  window.print();
+}
+</script>
 
 <?php render_footer(); ?>

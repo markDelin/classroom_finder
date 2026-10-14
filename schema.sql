@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS classrooms (
   status      ENUM('available','maintenance','disabled')
                             NOT NULL DEFAULT 'available',
   note        VARCHAR(160)  DEFAULT NULL,
+  schedule_file VARCHAR(255) DEFAULT NULL,
+  schedule_updated_at TIMESTAMP NULL DEFAULT NULL,
   created_at  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_rooms_location (building, room_number),

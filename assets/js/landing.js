@@ -106,8 +106,48 @@
         var wc = window.cfWallClock ? window.cfWallClock(data.server_now, 0) : null;
         if (wc) { updatedAt.textContent = '· updated ' + wc.hm; }
         tickCountdowns();
+        setupInfiniteScroll();
       })
       .catch(function () {});
+  }
+
+  var infiniteScrollObserver = null;
+
+  function checkScrollFallback() {
+    if (isLoadingMore) { return; }
+    var btn = document.getElementById('loadMoreBtn');
+    if (!btn) { return; }
+    var rect = btn.getBoundingClientRect();
+    if (rect.top <= window.innerHeight + 250) {
+      loadMore();
+    }
+  }
+
+  function setupInfiniteScroll() {
+    if (infiniteScrollObserver) {
+      infiniteScrollObserver.disconnect();
+      infiniteScrollObserver = null;
+    }
+    var trigger = document.getElementById('loadMoreBtn');
+    if (!trigger) { return; }
+
+    if ('IntersectionObserver' in window) {
+      infiniteScrollObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting && !isLoadingMore) {
+            loadMore();
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: '250px 0px',
+        threshold: 0.05
+      });
+      infiniteScrollObserver.observe(trigger);
+    } else {
+      window.removeEventListener('scroll', checkScrollFallback);
+      window.addEventListener('scroll', checkScrollFallback, { passive: true });
+    }
   }
 
   function loadMore() {
@@ -164,6 +204,7 @@
         resultCount.textContent = data.count;
         applyStats(data.stats);
         tickCountdowns();
+        setupInfiniteScroll();
       })
       .catch(function () {
         isLoadingMore = false;
@@ -251,4 +292,5 @@
   });
 
   setInterval(tickCountdowns, 30000);
+  setupInfiniteScroll();
 })();

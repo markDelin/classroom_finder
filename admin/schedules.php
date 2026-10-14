@@ -63,13 +63,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('schedules.php');
     }
 
+    if ($action === 'upload_sheet') {
+        $roomId = (int)($_POST['classroom_id'] ?? 0);
+        $res = schedule_upload_sheet($roomId, $_FILES['schedule_file'] ?? [], (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
+        redirect('schedules.php' . ($roomId ? '?room=' . $roomId : ''));
+    }
+
+    if ($action === 'delete_sheet') {
+        $roomId = (int)($_POST['classroom_id'] ?? 0);
+        $res = schedule_delete_sheet($roomId, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
+        redirect('schedules.php' . ($roomId ? '?room=' . $roomId : ''));
+    }
+
+    if ($action === 'import_csv') {
+        $replace = !empty($_POST['replace_existing']);
+        $file = $_FILES['csv_file'] ?? [];
+        if (empty($file) || !isset($file['tmp_name']) || !is_file((string)$file['tmp_name'])) {
+            $fail('Please select a CSV file to import.');
+        }
+        $res = schedule_import_csv((string)$file['tmp_name'], $replace, (int)$admin['id']);
+        if (!$res['ok']) {
+            $fail($res['error']);
+        }
+        flash('success', $res['message']);
+        redirect('schedules.php');
+    }
+
     $fail('Unknown action.');
 }
 
 expire_stale();
 
 $rooms = db()->query(
-    "SELECT id, room_number, building, floor, capacity, room_type FROM classrooms ORDER BY building, room_number"
+    "SELECT id, room_number, building, floor, capacity, room_type, schedule_file, schedule_updated_at FROM classrooms ORDER BY building, room_number"
 )->fetchAll();
 $roomMap = [];
 foreach ($rooms as $r) {
@@ -132,7 +166,7 @@ foreach ($st->fetchAll() as $row) {
     $weekByRoom[(int)$row['classroom_id']][$row['day_of_week']][] = $row;
 }
 $sheetRoom = ($filterRoom && isset($roomMap[$filterRoom])) ? $roomMap[$filterRoom] : null;
-$sheetRooms = $sheetRoom ? [$sheetRoom] : array_values(array_filter($rooms, static fn($r) => !empty($weekByRoom[(int)$r['id']])));
+$sheetRooms = $sheetRoom ? [$sheetRoom] : array_values(array_filter($rooms, static fn($r) => !empty($weekByRoom[(int)$r['id']]) || !empty($r['schedule_file'])));
 
 $school = school_name();
 
@@ -146,6 +180,14 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
             data-modal-form="#slotForm"
             data-title="Add class schedule"
             data-confirm-text="Add"><?= icon('plus') ?> Add <span class="hide-mobile">schedule</span></button>
+    <button class="btn btn--secondary btn--sm" type="button"
+            data-modal-form="#uploadSheetForm"
+            data-title="Upload ready-printed schedule"
+            data-confirm-text="Upload"><?= icon('upload') ?> Upload <span class="hide-mobile">printed sheet</span></button>
+    <button class="btn btn--secondary btn--sm" type="button"
+            data-modal-form="#importCsvForm"
+            data-title="Import schedule CSV"
+            data-confirm-text="Import"><?= icon('file-up') ?> Import <span class="hide-mobile">CSV</span></button>
     <button class="btn btn--ghost btn--sm" type="button" onclick="cfPrintSchedule()"><?= icon('printer') ?> Print <span class="hide-mobile">schedule</span></button>
   </div>
   <p class="muted">Rooms are shown as OCCUPIED and cannot be taken during their scheduled class times. Lecturers can open a room instantly when a class is not meeting; those reports appear below.</p>
@@ -369,12 +411,14 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   max-width: 100% !important;
 }
 .tt-sheet .excel-table {
-  width: 100% !important;
+  width: calc(100% - 2px) !important;
+  max-width: calc(100% - 2px) !important;
+  margin: .35rem auto 0 !important;
   border-collapse: collapse !important;
   font-size: .72rem !important;
   line-height: 1.25 !important;
-  margin-top: .35rem !important;
   border: 1px solid #cbd5e1 !important;
+  box-sizing: border-box !important;
 }
 .tt-sheet .excel-table th {
   background: #f1f5f9 !important;
@@ -402,6 +446,30 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   background: #e2e8f0 !important;
   color: #0f172a !important;
   border: 1px solid #cbd5e1 !important;
+  border-top: 1.5px solid #64748b !important;
+  border-bottom: 1.5px solid #64748b !important;
+}
+
+.tt-sheet__imported-wrap {
+  width: 100%;
+  margin-top: .4rem;
+  text-align: center;
+}
+.tt-sheet__imported-img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid #cbd5e1;
+  box-sizing: border-box;
+}
+.tt-sheet__pdf-object {
+  width: 100%;
+  height: 220mm;
+  min-height: 500px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
 }
 
 @page {
@@ -479,7 +547,25 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
     padding: .9rem 0 .65rem !important;
     margin: 0 0 .2rem !important;
   }
+  .tt-sheet__imported-img {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 250mm !important;
+    object-fit: contain !important;
+    border: none !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  .tt-sheet__pdf-object {
+    width: 100% !important;
+    height: 250mm !important;
+    border: none !important;
+  }
   .tt-sheet .excel-table {
+    width: calc(100% - 2px) !important;
+    max-width: calc(100% - 2px) !important;
+    margin: .35rem auto 0 !important;
+    border-collapse: collapse !important;
     border: 1px solid #cbd5e1 !important;
   }
   .tt-sheet .excel-table th,
@@ -492,7 +578,9 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   }
   .tt-sheet .excel-table .row-total td {
     background: #e2e8f0 !important;
-    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    border-top: 1.5px solid #64748b !important;
+    border-bottom: 1.5px solid #64748b !important;
   }
 }
 </style>
@@ -536,12 +624,61 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
         <div>Classroom: <strong><?= e($sRoom['room_number']) ?></strong> (<?= e($sRoom['building']) ?>)</div>
         <div>Schedule No.: SC-<?= str_pad((string)$rid, 3, '0', STR_PAD_LEFT) ?>-<?= date('Ymd') ?></div>
         <div>Date: <?= date('Y-m-d H:i:s') ?></div>
+        <?php if (!empty($sRoom['schedule_file'])): ?>
+          <div class="no-print" style="margin-top: .35rem; display: flex; gap: .3rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+            <span class="pill pill--ok" style="font-size: .65rem; padding: .1rem .4rem;">Imported sheet</span>
+            <a href="../<?= e($sRoom['schedule_file']) ?>" target="_blank" class="btn btn--ghost btn--xs" style="padding: .15rem .45rem; font-size: .7rem;" title="View raw file"><?= icon('eye') ?> View</a>
+            <button class="btn btn--ghost btn--xs" type="button" style="padding: .15rem .45rem; font-size: .7rem;"
+                    data-modal-form="#uploadSheetForm"
+                    data-title="Replace schedule sheet — Room <?= e($sRoom['room_number']) ?>"
+                    data-confirm-text="Replace"
+                    data-prefill='<?= e(json_encode(['classroom_id' => $rid])) ?>'><?= icon('pencil') ?> Replace</button>
+            <form method="post" style="display:inline; margin:0;" data-confirm="Remove the imported schedule sheet for Room <?= e($sRoom['room_number']) ?>?">
+              <?= csrf_field() ?>
+              <input type="hidden" name="action" value="delete_sheet">
+              <input type="hidden" name="classroom_id" value="<?= $rid ?>">
+              <button class="btn btn--danger btn--xs" type="submit" style="padding: .15rem .45rem; font-size: .7rem;" title="Remove imported sheet"><?= icon('trash-2') ?></button>
+            </form>
+          </div>
+        <?php else: ?>
+          <div class="no-print" style="margin-top: .35rem;">
+            <button class="btn btn--ghost btn--xs" type="button" style="padding: .15rem .45rem; font-size: .7rem;"
+                    data-modal-form="#uploadSheetForm"
+                    data-title="Upload schedule sheet — Room <?= e($sRoom['room_number']) ?>"
+                    data-confirm-text="Upload"
+                    data-prefill='<?= e(json_encode(['classroom_id' => $rid])) ?>'><?= icon('upload') ?> Upload sheet</button>
+          </div>
+        <?php endif; ?>
       </div>
     </header>
 
     <h2 class="tt-title">Room Weekly Class Schedule — <?= e($sRoom['room_number']) ?></h2>
 
-    <?php if (empty($roomSlots)): ?>
+    <?php
+    $hasUploadedFile = !empty($sRoom['schedule_file']) && is_file(__DIR__ . '/../' . ltrim($sRoom['schedule_file'], '/\\'));
+    $fileExt = $hasUploadedFile ? strtolower(pathinfo($sRoom['schedule_file'], PATHINFO_EXTENSION)) : '';
+    ?>
+
+    <?php if ($hasUploadedFile): ?>
+      <?php if ($fileExt === 'pdf'): ?>
+        <div class="tt-sheet__imported-wrap">
+          <div class="no-print" style="margin-bottom: .6rem; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: .5rem .75rem; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <span class="small muted">Ready-printed PDF schedule imported from external system.</span>
+            <a href="../<?= e($sRoom['schedule_file']) ?>" target="_blank" class="btn btn--primary btn--xs"><?= icon('printer') ?> Open / Print PDF</a>
+          </div>
+          <object data="../<?= e($sRoom['schedule_file']) ?>" type="application/pdf" class="tt-sheet__pdf-object">
+            <div style="padding: 2rem; text-align: center; border: 1px dashed #cbd5e1; border-radius: 6px;">
+              <p>Ready-printed schedule available as PDF.</p>
+              <a href="../<?= e($sRoom['schedule_file']) ?>" target="_blank" class="btn btn--primary btn--sm"><?= icon('eye') ?> Open PDF</a>
+            </div>
+          </object>
+        </div>
+      <?php else: ?>
+        <div class="tt-sheet__imported-wrap">
+          <img class="tt-sheet__imported-img" src="../<?= e($sRoom['schedule_file']) ?>" alt="Ready printed schedule — Room <?= e($sRoom['room_number']) ?>">
+        </div>
+      <?php endif; ?>
+    <?php elseif (empty($roomSlots)): ?>
       <p class="muted" style="margin: 1.2rem 0; text-align: center;">No scheduled classes recorded for this classroom.</p>
     <?php else: ?>
     <section>
@@ -611,8 +748,49 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   <label>Instructor <input name="instructor" maxlength="120" placeholder="Name on the program"></label>
 </form>
 
+<form method="post" enctype="multipart/form-data" class="form-grid form-grid--5" id="uploadSheetForm" hidden style="text-align:left">
+  <?= csrf_field() ?>
+  <input type="hidden" name="action" value="upload_sheet">
+  <label class="full-width">Classroom
+    <select name="classroom_id" required>
+      <option value="">— choose classroom —</option>
+      <?php foreach ($rooms as $r): ?>
+        <option value="<?= (int)$r['id'] ?>" <?= $filterRoom === (int)$r['id'] ? 'selected' : '' ?>>
+          <?= e($r['building']) ?> · <?= e($r['room_number']) ?><?= !empty($r['schedule_file']) ? ' (has uploaded sheet)' : '' ?>
+        </option>
+      <?php endforeach; ?>
+    </select>
+  </label>
+  <label class="full-width">Printed Schedule File (PDF, PNG, JPG, WEBP)
+    <input type="file" name="schedule_file" accept=".pdf,image/png,image/jpeg,image/webp" required>
+    <span class="small muted">Upload schedule exported or scanned from other system (max 12MB).</span>
+  </label>
+</form>
+
+<form method="post" enctype="multipart/form-data" class="form-grid form-grid--5" id="importCsvForm" hidden style="text-align:left">
+  <?= csrf_field() ?>
+  <input type="hidden" name="action" value="import_csv">
+  <label class="full-width">Schedule CSV File
+    <input type="file" name="csv_file" accept=".csv,text/csv,text/plain" required>
+    <span class="small muted">Expected columns: <code>Room</code>, <code>Day</code>, <code>Start Time</code>, <code>End Time</code>, <code>Subject</code>. Optional: <code>Building</code>, <code>Section</code>, <code>Instructor</code>.</span>
+  </label>
+  <label class="full-width" style="display:flex; align-items:center; gap:.6rem; cursor:pointer; margin-top:.3rem;">
+    <input type="checkbox" name="replace_existing" value="1" checked style="width:auto; margin:0;">
+    <span>Replace existing database schedule slots for imported classrooms</span>
+  </label>
+</form>
+
 <script>
 function cfPrintSchedule() {
+  <?php if ($sheetRoom && !empty($sheetRoom['schedule_file'])): ?>
+    <?php
+    $singleExt = strtolower(pathinfo($sheetRoom['schedule_file'], PATHINFO_EXTENSION));
+    ?>
+    <?php if ($singleExt === 'pdf'): ?>
+      window.open('../<?= e($sheetRoom['schedule_file']) ?>', '_blank');
+      return;
+    <?php endif; ?>
+  <?php endif; ?>
   var orig = document.title;
   document.title = 'Classroom-Schedules-<?= date('Ymd') ?>';
   window.addEventListener('afterprint', function () {

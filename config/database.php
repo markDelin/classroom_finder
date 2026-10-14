@@ -135,6 +135,11 @@ function db(): PDO
                   UNIQUE KEY uq_force_slot (schedule_id, exc_date)
                 ) ENGINE = InnoDB;
             ");
+
+            $cols = $pdo->query("SHOW COLUMNS FROM classrooms LIKE 'schedule_file'")->fetch();
+            if (!$cols) {
+                $pdo->exec("ALTER TABLE classrooms ADD COLUMN schedule_file VARCHAR(255) DEFAULT NULL, ADD COLUMN schedule_updated_at TIMESTAMP NULL DEFAULT NULL");
+            }
         } catch (Throwable $schemaErr) {
             if (function_exists('app_log')) {
                 app_log('DEBUG', 'Runtime table check notice: ' . $schemaErr->getMessage());

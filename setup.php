@@ -4,15 +4,19 @@ declare(strict_types=1);
 // Initial Setup: first-run wizard creating the primary root administrator account.
 require_once __DIR__ . '/config/helpers.php';
 
-// Prevent re-entry if installed.lock exists or users already populated
-if (is_file(__DIR__ . '/installed.lock')) {
-    redirect('index.php');
-}
+// Prevent re-entry only if users exist; clear stale lock if users table empty
 $st  = db()->query('SELECT COUNT(*) AS n FROM users');
 $any = (int)($st->fetch()['n'] ?? 0);
 if ($any > 0) {
-    @file_put_contents(__DIR__ . '/installed.lock', date('c'));
+    if (!is_file(__DIR__ . '/installed.lock')) {
+        @file_put_contents(__DIR__ . '/installed.lock', date('c'));
+    }
     redirect('index.php');
+}
+
+// Database has no users: remove stale lock if present
+if (is_file(__DIR__ . '/installed.lock')) {
+    @unlink(__DIR__ . '/installed.lock');
 }
 
 $errors = [];
