@@ -308,10 +308,78 @@ render_header('Print Schedules', ['prefix' => '../', 'nav' => 'admin', 'active' 
   </div>
 </div>
 <?php endif; ?>
+
+<?php
+$importedRooms = array_values(array_filter($rooms, static fn($r) => !empty($r['schedule_file'])));
+?>
+<?php if ($importedRooms): ?>
+<div class="card" style="margin-top: 1rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: .6rem; flex-wrap: wrap; gap: .5rem;">
+    <h3 style="margin: 0;">Imported schedule sheets</h3>
+    <button class="btn btn--secondary btn--sm" type="button"
+            data-modal-form="#uploadSheetForm"
+            data-title="Upload ready-printed schedule"
+            data-confirm-text="Upload"><?= icon('upload') ?> Upload printed sheet</button>
+  </div>
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Classroom</th>
+          <th>Building</th>
+          <th>File type</th>
+          <th>Last updated</th>
+          <th style="text-align: right;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($importedRooms as $ir):
+          $fExt = strtoupper(pathinfo((string)$ir['schedule_file'], PATHINFO_EXTENSION));
+        ?>
+        <tr>
+          <td class="cell-main nowrap"><strong><?= e($ir['room_number']) ?></strong></td>
+          <td class="nowrap"><?= e($ir['building']) ?></td>
+          <td><span class="pill pill--ok"><?= e($fExt) ?> sheet</span></td>
+          <td class="muted small nowrap"><?= !empty($ir['schedule_updated_at']) ? date('M j, Y g:i A', strtotime($ir['schedule_updated_at'])) : '—' ?></td>
+          <td>
+            <div class="actions-cell" style="justify-content: flex-end;">
+              <a href="../<?= e($ir['schedule_file']) ?>" target="_blank" class="btn btn--ghost btn--sm" title="View / print raw file">
+                <?= icon('eye') ?> <span class="btn-text">View</span>
+              </a>
+              <button class="btn btn--ghost btn--sm" type="button"
+                      data-modal-form="#uploadSheetForm"
+                      data-title="Replace schedule sheet — Room <?= e($ir['room_number']) ?>"
+                      data-confirm-text="Replace"
+                      data-prefill='<?= e(json_encode(['classroom_id' => (int)$ir['id']])) ?>'
+                      title="Replace file">
+                <?= icon('pencil') ?> <span class="btn-text">Replace</span>
+              </button>
+              <form method="post" class="inline-form" data-confirm="Remove the imported schedule sheet for Room <?= e($ir['room_number']) ?>?">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="delete_sheet">
+                <input type="hidden" name="classroom_id" value="<?= (int)$ir['id'] ?>">
+                <button class="btn btn--ghost-danger btn--sm" type="submit" title="Remove sheet">
+                  <?= icon('trash-2') ?> <span class="btn-text">Delete</span>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+<?php endif; ?>
 </div>
 
 <?php if ($sheetRooms): ?>
 <style>
+/* Hide printable previews on screen */
+.tt-heading,
+.tt-stage {
+  display: none !important;
+}
 /* Fixed Paper Preview Canvas: exactly A4 dimensions, never reflows */
 .tt-stage {
   width: 100%;

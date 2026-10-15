@@ -1,353 +1,420 @@
-# Clarendon College — Classroom Finder
+<div align="center">
 
-> Real-time campus classroom availability board, door QR code check-in engine, and academic scheduling system for Clarendon College.
+# 🏫 Clarendon College — Classroom Finder
 
-**Live Demo / Production:** [https://classrooom-finder.page.gd](https://classrooom-finder.page.gd)  
-**Target Environment:** PHP 7.4+ / 8.0+ / 8.1+ / 8.2+ / 8.3+ | MySQL 5.7+ / MariaDB 10.4+ | Any Web Server (Apache / Nginx / Shared Hosting / Laragon / XAMPP)
+<p align="center">
+  <strong>Next-generation campus classroom availability board, door QR code check-in engine, and academic timetable intelligence system.</strong>
+</p>
 
----
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
+[![Database](https://img.shields.io/badge/database-MariaDB%20%7C%20MySQL%205.7%2B-003545?style=for-the-badge&logo=mariadb&logoColor=white)](https://mariadb.org/)
+[![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](manifest.json)
+[![Security Hardened](https://img.shields.io/badge/Security-CSRF%20%2B%20CSP%20%2B%20Pessimistic%20Lock-10B981?style=for-the-badge&logo=shield&logoColor=white)](README.md#security-architecture)
+[![License](https://img.shields.io/badge/license-Clarendon%20College-0F3B6E?style=for-the-badge)](LICENSE)
 
-## Table of Contents
+[🌐 Live Deployment](https://classrooom-finder.page.gd) • [📋 API Documentation](#api-specification) • [🚀 Quick Start](#installation--quick-start) • [📊 Analytics](#analytics--utilization-reports) • [🧪 Tests](#testing--qa)
 
-1. [Overview & Core Capabilities](#overview--core-capabilities)
-2. [Visual Identity & Brand Architecture](#visual-identity--brand-architecture)
-3. [System Architecture & Lifecycle](#system-architecture--lifecycle)
-4. [Availability State Engine](#availability-state-engine)
-5. [Database Schema Reference](#database-schema-reference)
-6. [API Specification](#api-specification)
-7. [User Roles & Security Hierarchy](#user-roles--security-hierarchy)
-8. [Installation & Deployment Guide](#installation--deployment-guide)
-9. [System Configuration Reference](#system-configuration-reference)
-10. [Administrative Runbooks](#administrative-runbooks)
-11. [Background Workers & Automation](#background-workers--automation)
-12. [Security Architecture](#security-architecture)
-13. [Progressive Web App (PWA) & Offline Support](#progressive-web-app-pwa--offline-support)
-14. [Troubleshooting & FAQ](#troubleshooting--faq)
+</div>
 
 ---
 
-## Overview & Core Capabilities
-
-Clarendon College Classroom Finder eliminates physical room scouting across multi-floor campus facilities.
-
-- **Students & Campus Visitors:** Instantly check live room availability across all buildings and floors without logging in. View countdown timers showing when currently occupied classrooms will become free.
-- **Faculty & Lecturers:** Walk up to any classroom, scan the door poster using a mobile camera (or type the 8-character token), choose a duration, and claim the room. When a scheduled class is cancelled or dismissed early, authorized lecturers can trigger an audited "Force-Open" override to make the room immediately available.
-- **Campus Administrators & Facilities Staff:** Manage the physical inventory of rooms, configure weekly recurring class timetables, review live and past room sessions, audit system security events, approve lecturer registrations, and batch-print door QR posters.
+> [!NOTE]
+> **Clarendon College Classroom Finder** is an all-in-one institutional platform that eliminates physical room scouting across multi-floor academic facilities. It bridges real-time physical classroom state with digital scheduling, QR door check-ins, automated session expiry, and executive utilization analytics.
 
 ---
 
-## Visual Identity & Brand Architecture
+## 📑 Table of Contents
 
-The system features the official identity of **Clarendon College**:
-
-- **Hardcoded Institution Seal:** The official Clarendon College seal (`assets/img/logo.png`) is permanently embedded into the sticky navigation bar, landing hero banner, administrative interfaces, and timetable printouts.
-- **Aerial Campus View:** The public room finder displays an aerial drone perspective of the Clarendon College campus (`assets/img/campus-bg.webp`) as a fixed-attachment background beneath a calibrated, high-contrast frosted scrim.
-- **Clarendon Navy Palette:** Built on deep Clarendon blue (`#0F3B6E`), slate gray (`#0F172A`), clean white surfaces (`#FFFFFF`), and semantic status indicators (emerald green for available, crimson red for occupied, amber for warnings, slate for maintenance).
-- **Self-Hosted Typography:**
-  - **Barlow Condensed** (500/600/700) for door-plate numerals, room numbers, and hero titles.
-  - **IBM Plex Sans** (400/500/600) for readable body typography and interface navigation.
-  - **IBM Plex Mono** (400/500/600) for tabular timestamps, QR tokens, session counters, and metadata chips.
+- [Key Capabilities](#-key-capabilities)
+- [System Architecture](#-system-architecture)
+- [Tech Stack & Dependencies](#-tech-stack--dependencies)
+- [Directory Layout](#-directory-layout)
+- [Availability State Engine](#-availability-state-engine)
+- [Installation & Quick Start](#-installation--quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Method A: Local Setup via Laragon / XAMPP (Recommended)](#method-a-local-setup-via-laragon--xampp-recommended)
+  - [Method B: Linux / VPS / Production Web Server](#method-b-linux--vps--production-web-server)
+- [Database Schema Reference](#-database-schema-reference)
+- [API Specification](#-api-specification)
+  - [`GET /api/classroom_status.php`](#1-get-apiclassroom_statusphp)
+  - [`POST /api/scan_qr.php`](#2-post-apiscan_qrphp)
+  - [`POST /api/force_open.php`](#3-post-apiforce_openphp)
+  - [`POST /api/release_room.php`](#4-post-apirelease_roomphp)
+  - [`GET /qr/generate.php`](#5-get-qrgeneratephp)
+- [Schedule Import & Document Integration](#-schedule-import--document-integration)
+- [Analytics & Utilization Reports](#-analytics--utilization-reports)
+- [Role-Based Access Control (RBAC)](#-role-based-access-control-rbac)
+- [Security & Concurrency Architecture](#-security--concurrency-architecture)
+- [Automation & Background Workers](#-automation--background-workers)
+- [Testing & QA](#-testing--qa)
+- [Troubleshooting & FAQ](#-troubleshooting--faq)
+- [License & Attribution](#-license--attribution)
 
 ---
 
-## System Architecture & Lifecycle
+## ⚡ Key Capabilities
+
+### 🔍 For Students & Public Campus Visitors
+- **Zero-Authentication Real-Time Grid:** View live availability status across every campus building and floor instantly without requiring login credentials.
+- **Infinite Scrolling:** Smooth, zero-lag viewport browsing via `IntersectionObserver` with automatic fallback triggers.
+- **Live Countdown Timers:** Precision millisecond-calculated countdowns showing exact remaining time (`Free in 15 min`, `Starts in 45 min`).
+- **PWA Ready & Offline Resilient:** Installable to mobile home screens with cached asset bundles, custom splash screens, and offline fallback screens.
+
+### 📱 For Faculty & Lecturers
+- **Camera QR Door Scanning:** Point any smartphone camera at an entrance poster or enter an 8-character token to claim an available room.
+- **Pessimistic Lock Concurrency:** Eliminates double-booking conflicts at the database transaction layer via row-level locking.
+- **Force-Open Overrides:** When a scheduled class is cancelled or dismissed early, authorized lecturers can trigger an audited override to unlock the room immediately.
+- **One-Tap Release:** Instant room liberation upon class conclusion with automatic audit trail logging.
+
+### 🛠️ For Administrators & Facilities Officers
+- **Inventory & Capacity Management:** Full CRUD management of classrooms, capacities, equipment types, buildings, and operational statuses (`available`, `maintenance`, `disabled`).
+- **Dual-Mode Master Timetable Engine:**
+  - **In-App Slot Manager:** Build and edit recurring weekly class blocks.
+  - **External Ready-Printed Uploads:** Attach and display scanned or PDF/image schedule sheets directly from external registrar systems.
+  - **Batch CSV Import:** Ingest complete school-wide semester schedules from CSV files with duplicate resolution.
+- **Executive Utilization Reports:** Interactive donut charts, room utilization rankings, weekly hours metrics, and hairline-bordered exportable print formats.
+- **Batch Door Poster Generator:** Render 6-per-page A4 door posters complete with high-resolution vector QR codes, typography, and institution seals.
+
+---
+
+## 🏛 System Architecture
 
 ```text
-[ Browser / Mobile Device ]
-       │
-       ├─► (Public Visitor) ──► GET index.php ──────► Real-Time Room Grid (Auto-polls /api/classroom_status.php)
-       │
-       ├─► (Lecturer Camera) ─► POST api/scan_qr.php ─► Token Validation & Schedule Conflict Check
-       │                                                      │
-       │                                                      ▼
-       │                                             POST lecturer/occupy.php
-       │                                             (SELECT ... FOR UPDATE transaction)
-       │                                                      │
-       │                                                      ▼
-       ├─► (Cron / Scheduler) ─► CLI cron/expire.php ─► Transitions expired sessions to 'completed'
-       │
-       └─► (Administrator) ──► Admin Portal (admin/*) ─► CRUD Classrooms, Timetables, Users, Print Sheets
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           Client Devices & Browsers                             │
+│       [ Public Visitor ]          [ Mobile Lecturer ]         [ Administrator ] │
+└───────────────┬────────────────────────────┬─────────────────────────────┬──────┘
+                │                            │                             │
+                ▼                            ▼                             ▼
+    ┌────────────────────────┐  ┌─────────────────────────┐  ┌────────────────────────┐
+    │  Public Availability   │  │   Camera QR Scanner     │  │   Admin Portal Engine  │
+    │  - Grid / Filter UI    │  │   - Html5Qrcode Reader  │  │   - Inventory / Users  │
+    │  - Infinite Scroll     │  │   - Audio Feedback      │  │   - Master Timetables  │
+    │  - Countdown Workers   │  │   - Token Submission    │  │   - Utilization Report │
+    └───────────┬────────────┘  └────────────┬────────────┘  └────────────┬───────────┘
+                │                            │                            │
+                ▼                            ▼                            ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                HTTP / REST Layer                                │
+│   api/classroom_status.php   api/scan_qr.php   api/force_open.php   lecturer/*  │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        Decoupled Domain Service Layer                           │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌───────────────────────┐  │
+│  │     Room Service      │ │    Schedule Service   │ │    Session Service    │  │
+│  │ - Availability Matrix │ │ - CSV Importer        │ │ - FOR UPDATE Locks    │  │
+│  │ - Status Resolvers    │ │ - PDF / Image Uploads │ │ - Auto-Release Logic  │  │
+│  └───────────────────────┘ └───────────────────────┘ └───────────────────────┘  │
+└──────────────────────────────────────┬──────────────────────────────────────────┘
+                                       │
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                   Data Persistence & Background Automation                      │
+│      ┌─────────────────────────┐              ┌───────────────────────────┐     │
+│      │   MariaDB / MySQL 5.7+  │              │   cron/expire.php Worker  │     │
+│      │   - 7 Normalized Tables │◄─────────────┤   - Scheduled Sweeper     │     │
+│      │   - Cascade Constraints │              │   - CLI & Web Cron Ping   │     │
+│      └─────────────────────────┘              └───────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Directory Structure
+---
+
+## 🧰 Tech Stack & Dependencies
+
+| Layer | Technologies & Libraries |
+|---|---|
+| **Backend Runtime** | PHP 8.1+ (compatible up to PHP 8.4) • Strict Typing • Procedural Services |
+| **Database** | MariaDB 10.4+ / MySQL 5.7+ (InnoDB, UTF8mb4, Parameterized PDO) |
+| **Frontend Core** | Vanilla JavaScript (ES6+), CSS3 Variables, Semantic HTML5 |
+| **Typography** | Self-hosted `@font-face` (Barlow Condensed, IBM Plex Sans, IBM Plex Mono) |
+| **QR Engine** | Bundled `phpqrcode` (SVG / PNG stream generation) • `html5-qrcode` (camera capture) |
+| **Notifications & Dialogs** | `sweetalert2` (modal confirmations) • `toastify-js` (asynchronous feedback) |
+| **Audio Synthesis** | HTML5 Audio API (`success.mp3`, `error.mp3`) |
+| **Offline & PWA** | Web App Manifest (`manifest.json`) • Service Worker (`sw.js`) |
+
+---
+
+## 📂 Directory Layout
 
 ```text
 classroom_finder/
-├── admin/                         # Administrative control panel
-│   ├── classrooms.php             # Room inventory (numbers, buildings, floors, capacities, types)
-│   ├── dashboard.php              # Real-time KPIs, active sessions list, room status breakdown
-│   ├── history.php                # Comprehensive occupancy log with CSV export
-│   ├── logs.php                   # Security & operational audit trail
-│   ├── qr_codes.php               # QR code directory, token regeneration, 6-per-page printable sheets
-│   ├── schedules.php              # Weekly master timetable manager and force-open audit
-│   ├── sessions.php               # Live session monitor with administrative termination override
-│   ├── settings.php               # Operational hours and system duration parameters
-│   └── users.php                  # User verification, role assignment, and password resets
-├── api/                           # JSON endpoints for async UI updates
-│   ├── classroom_status.php       # Live status polling and HTML card rendering
-│   ├── force_open.php             # Schedule cancellation override handler
-│   ├── release_room.php           # Active session early termination
-│   └── scan_qr.php                # QR code token validation and eligibility check
-├── assets/                        # Static client-side assets
-│   ├── css/
-│   │   ├── style.css              # Core design system and responsive layout rules
-│   │   └── vendor/toastify.min.css# Notification toaster styles
-│   ├── fonts/                     # Bundled woff2 font files (IBM Plex Sans, IBM Plex Mono, Barlow)
-│   ├── img/                       # Hardcoded brand identity assets
-│   │   ├── campus-bg.webp         # Clarendon College aerial campus background (lightweight WebP)
-│   │   └── logo.png               # Official Clarendon College crest
-│   ├── js/
-│   │   ├── admin-modals.js        # Admin dialogs and confirmation helpers
-│   │   ├── landing.js             # Live polling engine and client-side filter coordinator
-│   │   ├── scanner.js             # Html5Qrcode camera driver, token submission, audio feedback
-│   │   ├── ui.js                  # Navigation drawer, toast alerts, theme initializers
-│   │   └── vendor/                # html5-qrcode, sweetalert2, toastify
-│   ├── sound/                     # Audio cues (success.mp3, error.mp3)
-│   └── uploads/                   # Runtime image storage and fallback logos
-├── auth/                          # Authentication subsystems
-│   ├── auth_check.php             # Session validators (require_login, require_admin, require_approved_lecturer)
-│   └── login_process.php          # Credential verification, rate limits, audit logging
-├── config/                        # Core configuration & framework helpers
-│   ├── database.php               # Singleton PDO connection manager
-│   ├── helpers.php                # CSRF tokens, session bootstrap, flash messaging, asset initializers
-│   ├── icons.php                  # Optimized inline SVG icon library
-│   └── layout.php                 # Shared headers, navigation topbar/sidebar, footers, room cards
+├── admin/                         # Administrative control center
+│   ├── classrooms.php             # Room inventory, capacities, floor & building mappings
+│   ├── dashboard.php              # Real-time KPI cards, active occupancy roster, quick actions
+│   ├── history.php                # Complete historical occupancy audit log with CSV export
+│   ├── logs.php                   # System-wide operational and security activity log
+│   ├── qr_codes.php               # Batch door poster generator (6-up A4 printable cards)
+│   ├── reports.php                # Classroom utilization & frequency analytics with charts
+│   ├── schedules.php              # Weekly timetable editor, sheet uploader & CSV importer
+│   ├── sessions.php               # Live session monitor with administrative revoke controls
+│   ├── settings.php               # Institutional parameters, operating hours, durations
+│   └── users.php                  # User account approvals, role elevations & access status
+├── api/                           # Lightweight REST JSON endpoints
+│   ├── classroom_status.php       # Live status calculation and dynamic HTML card pagination
+│   ├── force_open.php             # Audited class schedule cancellation override
+│   ├── release_room.php           # Active room claim termination
+│   └── scan_qr.php                # Door QR token validation & scan authorization
+├── assets/                        # Client-side static resources
+│   ├── css/                       # Design system, responsive layouts & print stylesheets
+│   ├── fonts/                     # Bundled WOFF2 self-hosted institutional typefaces
+│   ├── img/                       # Brand seals, campus photography, and PWA icons
+│   ├── js/                        # Modular frontend scripts (landing, scanner, modals)
+│   └── sound/                     # Auditory feedback files (success/error chimes)
+├── auth/                          # Access control & session verification middleware
+│   ├── auth_check.php             # Role guards: require_login, require_admin, require_approved
+│   └── login_process.php          # Credential authentication, rate-limiting & audit writes
+├── config/                        # Global bootstrapping & configuration
+│   ├── database.php               # Singleton PDO connection wrapper with UTF-8 enforcement
+│   ├── helpers.php                # Security sanitizers, CSRF, flash toasts & asset resolvers
+│   ├── icons.php                  # Inline SVG icon library
+│   └── layout.php                 # Reusable UI component skeletons (header, nav, cards)
 ├── cron/                          # Automation scripts
-│   └── expire.php                 # CLI-only background session expiration worker
-├── database/                      # SQL definitions and migration scripts
-│   ├── classroom_finder.sql       # Complete MariaDB/MySQL database schema and default seeds
-│   └── seed_classrooms.php        # Initial 30-room campus fixture generator
-├── lecturer/                      # Lecturer mobile-first self-service portal
-│   ├── dashboard.php              # Active occupancy status and end-session control
-│   ├── history.php                # Personal teaching room usage history
-│   ├── occupy.php                 # Pessimistic lock session creation handler
-│   ├── release.php                # Session release processing
-│   └── scanner.php                # Camera QR scanner and manual 8-character token entry
-├── qr/                            # Dynamic QR rendering service
-│   ├── generate.php               # PNG stream QR generator endpoint (?token=...)
-│   └── lib/                       # Bundled phpqrcode generation engine
+│   └── expire.php                 # Background occupancy session expiration worker
+├── database/                      # Migration and schema artifacts
+│   ├── classroom_finder.sql       # Canonical database definition with initial seeds
+│   └── seed_classrooms.php        # 30-room campus fixture generator
+├── lecturer/                      # Mobile-first faculty portal
+│   ├── dashboard.php              # Active occupancy status & fast-action release controls
+│   ├── history.php                # Personal teaching room usage ledger
+│   ├── occupy.php                 # Pessimistic lock room claiming transaction handler
+│   ├── release.php                # Session release processor
+│   └── scanner.php                # Full-screen camera QR scanner & manual code keypad
+├── qr/                            # Server-side QR rendering service
+│   ├── generate.php               # PNG/SVG image stream responder
+│   └── lib/                       # Bundled phpqrcode rasterizer
 ├── services/                      # Decoupled business logic domain layer
-│   ├── room_service.php           # Status calculation, token extraction, room CRUD
-│   ├── schedule_service.php       # Weekly recurring timetable slots and force-open logic
-│   ├── session_service.php        # Occupancy creation, release, expiration, duration clamping
-│   └── user_service.php           # Account authentication, status transitions, password management
-├── 403.php                        # HTTP 403 Forbidden template
-├── 404.php                        # HTTP 404 Not Found template
-├── 500.php                        # HTTP 500 Server Error template
-├── change_password.php            # Authenticated user password update
-├── error.php                      # Generic application error template
-├── index.php                      # Public live availability board
-├── login.php                      # User authentication gateway
-├── logout.php                     # Session termination handler
-├── manifest.json                  # PWA installation manifest
-├── schema.sql                     # Canonical database schema mirror
-├── setup.php                      # First-run locked administrator setup wizard
-└── sw.js                          # Service Worker for asset caching and offline resiliency
+│   ├── room_service.php           # Classroom CRUD, token generation & state calculation
+│   ├── schedule_service.php       # Slot recurrence, CSV import parser & sheet file manager
+│   ├── session_service.php        # Concurrency-safe occupancy transactions & auto-expiry
+│   └── user_service.php           # Account lifecycle, password hashing & verification
+├── tests/                         # Automated test suite
+│   └── test_schedule_import.php   # Unit & integration checks for schedule uploader & CSV parser
+├── 403.php, 404.php, 500.php      # Branded HTTP error pages
+├── index.php                      # Public live availability board (landing page)
+├── login.php, logout.php          # Authentication views
+├── manifest.json, sw.js           # Progressive Web App assets
+└── setup.php                      # Self-locking first-run administrator wizard
 ```
 
 ---
 
-## Availability State Engine
+## 🚦 Availability State Engine
 
-Every classroom's computed status is dynamically evaluated in real time:
+The operational status of every classroom is computed on-demand through an immutable evaluation cascade:
 
 ```text
-Classroom Status Hierarchy:
-1. Is classroom.status in ('maintenance', 'disabled')?
-   └─► YES: Output UNAVAILABLE (Gray) with administrator note.
-2. Is there an active classroom_session (status='active' AND end_time > NOW())?
-   └─► YES: Output OCCUPIED (Red) with lecturer name, end time, and countdown progress bar.
-3. Is there a weekly class_schedule active right now (matching current day-of-week and time)?
-   └─► Check schedule_force_open for today's date:
-       ├─► Override exists: Skip schedule block.
-       └─► No override: Output OCCUPIED (Red) with subject, section, and instructor.
-4. Default:
-   └─► Output AVAILABLE (Green) with capacity and location metadata.
+                       [ Incoming Room Query ]
+                                  │
+                                  ▼
+             Is classroom.status in ('maintenance', 'disabled')?
+                                 / \
+                         YES    /   \    NO
+                               ▼     ▼
+             ┌─────────────────┐     Is there an active session in classroom_sessions
+             │   UNAVAILABLE   │     where status = 'active' AND end_time > NOW()?
+             │     (Gray)      │                    / \
+             └─────────────────┘            YES    /   \    NO
+                                                   ▼     ▼
+                                 ┌─────────────────┐     Is there a weekly class_schedule active
+                                 │    OCCUPIED     │     for current day-of-week & current time?
+                                 │     (Red)       │                    / \
+                                 └─────────────────┘            YES    /   \    NO
+                                                                       ▼     ▼
+                                              Does an override exist in      ┌─────────────────┐
+                                              schedule_force_open for today? │    AVAILABLE    │
+                                                              / \            │     (Green)     │
+                                                      YES    /   \    NO     └─────────────────┘
+                                                            ▼     ▼
+                                          ┌─────────────────┐     ┌─────────────────┐
+                                          │    AVAILABLE    │     │    OCCUPIED     │
+                                          │     (Green)     │     │     (Red)       │
+                                          └─────────────────┘     └─────────────────┘
 ```
 
-### State Definitions
+### State Indicators
 
-| State | Visual Badge | CSS Class | Booking Allowed? | Description |
-|---|---|---|:---:|---|
-| **AVAILABLE** | Green (`circle-check`) | `st-available` / `pill--ok` | Yes | Room is completely free. Can be claimed immediately. |
-| **OCCUPIED** | Red (`clock`) | `st-occupied` / `pill--danger` | No | In use by a lecturer or an active weekly timetable class. |
-| **UNAVAILABLE** | Gray (`ban`) | `st-unavailable` / `pill--off` | No | Under facility repair or temporarily taken out of rotation. |
+| Status | Badge | CSS Token | Claimable? | Context |
+|---|:---:|:---:|:---:|---|
+| **AVAILABLE** | 🟢 Green | `pill--ok` / `st-available` | **Yes** | Room is physically unlocked and free to claim. |
+| **OCCUPIED** | 🔴 Red | `pill--danger` / `st-occupied` | **No** | Active lecturer session or ongoing academic class. |
+| **UNAVAILABLE** | ⚫ Gray | `pill--off` / `st-unavailable` | **No** | Facility under maintenance, offline, or decommissioned. |
 
 ---
 
-## Database Schema Reference
+## 🚀 Installation & Quick Start
 
-The system uses 7 normalized InnoDB tables with foreign key cascade constraints:
-
-### 1. `users`
-Stores system accounts for lecturers and administrators.
-```sql
-CREATE TABLE users (
-  id             INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  full_name      VARCHAR(120) NOT NULL,
-  staff_id       VARCHAR(40) NOT NULL,
-  email          VARCHAR(120) NOT NULL,
-  username       VARCHAR(40) NOT NULL,
-  password       VARCHAR(255) NOT NULL,
-  department     VARCHAR(80) DEFAULT NULL,
-  role           ENUM('admin','lecturer') NOT NULL DEFAULT 'lecturer',
-  account_status ENUM('pending','approved','rejected','suspended') NOT NULL DEFAULT 'pending',
-  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_users_username (username),
-  UNIQUE KEY uq_users_staff_id (staff_id),
-  UNIQUE KEY uq_users_email (email)
-);
-```
-
-### 2. `classrooms`
-Physical room registry.
-```sql
-CREATE TABLE classrooms (
-  id          INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  room_number VARCHAR(20) NOT NULL,
-  building    VARCHAR(80) NOT NULL,
-  floor       TINYINT UNSIGNED NOT NULL DEFAULT 1,
-  capacity    SMALLINT UNSIGNED NOT NULL DEFAULT 30,
-  room_type   VARCHAR(40) NOT NULL DEFAULT 'Other',
-  qr_token    VARCHAR(32) NOT NULL,
-  status      ENUM('available','maintenance','disabled') NOT NULL DEFAULT 'available',
-  note        VARCHAR(160) DEFAULT NULL,
-  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_rooms_location (building, room_number),
-  UNIQUE KEY uq_rooms_token (qr_token)
-);
-```
-
-### 3. `classroom_sessions`
-Live and historical room occupancy sessions.
-```sql
-CREATE TABLE classroom_sessions (
-  id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  classroom_id INT UNSIGNED NOT NULL,
-  user_id      INT UNSIGNED NOT NULL,
-  start_time   DATETIME NOT NULL,
-  end_time     DATETIME NOT NULL,
-  status       ENUM('active','completed','released') NOT NULL DEFAULT 'active',
-  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  released_at  DATETIME DEFAULT NULL,
-  KEY idx_sessions_room_active (classroom_id, status),
-  KEY idx_sessions_end (end_time),
-  KEY idx_sessions_user (user_id),
-  CONSTRAINT fk_session_room FOREIGN KEY (classroom_id) REFERENCES classrooms (id) ON DELETE CASCADE,
-  CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-);
-```
-
-### 4. `class_schedules`
-Weekly recurring academic timetables.
-```sql
-CREATE TABLE class_schedules (
-  id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  classroom_id INT UNSIGNED NOT NULL,
-  day_of_week  TINYINT UNSIGNED NOT NULL, -- 0=Sunday, 1=Monday, ..., 6=Saturday
-  start_time   TIME NOT NULL,
-  end_time     TIME NOT NULL,
-  subject      VARCHAR(120) NOT NULL,
-  section      VARCHAR(80) DEFAULT NULL,
-  instructor   VARCHAR(120) DEFAULT NULL,
-  is_active    TINYINT(1) NOT NULL DEFAULT 1,
-  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_sched_room_day (classroom_id, day_of_week, is_active),
-  CONSTRAINT fk_sched_room FOREIGN KEY (classroom_id) REFERENCES classrooms (id) ON DELETE CASCADE
-);
-```
-
-### 5. `schedule_force_open`
-Single-day overrides for cancelled or early-dismissed scheduled slots.
-```sql
-CREATE TABLE schedule_force_open (
-  id           INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  classroom_id INT UNSIGNED NOT NULL,
-  schedule_id  INT UNSIGNED NOT NULL,
-  exc_date     DATE NOT NULL,
-  reason       ENUM('lecturer_absent','emergency','ended_early','other') NOT NULL,
-  details      VARCHAR(160) DEFAULT NULL,
-  user_id      INT UNSIGNED NOT NULL,
-  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_force_slot (schedule_id, exc_date),
-  CONSTRAINT fk_force_room FOREIGN KEY (classroom_id) REFERENCES classrooms (id) ON DELETE CASCADE,
-  CONSTRAINT fk_force_sched FOREIGN KEY (schedule_id) REFERENCES class_schedules (id) ON DELETE CASCADE,
-  CONSTRAINT fk_force_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-);
-```
-
-### 6. `activity_logs`
-Immutable audit trail of authentication, room check-in, release, and config updates.
-```sql
-CREATE TABLE activity_logs (
-  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  user_id      INT UNSIGNED DEFAULT NULL,
-  classroom_id INT UNSIGNED DEFAULT NULL,
-  action       VARCHAR(40) NOT NULL,
-  details      VARCHAR(255) DEFAULT NULL,
-  timestamp    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  KEY idx_logs_time (timestamp),
-  KEY idx_logs_action (action),
-  KEY idx_logs_user (user_id)
-);
-```
-
-### 7. `settings`
-Key-value runtime configuration store.
-```sql
-CREATE TABLE settings (
-  skey   VARCHAR(40) NOT NULL PRIMARY KEY,
-  svalue VARCHAR(255) NOT NULL
-);
-```
+### Prerequisites
+- **PHP 8.1+** with extensions: `pdo_mysql`, `gd`, `mbstring`, `session`, `json`
+- **MariaDB 10.4+** or **MySQL 5.7+**
+- **Web Server:** Apache (with `mod_rewrite`) or Nginx with PHP-FPM
 
 ---
 
-## API Specification
+### Method A: Local Setup via Laragon / XAMPP (Recommended)
 
-All endpoints return JSON (`Content-Type: application/json; charset=utf-8`) unless `format=html` is specified. State-modifying requests require a valid CSRF token header (`X-CSRF-Token`) or parameter (`csrf`).
+1. **Clone or Copy Repository:**
+   Place the project into your local web root:
+   ```bash
+   cd C:\laragon\www
+   git clone https://github.com/your-username/classroom_finder.git
+   ```
+
+2. **Initialize Database:**
+   Start MySQL in Laragon/XAMPP, open your preferred client (phpMyAdmin, HeidiSQL, CLI), and run:
+   ```sql
+   CREATE DATABASE classroom_finder CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+   Import the schema:
+   ```bash
+   mysql -u root -p classroom_finder < database/classroom_finder.sql
+   ```
+
+3. **Verify Database Configuration:**
+   Inspect `config/database.php` and verify connection parameters:
+   ```php
+   const DB_HOST = '127.0.0.1';
+   const DB_PORT = '3306';
+   const DB_NAME = 'classroom_finder';
+   const DB_USER = 'root';
+   const DB_PASS = '';
+   ```
+
+4. **Launch Administrator Wizard:**
+   Navigate to the first-run installation lock in your browser:
+   ```text
+   http://localhost/classroom_finder/setup.php
+   ```
+   Fill in your primary administrator profile (Full Name, Staff ID, Username, Password). Upon submission, `setup.php` permanently seals itself against tampering.
+
+5. **Run Sanity Tests:**
+   Verify schedule services and database connectivity:
+   ```bash
+   php tests/test_schedule_import.php
+   ```
+
+---
+
+### Method B: Linux / VPS / Production Web Server
+
+1. **Clone Repository & Set Permissions:**
+   ```bash
+   cd /var/www/html
+   git clone https://github.com/your-username/classroom_finder.git
+   cd classroom_finder
+   chown -R www-data:www-data assets/uploads/ assets/img/
+   chmod -R 775 assets/uploads/ assets/img/
+   ```
+
+2. **Configure Nginx (Optional if using Nginx + PHP-FPM):**
+   ```nginx
+   server {
+       listen 80;
+       server_name classrooms.yourcollege.edu;
+       root /var/www/html/classroom_finder;
+       index index.php;
+
+       location / {
+           try_files $uri $uri/ /index.php?$args;
+       }
+
+       location ~ \.php$ {
+           include snippets/fastcgi-php.conf;
+           fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+       }
+
+       location ~* \.(sql|lock|log)$ {
+           deny all;
+       }
+   }
+   ```
+
+3. **Enforce SSL/TLS:**
+   Camera QR scanning on mobile devices **requires a secure HTTPS origin**. Obtain a free certificate via Let's Encrypt:
+   ```bash
+   certbot --nginx -d classrooms.yourcollege.edu
+   ```
+
+---
+
+## 🗄️ Database Schema Reference
+
+The system relies on 7 tightly normalized tables engineered with strict foreign key constraints:
+
+```text
+┌──────────────┐         ┌──────────────────────┐         ┌────────────────────┐
+│    users     │1       *│  classroom_sessions  │*       1│     classrooms     │
+│──────────────┼─────────┼──────────────────────┼─────────┼────────────────────│
+│ id (PK)      │         │ id (PK)              │         │ id (PK)            │
+│ staff_id     │         │ classroom_id (FK)    │         │ room_number        │
+│ username     │         │ user_id (FK)         │         │ building           │
+│ role         │         │ start_time           │         │ floor              │
+│ status       │         │ end_time             │         │ capacity           │
+└──────────────┘         │ status               │         │ qr_token (UQ)      │
+                         └──────────────────────┘         │ schedule_file      │
+                                                          │ status             │
+                                                          └──────────┬─────────┘
+                                                                     │1
+                                                                     │
+                                                                     │*
+┌──────────────────────┐         ┌──────────────────────┐            │
+│ schedule_force_open  │*       1│   class_schedules    │*           │
+│──────────────────────┼─────────┼──────────────────────┼────────────┘
+│ id (PK)              │         │ id (PK)              │
+│ classroom_id (FK)    │         │ classroom_id (FK)    │
+│ schedule_id (FK)     │         │ day_of_week (0-6)    │
+│ exc_date             │         │ start_time / end_time│
+│ reason               │         │ subject / section    │
+└──────────────────────┘         └──────────────────────┘
+```
+
+> [!TIP]
+> Inspect the canonical SQL declarations directly in [database/classroom_finder.sql](database/classroom_finder.sql).
+
+---
+
+## 🔌 API Specification
+
+All endpoints return JSON (`Content-Type: application/json; charset=utf-8`) unless explicitly requesting HTML payloads. Modifying requests mandate valid CSRF protection.
 
 ### 1. `GET /api/classroom_status.php`
-Retrieve live availability for one or more classrooms.
+Retrieves live calculated availability for rooms, including active occupant names, countdowns, and stats.
 
-**Query Parameters:**
-| Parameter | Type | Required | Description |
-|---|---|:---:|---|
-| `id` | integer | No | Single classroom ID. If omitted, returns all filtered classrooms. |
-| `q` | string | No | Search query (matches room number, building, or type). |
-| `status` | string | No | Status filter: `available`, `occupied`, `unavailable`. |
-| `building` | string | No | Filter by building name. |
-| `floor` | integer | No | Filter by floor level. |
-| `type` | string | No | Filter by room type (e.g. `Lecture Hall`, `Laboratory`). |
-| `mincap` | integer | No | Minimum seat capacity filter. |
-| `page` | integer | No | Pagination page index (default: `1`). |
-| `format` | string | No | Set to `html` to retrieve rendered HTML card components for the public grid. |
+**Parameters:**
+| Parameter | Type | In | Description |
+|---|---|---|---|
+| `q` | `string` | Query | Fulltext search query against room number, building, or type. |
+| `status` | `string` | Query | Status filter: `available`, `occupied`, `unavailable`. |
+| `building` | `string` | Query | Building name filter. |
+| `floor` | `integer`| Query | Floor level integer. |
+| `page` | `integer`| Query | Pagination index (default: `1`). |
+| `with_html` | `integer`| Query | Set to `1` to receive pre-rendered HTML cards for infinite scrolling. |
 
-**Success Response (200 OK):**
+**Example 200 OK Response:**
 ```json
 {
   "ok": true,
+  "count": 28,
+  "page": 1,
   "stats": {
     "available": 18,
     "occupied": 8,
-    "unavailable": 4
+    "unavailable": 2
   },
-  "total": 30,
-  "page": 1,
+  "server_now": "2026-10-15 14:30:00",
   "rooms": [
     {
       "id": 101,
       "room_number": "Main-101",
-      "building": "Main Academic Building",
+      "building": "Main Academic",
       "floor": 1,
-      "capacity": 45,
-      "room_type": "Lecture Hall",
-      "computed": "available",
-      "session_id": null,
-      "session_lecturer": null,
-      "session_start": null,
-      "session_end": null,
-      "available_at": null
+      "capacity": 40,
+      "computed": "occupied",
+      "status_label": "Occupied",
+      "session_lecturer": "Prof. Smith",
+      "free_at": "2026-10-15 15:30:00"
     }
   ]
 }
@@ -356,29 +423,27 @@ Retrieve live availability for one or more classrooms.
 ---
 
 ### 2. `POST /api/scan_qr.php`
-Validate a scanned QR code or manual token before presenting the check-in modal.
+Validates a door token before unlocking the occupancy modal.
 
-**Authentication:** Required (`lecturer` with `approved` status).
+**Authentication:** Required (`role = 'lecturer'`, `account_status = 'approved'`).
 
 **Payload:**
 ```json
 {
   "token": "A1B2C3D4",
-  "csrf": "4f9a7d8e6c..."
+  "csrf": "3f982d1..."
 }
 ```
 
-**Success Response (200 OK):**
+**Example 200 OK Response:**
 ```json
 {
   "ok": true,
   "room": {
     "id": 101,
     "room_number": "Main-101",
-    "building": "Main Academic Building",
-    "floor": 1,
-    "capacity": 45,
-    "room_type": "Lecture Hall",
+    "building": "Main Academic",
+    "capacity": 40,
     "token": "A1B2C3D4"
   },
   "duration_options": [30, 60, 90, 120],
@@ -387,15 +452,10 @@ Validate a scanned QR code or manual token before presenting the check-in modal.
 }
 ```
 
-**Error Responses:**
-- `401 Unauthorized`: User not signed in.
-- `403 Forbidden`: Account pending approval, outside campus scan hours, or invalid CSRF.
-- `400 Bad Request`: Invalid token, room already occupied, or user already holds an active session.
-
 ---
 
 ### 3. `POST /api/force_open.php`
-Submit an audited schedule cancellation override for a classroom blocked by a weekly timetable slot.
+Submit an audited schedule cancellation override for a classroom blocked by a master timetable slot.
 
 **Authentication:** Required (`lecturer` or `admin`).
 
@@ -404,265 +464,187 @@ Submit an audited schedule cancellation override for a classroom blocked by a we
 {
   "token": "A1B2C3D4",
   "schedule_id": 42,
-  "reason": "lecturer_absent",
-  "details": "Instructor advised class cancellation via departmental notice.",
-  "csrf": "4f9a7d8e6c..."
-}
-```
-
-**Success Response (200 OK):**
-```json
-{
-  "ok": true,
-  "message": "Classroom schedule has been cleared for today. You may now check in."
+  "reason": "ended_early",
+  "details": "Class completed lab exercises 45 minutes ahead of schedule.",
+  "csrf": "3f982d1..."
 }
 ```
 
 ---
 
 ### 4. `POST /api/release_room.php`
-End an active occupancy session before its scheduled expiration.
+Terminates an ongoing occupancy session ahead of schedule.
 
-**Authentication:** Required (Lecturer who owns the session, or any Administrator).
+**Authentication:** Required (session owner or administrator).
 
 **Payload:**
 ```json
 {
   "session_id": 85,
-  "csrf": "4f9a7d8e6c..."
-}
-```
-
-**Success Response (200 OK):**
-```json
-{
-  "ok": true,
-  "message": "Classroom Main-101 has been released and is now available."
+  "csrf": "3f982d1..."
 }
 ```
 
 ---
 
 ### 5. `GET /qr/generate.php`
-Stream a dynamic PNG QR code image for a classroom token or printable URL.
+Dynamic server-side QR code rasterizer.
 
 **Query Parameters:**
 | Parameter | Type | Required | Description |
 |---|---|:---:|---|
-| `token` | string | Yes | 8-character classroom token or full claim URL. |
-| `size` | integer | No | QR pixel module size (1 to 10, default: `4`). |
-| `margin` | integer | No | Quiet zone border width (default: `2`). |
-
-**Response:** `image/png` binary stream.
+| `token` | `string` | **Yes** | 8-character classroom token or full claim URL. |
+| `size` | `integer`| No | Module dimension (1–10, default: `4`). |
+| `margin` | `integer`| No | Quiet zone border width (default: `2`). |
 
 ---
 
-## User Roles & Security Hierarchy
+## 📅 Schedule Import & Document Integration
 
-| Privilege / Action | Public Visitor | Pending Lecturer | Approved Lecturer | Administrator |
+Clarendon College Classroom Finder supports flexible hybrid academic scheduling:
+
+### 1. External Printed Schedule Integration
+When classrooms use timetables generated by third-party institutional ERPs or registrar software, administrators can upload the exact scanned sheet or digital printout:
+- Supported formats: **PDF**, **PNG**, **JPG**, **WEBP** (up to 12 MB).
+- PDF files embed seamlessly via standard `<object>` elements with direct in-browser print triggers.
+- High-resolution images are scaled and centered to prevent reflow.
+- Managed directly inside **Admin > Print Schedules > Imported Schedule Sheets**.
+
+### 2. Batch CSV Timetable Import
+Import hundreds of recurring weekly class slots in a single click via **Admin > Schedules > Import CSV**:
+- **Supported Columns:**
+  - `Room` *(Required)*: Matches `room_number` in database.
+  - `Day` *(Required)*: Day name (`Monday`, `Mon`, `1`).
+  - `Start Time` *(Required)*: e.g. `08:00` or `8:00 AM`.
+  - `End Time` *(Required)*: e.g. `10:00` or `10:00 AM`.
+  - `Subject` *(Required)*: Course code or title.
+  - `Building` *(Optional)*: Disambiguates duplicate room numbers.
+  - `Section` *(Optional)*: e.g. `BSCS 3-A`.
+  - `Instructor` *(Optional)*: Assigned faculty member.
+- **Toggle Replace Mode:** Optionally clear existing database slots for imported classrooms or append without overwriting.
+
+---
+
+## 📊 Analytics & Utilization Reports
+
+Located at [admin/reports.php](admin/reports.php), the administrative reporting suite delivers instant clarity on campus asset utilization:
+
+- **Interactive Utilization Donut Chart:** Visual breakdown of Available vs. Occupied vs. Maintenance classrooms rendered with native SVG.
+- **Key Utilization KPIs:**
+  - Total Weekly Scheduled Hours across campus.
+  - Average Room Load (hours per room).
+  - Most Active Day and Peak Usage Window.
+- **Hairline Table Styling:** Formatted with `border-collapse: separate; border-spacing: 0;` and calibrated `0.5px solid #000000` borders ensuring crisp, high-resolution rendering without double-stroke blurring on both displays and paper printouts.
+
+---
+
+## 🛡️ Role-Based Access Control (RBAC)
+
+| System Action | Public Visitor | Pending Lecturer | Approved Lecturer | Administrator |
 |---|:---:|:---:|:---:|:---:|
-| View Live Room Board | Yes | Yes | Yes | Yes |
-| Search & Filter Rooms | Yes | Yes | Yes | Yes |
-| Inspect Timetable Details | Yes | Yes | Yes | Yes |
-| Access Mobile QR Scanner | No | No | Yes | Yes |
-| Occupy Classrooms via Token | No | No | Yes | Yes |
-| Force-Open Cancelled Slots | No | No | Yes | Yes |
-| Release Own Sessions | No | No | Yes | Yes |
-| Release Any User's Session | No | No | No | Yes |
-| Classroom CRUD Inventory | No | No | No | Yes |
-| Batch-Print Door Posters | No | No | No | Yes |
-| Master Schedule Editor | No | No | No | Yes |
-| User Approvals & Role Grants | No | No | No | Yes |
-| View System Audit Logs | No | No | No | Yes |
-| Edit System Operating Hours | No | No | No | Yes |
+| View Live Availability Grid | ✅ | ✅ | ✅ | ✅ |
+| Filter & Search Rooms | ✅ | ✅ | ✅ | ✅ |
+| Scan Door QR Posters | ❌ | ❌ | ✅ | ✅ |
+| Check In / Occupy Rooms | ❌ | ❌ | ✅ | ✅ |
+| Submit Force-Open Overrides | ❌ | ❌ | ✅ | ✅ |
+| Release Own Sessions | ❌ | ❌ | ✅ | ✅ |
+| Terminate Any User's Session | ❌ | ❌ | ❌ | ✅ |
+| Manage Classroom Inventory | ❌ | ❌ | ❌ | ✅ |
+| Upload Schedule Sheets / CSV | ❌ | ❌ | ❌ | ✅ |
+| Generate Batch Door Posters | ❌ | ❌ | ❌ | ✅ |
+| Review Activity Audit Logs | ❌ | ❌ | ❌ | ✅ |
+| System Settings & Scan Hours | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
-## Installation & Deployment Guide
+## 🔒 Security & Concurrency Architecture
 
-### System Requirements
-- **PHP:** 8.1.0 or newer
-  - Required Extensions: `pdo_mysql`, `gd`, `mbstring`, `session`, `json`
-- **Database:** MariaDB 10.4+ or MySQL 5.7+
-- **Web Server:** Apache 2.4+ (with `mod_rewrite` and `.htaccess` support) or Nginx with PHP-FPM
-- **Browser Compatibility:** Chrome 90+, Safari 14+, Firefox 88+, Edge 90+ (Requires HTTPS in production for camera access)
-
----
-
-### Method A: Local Setup via Laragon (Recommended)
-
-1. Place the project directory into Laragon's `www` root:
-   ```text
-   C:\laragon\www\classroom_finder
-   ```
-2. Start **All Services** in the Laragon Control Panel (Apache & MySQL).
-3. Open MySQL client or phpMyAdmin and create database:
+1. **Pessimistic Concurrency Locking (`FOR UPDATE`):**
    ```sql
-   CREATE DATABASE classroom_finder CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   SELECT id, status FROM classrooms WHERE id = ? FOR UPDATE;
    ```
-4. Import schema:
-   - Import `database/classroom_finder.sql` via phpMyAdmin or MySQL CLI:
-     ```bash
-     mysql -u root -p classroom_finder < database/classroom_finder.sql
-     ```
-5. Check database credentials in `config/database.php`:
-   ```php
-   define('DB_HOST', '127.0.0.1');
-   define('DB_NAME', 'classroom_finder');
-   define('DB_USER', 'root');
-   define('DB_PASS', '');
-   ```
-6. Open your browser and navigate to the first-run administrator wizard:
-   ```text
-   http://localhost/classroom_finder/setup.php
-   ```
-7. Enter initial administrator credentials (e.g., Full Name, Staff ID, Email, Username, Password). Upon completion, `setup.php` locks itself permanently.
-8. Sign in at `http://localhost/classroom_finder/login.php`.
+   Room claims are encapsulated in ACID-compliant transactions. Simultaneous mobile scans queue safely; the first transaction secures the slot, and concurrent attempts are immediately rejected with informative user feedback.
 
----
+2. **Prepared Statements & Parameter Binding:**
+   100% of database interactions execute through PDO prepared statements, eliminating SQL injection vectors.
 
-### Method B: Web / Shared Hosting Setup (cPanel / InfinityFree / VPS)
-
-1. Upload the codebase to your web root (e.g. `public_html` or `htdocs`).
-2. Create a MySQL database and user in your hosting control panel.
-3. Import `database/classroom_finder.sql` using phpMyAdmin.
-4. Update database credentials in `config/database.php`:
-   ```php
-   const DB_HOST = 'sqlxxx.yourhost.com'; // or '127.0.0.1' / 'localhost'
-   const DB_PORT = '3306';
-   const DB_NAME = 'your_db_name';
-   const DB_USER = 'your_db_user';
-   const DB_PASS = 'your_db_password';
-   ```
-5. Ensure `assets/uploads/` and `assets/img/` have write permissions (755 or 775).
-6. Complete initial administrator creation via `setup.php` in your browser.
-7. Enforce HTTPS in your domain settings to allow camera QR scanning on mobile devices.
-
----
-
-## System Configuration Reference
-
-Configurable in **Admin > Settings** or directly in the `settings` database table:
-
-| Setting Key | Default | Type | Description |
-|---|---|:---:|---|
-| `app_name` | `Classroom Finder` | string | Application brand name displayed in top bar and window titles. |
-| `school_name` | `Clarendon College` | string | Formal institution title displayed on hero banners and timetable sheets. |
-| `school_address` | *(Empty)* | string | Street address printed under the institution header on printed schedules. |
-| `school_contact` | *(Empty)* | string | Telephone number or registrar email printed on printed schedule sheets. |
-| `min_duration_minutes`| `15` | integer | Minimum allowable room occupancy duration in minutes (range: 5–480). |
-| `max_duration_minutes`| `480` | integer | Maximum single-session occupancy duration in minutes (range: 15–1440). |
-| `duration_step_minutes`| `30` | integer | Step interval for the duration selector modal buttons. |
-| `landing_refresh_seconds`| `15` | integer | Live availability board polling frequency in seconds. |
-| `scan_day_start` | `07:00` | string | Daily campus scan opening time in 24-hour format (`HH:MM`). |
-| `scan_day_end` | `19:00` | string | Daily campus scan closing time in 24-hour format (`HH:MM`). |
-
----
-
-## Administrative Runbooks
-
-### Runbook 1: Printing Door QR Posters
-1. Navigate to **Admin > QR Codes** (`admin/qr_codes.php`).
-2. Filter rooms by building or floor if printing by facility section.
-3. Select rooms using row checkboxes, or click the master checkbox to select all rooms on the page.
-4. Click **Print Selected Posters**.
-5. The print dialog renders 6 standardized door cards per A4/Letter page containing:
-   - Institution name and crest.
-   - Large, high-contrast room number and location metadata.
-   - High-resolution SVG-rendered QR code targeting the instant check-in URL.
-   - Human-readable 8-character fallback code.
-   - Quick instructions for camera check-in.
-6. Print and affix next to each classroom entrance door at eye level.
-
----
-
-### Runbook 2: Weekly Schedule Timetable Setup
-1. Navigate to **Admin > Schedules** (`admin/schedules.php`).
-2. Click **Add Schedule Slot**.
-3. Select the classroom, day of the week (Monday through Sunday), start time, end time, subject title, section code, and instructor name.
-4. Save slot. The system automatically validates against conflicting overlaps.
-5. The public room finder and scanner will now mark the room as `Occupied` during those recurring intervals unless a force-open override is invoked.
-
----
-
-### Runbook 3: Approving Lecturer Accounts
-1. Direct new instructors to click **Sign in > Need an account? Contact an administrator** or visit `register.php` (if self-registration enabled).
-2. Navigate to **Admin > Users** (`admin/users.php`).
-3. Click the **Pending Approval** filter tab.
-4. Review the lecturer's Full Name, Department, and official Staff ID.
-5. Click **Approve**. The lecturer can now log in and operate the camera check-in scanner.
-
----
-
-## Background Workers & Automation
-
-### Automated Session Expiration Worker
-The system automatically performs lazy session cleanup whenever room queries execute. Optionally, you can trigger `cron/expire.php` periodically:
-
-- **Web Cron / Scheduled Ping (cPanel / InfinityFree / cron-job.org):**
-  Schedule an HTTP GET request to `https://your-domain.com/cron/expire.php` every 1–5 minutes.
-- **Local Task Scheduler (Windows / Laragon):**
-  Run `php cron/expire.php` on a 1-minute interval.
-- **CLI Scheduler:**
-  ```text
-  * * * * * php /path/to/htdocs/cron/expire.php > /dev/null 2>&1
-  ```
-
-The worker automatically transitions expired active sessions to `completed` and logs each completion event to `activity_logs`.
-
----
-
-## Security Architecture
-
-1. **Pessimistic Concurrency Control:**
-   Room check-ins use `SELECT id, status FROM classrooms WHERE id = ? FOR UPDATE` inside an isolated database transaction. If two lecturers attempt to check into the same room simultaneously, the second transaction is queued and safely rejected with an informative error rather than causing double-booking.
-2. **SQL Injection Defense:**
-   All queries utilize PDO prepared statements with parameterized input bindings. No direct string interpolation is performed on SQL statements.
 3. **Cross-Site Request Forgery (CSRF):**
-   State-altering actions generate and validate cryptographically secure 256-bit random tokens via `csrf_token()` and `check_csrf()`.
-4. **Session Security & Hardening:**
-   - `HttpOnly`: Session cookies are inaccessible to JavaScript.
+   All mutation forms and asynchronous API payloads validate high-entropy 256-bit cryptographically secure tokens.
+
+4. **Session & Cookie Hardening:**
+   - `HttpOnly`: Session cookies are inaccessible to client-side scripts.
    - `SameSite=Lax`: Defends against cross-site timing and CSRF attacks.
-   - `Strict-Transport-Security`: Enforces HTTPS in production.
    - `Content-Security-Policy`: Restricts inline injection vectors while whitelisting self-hosted fonts and assets.
-5. **Directory Protection (.htaccess):**
-   Direct URL requests to `config/`, `database/`, `.sql`, `.log`, and `.lock` files are rejected with HTTP 403 Forbidden.
-6. **Rate-Limiting & Scan Hours:**
-   Check-in attempts outside calibrated operating hours (`scan_day_start` to `scan_day_end`) are blocked at the controller layer.
+
+5. **Filesystem Protection:**
+   Direct HTTP access to `.sql`, `.lock`, `.log`, and sensitive directories (`config/`, `database/`) is blocked via `.htaccess` rules.
 
 ---
 
-## Progressive Web App (PWA) & Offline Support
+## ⏱️ Automation & Background Workers
 
-Clarendon College Classroom Finder operates as an installable Progressive Web App:
+Classroom Finder automatically cleans up completed room occupancies on-demand during routine query execution. For high-volume production deployments, an automated background cron worker is provided:
 
-- **Manifest (`manifest.json`):** Defines standalone viewport display, `#0F3B6E` theme bar styling, and high-DPI Clarendon College launcher icons.
-- **Service Worker (`sw.js`):** Intercepts network requests to cache offline styles, self-hosted web fonts (`Barlow Condensed`, `IBM Plex Sans`, `IBM Plex Mono`), icons, and audio feedback cues.
-- **Mobile Camera Support:** Uses `html5-qrcode` with automatic camera selection, torch support where available, and low-latency audio feedback (`assets/sound/success.mp3` on claim, `error.mp3` on failure).
+### Setting Up the Cron Worker
+Schedule [cron/expire.php](cron/expire.php) to run every 1 to 5 minutes:
 
----
+```bash
+# Production Linux Crontab (crontab -e)
+* * * * * php /var/www/html/classroom_finder/cron/expire.php > /dev/null 2>&1
+```
 
-## Troubleshooting & FAQ
-
-### 1. Camera does not start in QR Scanner
-- **Cause:** Mobile browsers require a secure origin to access camera hardware.
-- **Solution:** Access the site over `https://` (or `http://localhost` during local development). If testing from a phone on a local Wi-Fi IP (e.g. `192.168.1.x`), generate a self-signed certificate in Laragon or test using a tunneling service like ngrok.
-
-### 2. "First-time setup: no administrator exists yet" banner persists
-- **Cause:** No accounts exist in the `users` table with `role = 'admin'`.
-- **Solution:** Visit `http://localhost/classroom_finder/setup.php` in your browser and complete the initial account creation form.
-
-### 3. Background image or logo does not render
-- **Cause:** File permissions or missing image files in `assets/img/`.
-- **Solution:** `config/helpers.php` contains a self-initializing bootstrap that automatically copies `assets/img/campus-bg.webp` and `assets/img/logo.png` upon any HTTP request. Ensure the web server user has write permissions to `assets/img/`.
-
-### 4. Scheduled classes show as available
-- **Cause:** Server timezone mismatch or active force-open override.
-- **Solution:** Verify `date_default_timezone_set('Asia/Manila');` in `config/helpers.php`. Check **Admin > Schedules** to see if an instructor submitted a force-open exception for today's date.
+```powershell
+# Windows Task Scheduler (PowerShell)
+schtasks /create /tn "ClassroomFinderExpire" /tr "php C:\laragon\www\classroom_finder\cron\expire.php" /sc minute /mo 1
+```
 
 ---
 
-## License & Attribution
+## 🧪 Testing & QA
 
-Copyright © 2026 **Clarendon College**. All rights reserved.  
-Built for campus facilities and academic scheduling management.
+Classroom Finder includes lightweight, zero-dependency unit and integration checks verifying core domain logic, file uploads, and CSV parsers.
+
+Run the test suite directly from your terminal:
+
+```bash
+php tests/test_schedule_import.php
+```
+
+**Expected Output:**
+```text
+Running schedule import tests...
+ALL SCHEDULE IMPORT TESTS PASSED.
+```
+
+---
+
+## ❓ Troubleshooting & FAQ
+
+<details>
+<summary><strong>1. Why won't the camera open when scanning a QR code?</strong></summary>
+
+Mobile browsers (Chrome, Safari, Firefox) mandate a secure context (`HTTPS` or `localhost`) to grant hardware camera permissions. When testing over local network Wi-Fi (e.g. `192.168.1.50`), either create a local SSL certificate or forward through an HTTPS tunnel (e.g. `ngrok` or `Cloudflare Tunnel`).
+</details>
+
+<details>
+<summary><strong>2. How do I reset a locked setup wizard?</strong></summary>
+
+`setup.php` locks itself as soon as at least one administrator account exists in the `users` table. To re-run setup during development, either clear the `users` table or add an administrator manually via SQL.
+</details>
+
+<details>
+<summary><strong>3. Why are table borders too thick when printing?</strong></summary>
+
+Standard browsers snap `border-collapse: collapse` table lines to 1px or 2px. Classroom Finder's reporting engine utilizes `border-collapse: separate; border-spacing: 0;` paired with hairline `0.5px solid #000000` borders on table cell perimeters to guarantee ultra-sharp rendering.
+</details>
+
+---
+
+## 📄 License & Attribution
+
+Distributed under institutional license for **Clarendon College**.  
+Copyright © 2026 **Clarendon College**. All rights reserved.
+
+<div align="center">
+  <sub>Built with ❤️ for the students, faculty, and administrators of Clarendon College.</sub>
+</div>
