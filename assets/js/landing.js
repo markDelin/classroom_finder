@@ -272,7 +272,15 @@
         html: '<div style="text-align:left;font-size:.92rem;line-height:1.6;margin-top:.4rem;">' +
               '<p><strong>Campus Classroom Finder</strong> provides real-time room availability, schedules, and occupancy tracking.</p>' +
               '<hr style="margin:.75rem 0;border:0;border-top:1px solid var(--border,#cbd5e1);">' +
-              '<p style="margin-bottom:.35rem;"><strong>Developed by:</strong></p>' +
+              '<p style="margin-bottom:.25rem;"><strong>Course Subjects:</strong></p>' +
+              '<ul style="margin:0 0 .65rem 0;padding-left:1.25rem;">' +
+              '<li>Application Development and Emerging Technology</li>' +
+              '<li>Database Management</li>' +
+              '</ul>' +
+              '<p style="margin-bottom:.25rem;"><strong>Lecturer / Instructor:</strong></p>' +
+              '<p style="margin:0 0 .65rem 0;padding-left:.25rem;"><strong>Roderick Mayo</strong></p>' +
+              '<hr style="margin:.75rem 0;border:0;border-top:1px solid var(--border,#cbd5e1);">' +
+              '<p style="margin-bottom:.25rem;"><strong>Developed by:</strong></p>' +
               '<ul style="margin:0;padding-left:1.25rem;">' +
               '<li><strong>Reymark F. Delin</strong></li>' +
               '<li><strong>Jaibel Rentillo</strong></li>' +

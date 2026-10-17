@@ -640,6 +640,12 @@ Standard browsers snap `border-collapse: collapse` table lines to 1px or 2px. Cl
 Distributed under institutional license for **Clarendon College**.  
 Copyright © 2026 **Clarendon College**. All rights reserved.
 
+### 📚 Academic Context
+- **Subjects:**
+  - Application Development and Emerging Technology
+  - Database Management
+- **Lecturer / Instructor:** Roderick Mayo
+
 ### 👥 Development Team
 - **Reymark F. Delin**
 - **Jaibel Rentillo**
