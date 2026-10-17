@@ -263,6 +263,28 @@
   });
 
   document.addEventListener('click', function (ev) {
+    var aboutLink = ev.target.closest('#aboutBtn');
+    if (aboutLink) {
+      ev.preventDefault();
+      if (!window.Swal) { return; }
+      window.Swal.fire({
+        title: 'About the System',
+        html: '<div style="text-align:left;font-size:.92rem;line-height:1.6;margin-top:.4rem;">' +
+              '<p><strong>Campus Classroom Finder</strong> provides real-time room availability, schedules, and occupancy tracking.</p>' +
+              '<hr style="margin:.75rem 0;border:0;border-top:1px solid var(--border,#cbd5e1);">' +
+              '<p style="margin-bottom:.35rem;"><strong>Developed by:</strong></p>' +
+              '<ul style="margin:0;padding-left:1.25rem;">' +
+              '<li><strong>Reymark F. Delin</strong></li>' +
+              '<li><strong>Jaibel Rentillo</strong></li>' +
+              '<li><strong>Angela Pauste</strong></li>' +
+              '</ul>' +
+              '</div>',
+        confirmButtonText: 'Close',
+        confirmButtonColor: 'var(--primary, #0F3B6E)'
+      });
+      return;
+    }
+
     var loadBtn = ev.target.closest('#loadMoreBtn');
     if (loadBtn) {
       ev.preventDefault();

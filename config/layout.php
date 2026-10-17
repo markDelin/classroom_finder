@@ -47,7 +47,8 @@ function render_header(string $title, array $opts = []): void
         'admin' => [
             ['key' => 'dashboard',    'label' => 'Dashboard',        'href' => $adminHref('dashboard.php'),    'icon' => 'layout-dashboard'],
             ['key' => 'users',        'label' => 'Users',            'href' => $adminHref('users.php'),        'icon' => 'users'],
-            ['key' => 'classrooms',   'label' => 'Classrooms',       'href' => $adminHref('classrooms.php'),   'icon' => 'door-open'],
+            ['key' => 'classrooms',        'label' => 'Classrooms',        'href' => $adminHref('classrooms.php'),        'icon' => 'door-open'],
+            ['key' => 'classroom_history', 'label' => 'Classroom History', 'href' => $adminHref('classroom_history.php'), 'icon' => 'calendar-clock'],
             ['key' => 'qr',           'label' => 'QR Codes',         'href' => $adminHref('qr_codes.php'),     'icon' => 'qr-code'],
             ['key' => 'sessions',     'label' => 'Active Sessions',  'href' => $adminHref('sessions.php'),     'icon' => 'clock'],
             ['key' => 'schedules',    'label' => 'Print Schedules',  'href' => $adminHref('schedules.php'),    'icon' => 'calendar-days'],

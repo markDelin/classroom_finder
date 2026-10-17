@@ -153,7 +153,11 @@ render_header('Find a Classroom', ['prefix' => '', 'wide' => true, 'public' => t
 
 <footer class="site-footer">
   <span><?= e($school !== '' ? $school . ' · ' . app_name() : app_name()) ?></span>
-  <span>Lecturer? <a href="login.php">Log in to occupy a room via QR</a></span>
+  <span>
+    <a href="#about" id="aboutBtn">About</a>
+    <span class="muted" style="margin: 0 .4rem;">·</span>
+    Lecturer? <a href="login.php">Log in to occupy a room via QR</a>
+  </span>
 </footer>
 
 <?php render_footer(['assets/js/landing.js']); ?>
