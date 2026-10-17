@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/img/logo.png" alt="Clarendon College Logo" width="140" height="140">
+
 # 🏫 Clarendon College — Classroom Finder
 
 <p align="center">
@@ -644,6 +646,11 @@ Standard browsers snap `border-collapse: collapse` table lines to 1px or 2px. Cl
 
 Distributed under institutional license for **Clarendon College**.  
 Copyright © 2026 **Clarendon College**. All rights reserved.
+
+### 👥 Development Team
+- **Reymark F. Delin**
+- **Jaibel Rentillo**
+- **Angela Pauste**
 
 <div align="center">
   <sub>Built with ❤️ for the students, faculty, and administrators of Clarendon College.</sub>
