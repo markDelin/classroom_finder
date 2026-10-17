@@ -2,7 +2,7 @@
 
 <img src="assets/img/logo.png" alt="Clarendon College Logo" width="140" height="140">
 
-# 🏫 Clarendon College — Classroom Finder
+# Clarendon College — Classroom Finder
 
 <p align="center">
   <strong>Next-generation campus classroom availability board, door QR code check-in engine, and academic timetable intelligence system.</strong>
