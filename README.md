@@ -18,13 +18,6 @@
 
 </div>
 
----
-
-> [!NOTE]
-> **Clarendon College Classroom Finder** is an all-in-one institutional platform that eliminates physical room scouting across multi-floor academic facilities. It bridges real-time physical classroom state with digital scheduling, QR door check-ins, automated session expiry, and executive utilization analytics.
-
----
-
 ## 📑 Table of Contents
 
 - [Key Capabilities](#-key-capabilities)
