@@ -282,7 +282,12 @@ The operational status of every classroom is computed on-demand through an immut
    ```
    Fill in your primary administrator profile (Full Name, Staff ID, Username, Password). Upon submission, `setup.php` permanently seals itself against tampering.
 
-5. **Run a Syntax Check:**
+5. **Configure the Campus Geofence:**
+   Sign in as an administrator, open **Settings**, and set the campus latitude, longitude, and allowed radius in meters. Check-in and force-open actions fail closed until all three values are configured.
+
+   Scanner pages require browser location permission. Use HTTPS or `localhost`; browsers commonly block geolocation on insecure origins. The server recalculates the distance from the submitted coordinates and never trusts a client-provided distance or pass/fail result.
+
+6. **Run a Syntax Check:**
    Check the schedule service syntax (does not verify database connectivity):
    ```bash
    php -l services/schedule_service.php
@@ -569,7 +574,13 @@ Located at [admin/reports.php](admin/reports.php), the administrative reporting 
    - `SameSite=Lax`: Defends against cross-site timing and CSRF attacks.
    - `Content-Security-Policy`: Restricts inline injection vectors while whitelisting self-hosted fonts and assets.
 
-5. **Filesystem Protection:**
+5. **Campus Geofencing:**
+   - Browser GPS is required for QR scans, manual-token check-ins, and force-open actions.
+   - The authoritative server checks use the configured campus center and radius with Haversine distance.
+   - Missing configuration, denied location permission, invalid coordinates, or an outside-campus location rejects the action.
+   - Client-side location data is treated as untrusted input and validated again before the database write.
+
+6. **Filesystem Protection:**
    Direct HTTP access to `.sql`, `.lock`, `.log`, and sensitive directories (`config/`, `database/`) is blocked via `.htaccess` rules.
 
 ---
@@ -595,12 +606,13 @@ schtasks /create /tn "ClassroomFinderExpire" /tr "php C:\laragon\www\classroom_f
 
 ## 🧪 Testing & QA
 
-No automated unit or integration test suite is currently included. CI checks PHP syntax for all tracked PHP files.
+The geofence regression check covers distance, coordinate bounds, and accuracy limits. CI checks PHP syntax for all tracked PHP files.
 
 Run the same syntax checks locally from Git Bash or a POSIX shell:
 
 ```bash
 git ls-files -z '*.php' | xargs -0 -r -n1 php -l
+php tests_geofence.php
 ```
 
 Syntax checks do not verify database connectivity, uploads, CSV import behavior, or browser flows; check those manually against a configured local database.
