@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 // Schedule Service: weekly recurring timetables, slot conflict checks, and force-open overrides.
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/geofence.php';
 
 const SCHEDULE_DAY_NAMES = [
     1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'
@@ -254,10 +255,14 @@ function schedule_toggle_slot(int $id, ?int $adminId = null): array
     return ['ok' => true, 'message' => 'Schedule status toggled.'];
 }
 
-function schedule_force_open(int $classroomId, int $userId, string $reason, string $details = ''): array
+function schedule_force_open(int $classroomId, int $userId, string $reason, string $details = '', $latitude = null, $longitude = null, $accuracy = null): array
 {
     if ($classroomId <= 0 || $userId <= 0) {
         return ['ok' => false, 'error' => 'Invalid request parameters.', 'code' => 400];
+    }
+
+    if (!geofence_check($latitude, $longitude, $accuracy)) {
+        return ['ok' => false, 'error' => 'Opening a room requires a valid location within the configured campus geofence.', 'code' => 403];
     }
 
     if (!in_array($reason, ['lecturer_absent', 'emergency', 'ended_early', 'other'], true)) {

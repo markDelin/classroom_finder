@@ -125,5 +125,8 @@ INSERT INTO settings (skey, svalue) VALUES
   ('duration_step_minutes',    '30'),
   ('landing_refresh_seconds',  '15'),
   ('scan_day_start',           '07:00'),
-  ('scan_day_end',             '19:00')
+  ('scan_day_end',             '19:00'),
+  ('campus_latitude',           ''),
+  ('campus_longitude',          ''),
+  ('campus_radius_meters',      '100')
 ON DUPLICATE KEY UPDATE svalue = VALUES(svalue);

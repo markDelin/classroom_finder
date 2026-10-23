@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 // Session Service: classroom occupancy sessions, pessimistic concurrency check-in, and releases.
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/geofence.php';
 
 // Fetch active session details by session ID
 function session_get_active(int $sessionId): ?array
@@ -56,7 +57,7 @@ function session_schedule_windows(int $start, int $end): array
     return $windows;
 }
 
-function session_occupy(int $classroomId, int $userId, int $minutes): array
+function session_occupy(int $classroomId, int $userId, int $minutes, $latitude = null, $longitude = null, $accuracy = null): array
 {
     if ($userId <= 0 || $classroomId <= 0) {
         return ['ok' => false, 'error' => 'Invalid user or classroom ID.'];
@@ -104,6 +105,10 @@ function session_occupy(int $classroomId, int $userId, int $minutes): array
         // Read active holds only after both locks, avoiding a stale transaction snapshot.
         if ($activeHold = session_get_active_for_user($userId)) {
             throw new RuntimeException('You are still occupying room ' . $activeHold['room_number'] . '. Release it first.');
+        }
+
+        if (!geofence_check($latitude, $longitude, $accuracy)) {
+            throw new RuntimeException('Check-in requires a valid location within the configured campus geofence.');
         }
 
         if ($room['status'] !== 'available') {

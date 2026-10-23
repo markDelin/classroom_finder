@@ -31,9 +31,12 @@ if (!$room) {
 }
 
 $reason = (string)($input['reason'] ?? '');
+$latitude = $input['latitude'] ?? null;
+$longitude = $input['longitude'] ?? null;
+$accuracy = $input['accuracy'] ?? null;
 $details = (string)($input['details'] ?? '');
 
-$res = schedule_force_open((int)$room['id'], (int)$user['id'], $reason, $details);
+$res = schedule_force_open((int)$room['id'], (int)$user['id'], $reason, $details, $latitude, $longitude, $accuracy);
 if (!$res['ok']) {
     json_response([
         'ok'    => false,

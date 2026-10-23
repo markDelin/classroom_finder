@@ -17,6 +17,9 @@
   var occupyForm = document.getElementById('occupyForm');
   var fToken     = document.getElementById('fToken');
   var fMinutes   = document.getElementById('fMinutes');
+  var fLatitude  = document.getElementById('fLatitude');
+  var fLongitude = document.getElementById('fLongitude');
+  var fAccuracy  = document.getElementById('fAccuracy');
   var manualForm = document.getElementById('manualForm');
 
   var scanner     = null;
@@ -180,6 +183,13 @@
     e.textContent = window.cfWallClock(serverNowIso, minutes).time;
   }
 
+  function getLocation() {
+    return new Promise(function (resolve, reject) {
+      if (!navigator.geolocation) return reject(new Error('Location is not supported by this browser.'));
+      navigator.geolocation.getCurrentPosition(resolve, function () { reject(new Error('Location permission is required to scan or open a room.')); }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    });
+  }
+
   function requestForceOpen(data) {
     var num = data.room.room_number;
     var opts = [
@@ -225,10 +235,11 @@
 
   async function submitForceOpen(data, reason, details) {
     try {
+      var pos = await getLocation();
       var resp = await fetch('../api/force_open.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-        body: JSON.stringify({ token: data.room.token, reason: reason, details: details })
+        body: JSON.stringify({ token: data.room.token, reason: reason, details: details, latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy })
       });
       var out = await resp.json();
       if (!resp.ok || !out.ok) {
@@ -338,7 +349,10 @@
       window.Swal.showLoading();
       fToken.value = data.room.token;
       fMinutes.value = String(res.value);
-      occupyForm.submit();
+      getLocation().then(function (pos) {
+        fLatitude.value = pos.coords.latitude; fLongitude.value = pos.coords.longitude; fAccuracy.value = pos.coords.accuracy;
+        occupyForm.submit();
+      }).catch(function (e) { modalAlert('error', e.message); unlockScanner(1500); });
     });
   }
 
@@ -363,11 +377,13 @@
     pauseScanner();
 
     try {
+      say('Requesting location…');
+      var pos = await getLocation();
       say('Checking room…');
       var res = await fetch('../api/scan_qr.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-        body: JSON.stringify({ token: token })
+        body: JSON.stringify({ token: token, latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy })
       });
       var data = await res.json();
       if (!res.ok || !data.ok) {

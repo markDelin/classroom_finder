@@ -38,6 +38,10 @@ if ($activeSession = get_active_session_for((int)$user['id'])) {
 }
 
 $input = request_input();
+require_once __DIR__ . '/../config/geofence.php';
+if (!geofence_check($input['latitude'] ?? null, $input['longitude'] ?? null, $input['accuracy'] ?? null)) {
+    json_response(['ok' => false, 'error' => 'Scanning requires a valid location within the configured campus geofence.', 'code' => 'geofence'], 403);
+}
 $token = extract_qr_token((string)($input['token'] ?? ''));
 if ($token === null) {
     json_response(['ok' => false, 'error' => 'That does not look like a Classroom Finder QR code.', 'code' => 'bad_qr'], 400);

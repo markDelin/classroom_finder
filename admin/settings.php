@@ -12,6 +12,7 @@ $intKeys = [
     'max_duration_minutes'    => [15, 1440, 'Maximum occupancy (minutes)'],
     'duration_step_minutes'   => [5, 120, 'Duration picker step (minutes)'],
     'landing_refresh_seconds' => [5, 600, 'Landing page refresh (seconds)'],
+    'campus_radius_meters' => [1, 10000, 'Campus geofence radius (meters)'],
 ];
 
 // POST: Save updated settings
@@ -41,6 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (mb_strlen($schoolContact) <= 120) {
         set_setting('school_contact', $schoolContact);
     }
+
+    $lat = filter_var($_POST['campus_latitude'] ?? '', FILTER_VALIDATE_FLOAT);
+    $lon = filter_var($_POST['campus_longitude'] ?? '', FILTER_VALIDATE_FLOAT);
+    if ($lat !== false && is_finite((float)$lat) && $lat >= -90 && $lat <= 90) set_setting('campus_latitude', (string)$lat);
+    if ($lon !== false && is_finite((float)$lon) && $lon >= -180 && $lon <= 180) set_setting('campus_longitude', (string)$lon);
 
     // 2. Numeric Parameter Clamping
     foreach ($intKeys as $key => [$min, $max, $label]) {
@@ -173,6 +179,15 @@ render_header('Settings', ['prefix' => '../', 'nav' => 'admin', 'active' => 'set
                  value="<?= get_setting_int('landing_refresh_seconds', 20) ?>">
           <small class="muted" style="display:block;margin-top:.3rem">Allowed range: 5 – 600 (live feed reload interval)</small>
         </label>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group__head"><h4 class="settings-group__title">Campus geofence</h4><p class="settings-group__desc">Required for scanner check-in and force-open. Missing values deny access.</p></div>
+      <div class="settings-grid--3">
+        <label>Latitude<input type="number" name="campus_latitude" min="-90" max="90" step="any" required value="<?= e(get_setting('campus_latitude', '')) ?>"></label>
+        <label>Longitude<input type="number" name="campus_longitude" min="-180" max="180" step="any" required value="<?= e(get_setting('campus_longitude', '')) ?>"></label>
+        <label>Radius (meters)<input type="number" name="campus_radius_meters" min="1" max="10000" required value="<?= get_setting_int('campus_radius_meters', 100) ?>"></label>
       </div>
     </div>
 

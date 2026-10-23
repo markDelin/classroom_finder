@@ -63,6 +63,9 @@ render_header('Scan Classroom QR', ['prefix' => '../', 'nav' => 'lecturer', 'act
   <?= csrf_field() ?>
   <input type="hidden" name="token" id="fToken" value="">
   <input type="hidden" name="minutes" id="fMinutes" value="">
+  <input type="hidden" name="latitude" id="fLatitude" value="">
+  <input type="hidden" name="longitude" id="fLongitude" value="">
+  <input type="hidden" name="accuracy" id="fAccuracy" value="">
 </form>
 
 <audio id="scanSuccessSound" src="../assets/sound/success.mp3" preload="auto"></audio>

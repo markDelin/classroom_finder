@@ -19,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !check_csrf()) {
 // Validate token and selected occupancy duration
 $token   = extract_qr_token((string)($_POST['token'] ?? ''));
 $minutes = filter_var($_POST['minutes'] ?? '', FILTER_VALIDATE_INT);
+$latitude = $_POST['latitude'] ?? null;
+$longitude = $_POST['longitude'] ?? null;
+$accuracy = $_POST['accuracy'] ?? null;
 
 if ($token === null) {
     $fail('Missing or malformed QR token.');
@@ -33,7 +36,7 @@ if (!$room) {
     $fail('Unknown QR code. Ask the administrator for the current poster.');
 }
 
-$res = session_occupy((int)$room['id'], (int)$user['id'], (int)$minutes);
+$res = session_occupy((int)$room['id'], (int)$user['id'], (int)$minutes, $latitude, $longitude, $accuracy);
 if (!$res['ok']) {
     $fail($res['error']);
 }
