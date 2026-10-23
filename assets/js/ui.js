@@ -371,35 +371,6 @@
     }, 5000);
   });
 
-  /* ---------- page loader (commented out) ----------
-  var loader = document.getElementById('pageLoader');
-  if (loader) {
-    var hideLoader = function () {
-      loader.classList.add('is-hidden');
-    };
-    if (document.readyState === 'complete') {
-      hideLoader();
-    } else {
-      window.addEventListener('load', hideLoader);
-    }
-    setTimeout(hideLoader, 3500); // ponytail: safety fallback if asset hangs
-
-    window.addEventListener('pageshow', function (ev) {
-      if (ev.persisted) { hideLoader(); }
-    });
-
-    document.addEventListener('click', function (ev) {
-      var a = ev.target.closest('a');
-      if (!a || !a.href || a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-no-loader')) { return; }
-      if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.defaultPrevented) { return; }
-      var href = a.getAttribute('href') || '';
-      if (!href || href.charAt(0) === '#' || href.indexOf('javascript:') === 0 || href.indexOf('mailto:') === 0 || href.indexOf('tel:') === 0) { return; }
-      if (a.origin !== window.location.origin || a.href === window.location.href) { return; }
-      loader.classList.remove('is-hidden');
-    });
-  }
-  */
-
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
       var prefix = document.body.dataset.prefix || '';

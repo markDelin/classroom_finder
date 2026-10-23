@@ -6,24 +6,6 @@ require_once __DIR__ . '/../config/database.php';
 
 const ROOM_SERVICE_TYPES = ['Lecture Room', 'Highschool Comlab', 'College Comlab', 'Highschool Room', 'Other', 'Lecture', 'Laboratory', 'Seminar'];
 
-// Retrieve single classroom with computed live availability status
-function room_get(int $id): ?array
-{
-    return room_get_with_status($id);
-}
-
-// Fetch raw classroom row without joined session or schedule status
-function room_get_raw(int $id): ?array
-{
-    if ($id <= 0) {
-        return null;
-    }
-    $st = db()->prepare('SELECT * FROM classrooms WHERE id = ? LIMIT 1');
-    $st->execute([$id]);
-    $row = $st->fetch();
-    return $row ?: null;
-}
-
 // Find classroom by 8-character unique QR token
 function room_get_by_token(string $token): ?array
 {

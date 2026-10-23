@@ -38,7 +38,7 @@ if (!function_exists('mb_strtoupper')) {
 
 date_default_timezone_set('Asia/Manila');
 
-// Ensure hardcoded brand assets (campus background & school logo) exist
+// hardcoded assets (campus background & school logo) exist
 (static function (): void {
     $imgDir = __DIR__ . '/../assets/img';
     if (!is_dir($imgDir)) {
@@ -231,11 +231,6 @@ function current_user(): ?array
     return $user;
 }
 
-function is_logged_in(): bool
-{
-    return current_user() !== null;
-}
-
 $settings_cache ??= null;
 
 // Retrieves cached system setting by key with fallback default
@@ -301,16 +296,6 @@ function fetch_classrooms(array $f = []): array
     return room_fetch_all($f);
 }
 
-function get_room_with_status(int $id): ?array
-{
-    return room_get_with_status($id);
-}
-
-function get_room(int $id): ?array
-{
-    return room_get($id);
-}
-
 function get_room_by_token(string $token): ?array
 {
     return room_get_by_token($token);
@@ -329,15 +314,6 @@ function extract_qr_token(?string $raw): ?string
 function get_active_session_for(int $userId): ?array
 {
     return session_get_active_for_user($userId);
-}
-
-function release_session(int $sessionId, string $via = 'lecturer'): bool
-{
-    $u = current_user();
-    $userId = $u ? (int)$u['id'] : 0;
-    $role = ($u && $u['role'] === 'admin') ? 'admin' : $via;
-    $res = session_release($sessionId, $userId, $role);
-    return (bool)($res['ok'] ?? false);
 }
 
 function fmt_time(?string $sqlDateTime): string

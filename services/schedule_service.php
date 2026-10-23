@@ -38,20 +38,6 @@ function schedule_get_active_slot(int $classroomId, int $dayOfWeek, string $time
     return $slot ?: null;
 }
 
-function schedule_fetch_by_room(int $classroomId): array
-{
-    if ($classroomId <= 0) {
-        return [];
-    }
-    $st = db()->prepare(
-        'SELECT * FROM class_schedules
-         WHERE classroom_id = ?
-         ORDER BY day_of_week ASC, start_time ASC'
-    );
-    $st->execute([$classroomId]);
-    return $st->fetchAll();
-}
-
 function schedule_upcoming_for_rooms(array $roomIds, ?int $now = null): array
 {
     $roomIds = array_values(array_unique(array_filter(array_map('intval', $roomIds), static fn(int $id): bool => $id > 0)));

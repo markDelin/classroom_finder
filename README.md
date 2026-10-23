@@ -126,7 +126,7 @@
 | **Frontend Core** | Vanilla JavaScript (ES6+), CSS3 Variables, Semantic HTML5 |
 | **Typography** | Self-hosted `@font-face` (Barlow Condensed, IBM Plex Sans, IBM Plex Mono) |
 | **QR Engine** | Bundled `phpqrcode` (SVG / PNG stream generation) • `html5-qrcode` (camera capture) |
-| **Notifications & Dialogs** | `sweetalert2` (modal confirmations) • `toastify-js` (asynchronous feedback) |
+| **Notifications & Dialogs** | `sweetalert2` (modal confirmations) • built-in flash notifications (asynchronous feedback) |
 | **Audio Synthesis** | HTML5 Audio API (`success.mp3`, `error.mp3`) |
 | **Offline & PWA** | Web App Manifest (`manifest.json`) • Service Worker (`sw.js`) |
 
@@ -185,8 +185,6 @@ classroom_finder/
 │   ├── schedule_service.php       # Slot recurrence, CSV import parser & sheet file manager
 │   ├── session_service.php        # Concurrency-safe occupancy transactions & auto-expiry
 │   └── user_service.php           # Account lifecycle, password hashing & verification
-├── tests/                         # Automated test suite
-│   └── test_schedule_import.php   # Unit & integration checks for schedule uploader & CSV parser
 ├── 403.php, 404.php, 500.php      # Branded HTTP error pages
 ├── index.php                      # Public live availability board (landing page)
 ├── login.php, logout.php          # Authentication views
@@ -284,10 +282,10 @@ The operational status of every classroom is computed on-demand through an immut
    ```
    Fill in your primary administrator profile (Full Name, Staff ID, Username, Password). Upon submission, `setup.php` permanently seals itself against tampering.
 
-5. **Run Sanity Tests:**
-   Verify schedule services and database connectivity:
+5. **Run a Syntax Check:**
+   Check the schedule service syntax (does not verify database connectivity):
    ```bash
-   php tests/test_schedule_import.php
+   php -l services/schedule_service.php
    ```
 
 ---
@@ -597,19 +595,15 @@ schtasks /create /tn "ClassroomFinderExpire" /tr "php C:\laragon\www\classroom_f
 
 ## 🧪 Testing & QA
 
-Classroom Finder includes lightweight, zero-dependency unit and integration checks verifying core domain logic, file uploads, and CSV parsers.
+No automated unit or integration test suite is currently included. CI checks PHP syntax for all tracked PHP files.
 
-Run the test suite directly from your terminal:
+Run the same syntax checks locally from Git Bash or a POSIX shell:
 
 ```bash
-php tests/test_schedule_import.php
+git ls-files -z '*.php' | xargs -0 -r -n1 php -l
 ```
 
-**Expected Output:**
-```text
-Running schedule import tests...
-ALL SCHEDULE IMPORT TESTS PASSED.
-```
+Syntax checks do not verify database connectivity, uploads, CSV import behavior, or browser flows; check those manually against a configured local database.
 
 ---
 

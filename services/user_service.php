@@ -16,19 +16,6 @@ function user_get(int $id): ?array
     return $user ?: null;
 }
 
-// Retrieve user by username
-function user_get_by_username(string $username): ?array
-{
-    $username = trim($username);
-    if ($username === '') {
-        return null;
-    }
-    $st = db()->prepare('SELECT * FROM users WHERE username = ? LIMIT 1');
-    $st->execute([$username]);
-    $user = $st->fetch();
-    return $user ?: null;
-}
-
 // Authenticate credentials against bcrypt hash and verify active account status
 function user_authenticate(string $username, string $password): array
 {
